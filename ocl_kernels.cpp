@@ -1,38 +1,10 @@
 #include "ocl_common.hpp"
-#include "kernel_files/ocl_kernel_hdr.hpp"
-
+#include "ocl_kernel_hdr.hpp"
 #include <sstream>
 
 void CloverChunk::initProgram
 (void)
 {
-    // add all the sources into one big string
-    std::stringstream ss;
-    #define ADD_SOURCE(src_str) \
-        ss << src_##src_str##_cl << std::endl;
-
-    // add macros first
-    ADD_SOURCE(macros);
-
-    // then add kernels
-    ADD_SOURCE(ideal_gas);
-    ADD_SOURCE(accelerate);
-    ADD_SOURCE(flux_calc);
-    ADD_SOURCE(viscosity);
-    ADD_SOURCE(revert);
-    ADD_SOURCE(initialise_chunk);
-    ADD_SOURCE(advec_mom);
-    ADD_SOURCE(advec_cell);
-    ADD_SOURCE(reset_field);
-    ADD_SOURCE(generate_chunk);
-    ADD_SOURCE(PdV);
-    ADD_SOURCE(field_summary);
-    ADD_SOURCE(calc_dt);
-	// has to be included last! FIXME
-    ADD_SOURCE(update_halo);
-
-    #undef ADD_SOURCE
-
     // options
     std::stringstream options("");
 
@@ -44,11 +16,22 @@ void CloverChunk::initProgram
         //options << "-cl-nv-maxrregcount=20 ";
     }
 
-    // on ARM, don't use built in functions as they don't exist
 #ifdef __arm__
+    // on ARM, don't use built in functions as they don't exist
     options << "-DCLOVER_NO_BUILTINS ";
-    options << "-w ";
 #endif
+
+#if defined(NO_KERNEL_REDUCTIONS)
+    // don't do any reductions inside the kernels
+    options << "-D NO_KERNEL_REDUCTIONS ";
+#endif
+
+#ifdef ONED_KERNEL_LAUNCHES
+    // launch kernels with 1d work group size
+    options << "-DONED_KERNEL_LAUNCHES ";
+#endif
+
+    options << "-DCG_DO_PRECONDITION ";
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -67,96 +50,167 @@ void CloverChunk::initProgram
     options << "-DX_FACE_DATA=" << X_FACE_DATA << " ";
     options << "-DY_FACE_DATA=" << Y_FACE_DATA << " ";
 
-#ifdef ONED_KERNEL_LAUNCHES
-    options << "-DONED_KERNEL_LAUNCHES ";
-#endif
-
-    // not in 1.2 - not needed anyway
-    //options << "-cl-strict-aliasing ";
+    // include current directory
+    options << "-I. ";
 
     // device type in the form "-D..."
     options << device_type_prepro;
 
-    fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
+    const std::string options_str = options.str();
 
-    compileProgram(ss.str(), options.str());
+    fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
 
-    size_t max_wg_size;
-    #define COMPILE_KERNEL(kernel_name)                                 \
-        try                                                             \
-        {                                                               \
-            fprintf(DBGOUT, "Compiling %s\n", #kernel_name); \
-            kernel_name##_device = cl::Kernel(program, #kernel_name);   \
-        }                                                               \
-        catch (cl::Error e){                                            \
-            fprintf(stderr, "Error in creating %s kernel %d\n",         \
-                    #kernel_name, e.err());                             \
-            exit(1);                                                    \
-        }                                                               \
-        cl::detail::errHandler(                                         \
-            clGetKernelWorkGroupInfo(kernel_name##_device(),            \
-                                     device(),                          \
-                                     CL_KERNEL_WORK_GROUP_SIZE,         \
-                                     sizeof(size_t),                    \
-                                     &max_wg_size,                      \
-                                     NULL));                            \
-        if ((LOCAL_X*LOCAL_Y) > max_wg_size)                            \
-        {                                                               \
-            fprintf(stderr, "Work group size %zux%zu is too big for kernel %s", \
-                    LOCAL_X, LOCAL_Y, #kernel_name);                    \
-            fprintf(stderr, " - maximum is %zu\n", max_wg_size);        \
-            exit(1); \
-        }
+    compileKernel(options_str, src_ideal_gas_cl, "ideal_gas", ideal_gas_device);
+    compileKernel(options_str, src_accelerate_cl, "accelerate", accelerate_device);
+    compileKernel(options_str, src_flux_calc_cl, "flux_calc", flux_calc_device);
+    compileKernel(options_str, src_viscosity_cl, "viscosity", viscosity_device);
+    compileKernel(options_str, src_revert_cl, "revert", revert_device);
 
-    COMPILE_KERNEL(ideal_gas);
-    COMPILE_KERNEL(accelerate);
-    COMPILE_KERNEL(flux_calc);
-    COMPILE_KERNEL(viscosity);
-    COMPILE_KERNEL(revert);
-    COMPILE_KERNEL(reset_field);
-    COMPILE_KERNEL(field_summary);
-    COMPILE_KERNEL(calc_dt);
+    compileKernel(options_str, src_initialise_chunk_cl, "initialise_chunk_first", initialise_chunk_first_device);
+    compileKernel(options_str, src_initialise_chunk_cl, "initialise_chunk_second", initialise_chunk_second_device);
+    compileKernel(options_str, src_generate_chunk_cl, "generate_chunk_init", generate_chunk_init_device);
+    compileKernel(options_str, src_generate_chunk_cl, "generate_chunk", generate_chunk_device);
 
-    // initialise chunk kernels
-    COMPILE_KERNEL(initialise_chunk_first);
-    COMPILE_KERNEL(initialise_chunk_second);
+    compileKernel(options_str, src_reset_field_cl, "reset_field", reset_field_device);
+    compileKernel(options_str, src_set_field_cl, "set_field", set_field_device);
 
-    // generate chunk kernels
-    COMPILE_KERNEL(generate_chunk_init)
-    COMPILE_KERNEL(generate_chunk)
+    compileKernel(options_str, src_PdV_cl, "PdV_predict", PdV_predict_device);
+    compileKernel(options_str, src_PdV_cl, "PdV_not_predict", PdV_not_predict_device);
 
-    // various advec_mom kernels
-    COMPILE_KERNEL(advec_mom_vol)
-    COMPILE_KERNEL(advec_mom_node_flux_post_x)
-    COMPILE_KERNEL(advec_mom_node_pre_x)
-    COMPILE_KERNEL(advec_mom_flux_x)
-    COMPILE_KERNEL(advec_mom_xvel)
-    COMPILE_KERNEL(advec_mom_node_flux_post_y)
-    COMPILE_KERNEL(advec_mom_node_pre_y)
-    COMPILE_KERNEL(advec_mom_flux_y)
-    COMPILE_KERNEL(advec_mom_yvel)
+    compileKernel(options_str, src_field_summary_cl, "field_summary", field_summary_device);
+    compileKernel(options_str, src_calc_dt_cl, "calc_dt", calc_dt_device);
 
-    // various advec_cell kernels
-    COMPILE_KERNEL(advec_cell_pre_vol_x)
-    COMPILE_KERNEL(advec_cell_ener_flux_x)
-    COMPILE_KERNEL(advec_cell_x)
-    COMPILE_KERNEL(advec_cell_pre_vol_y)
-    COMPILE_KERNEL(advec_cell_ener_flux_y)
-    COMPILE_KERNEL(advec_cell_y)
+    compileKernel(options_str, src_update_halo_cl, "update_halo_top", update_halo_top_device);
+    compileKernel(options_str, src_update_halo_cl, "update_halo_bottom", update_halo_bottom_device);
+    compileKernel(options_str, src_update_halo_cl, "update_halo_left", update_halo_left_device);
+    compileKernel(options_str, src_update_halo_cl, "update_halo_right", update_halo_right_device);
 
-    // PdV kernels
-    COMPILE_KERNEL(PdV_predict)
-    COMPILE_KERNEL(PdV_not_predict)
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_vol", advec_mom_vol_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_node_flux_post_x", advec_mom_node_flux_post_x_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_node_pre_x", advec_mom_node_pre_x_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_flux_x", advec_mom_flux_x_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_xvel", advec_mom_xvel_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_node_flux_post_y", advec_mom_node_flux_post_y_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_node_pre_y", advec_mom_node_pre_y_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_flux_y", advec_mom_flux_y_device);
+    compileKernel(options_str, src_advec_mom_cl, "advec_mom_yvel", advec_mom_yvel_device);
 
-    // update halo
-    COMPILE_KERNEL(update_halo_bottom)
-    COMPILE_KERNEL(update_halo_top)
-    COMPILE_KERNEL(update_halo_right)
-    COMPILE_KERNEL(update_halo_left)
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_pre_vol_x", advec_cell_pre_vol_x_device);
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_x", advec_cell_ener_flux_x_device);
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_x", advec_cell_x_device);
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_pre_vol_y", advec_cell_pre_vol_y_device);
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
+    compileKernel(options_str, src_advec_cell_cl, "advec_cell_y", advec_cell_y_device);
 
-    #undef COMPILE_KERNEL
+#if defined(TL_USE_CG)
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_others", tea_leaf_cg_init_others_device);
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
+    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
+#else
+    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_init", tea_leaf_jacobi_init_device);
+    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device);
+    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device);
+#endif
+
+    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_finalise", tea_leaf_finalise_device);
 
     fprintf(DBGOUT, "All kernels compiled\n");
+}
+
+void CloverChunk::compileKernel
+(const std::string& options,
+ const std::string& source_name,
+ const char* kernel_name,
+ cl::Kernel& kernel)
+{
+    const std::string source_str(source_name);
+    fprintf(DBGOUT, "Compiling %s...", kernel_name);
+    cl::Program program = compileProgram(source_str, options);
+
+    size_t max_wg_size;
+
+    try
+    {
+        kernel = cl::Kernel(program, kernel_name);
+    }
+    catch (cl::Error e)
+    {
+        fprintf(DBGOUT, "Failed\n");
+        DIE("Error in creating %s kernel %d\n",
+                kernel_name, e.err());
+    }
+    cl::detail::errHandler(
+        clGetKernelWorkGroupInfo(kernel(),
+                                 device(),
+                                 CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t),
+                                 &max_wg_size,
+                                 NULL));
+    if ((LOCAL_X*LOCAL_Y) > max_wg_size)
+    {
+        DIE("Work group size %zux%zu is too big for kernel %s"
+            " - maximum is %zu\n",
+                LOCAL_X, LOCAL_Y, kernel_name,
+                max_wg_size);
+    }
+
+    fprintf(DBGOUT, "Done\n");
+    fflush(DBGOUT);
+}
+
+cl::Program CloverChunk::compileProgram
+(const std::string& source,
+ const std::string& options)
+{
+    // catches any warnings/errors in the build
+    std::stringstream errstream("");
+
+    // very verbose
+    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
+    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
+    fflush(DBGOUT);
+    cl::Program program;
+
+    cl::Program::Sources sources;
+    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
+
+    try
+    {
+        program = cl::Program(context, sources);
+        std::vector<cl::Device> dev_vec(1, device);
+        program.build(dev_vec, options.c_str());
+    }
+    catch (cl::Error e)
+    {
+        fprintf(stderr, "Errors in creating program\n");
+
+        try
+        {
+            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        }
+        catch (cl::Error ie)
+        {
+            DIE("Error in retrieving build info\n");
+        }
+
+        std::string errs(errstream.str());
+        DIE("%s\n", errs.c_str());
+    }
+
+    // return
+    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    std::string errs(errstream.str());
+
+    // some will print out an empty warning log
+    if (errs.size() > 10)
+    {
+        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
+    }
+
+    return program;
 }
 
 void CloverChunk::initSizes
@@ -173,7 +227,6 @@ void CloverChunk::initSizes
         total_cells++;
     }
 
-    fprintf(DBGOUT, "Local size = %zu\n", LOCAL_X);
     fprintf(DBGOUT, "Global size = %zu\n", total_cells);
     global_size = cl::NDRange(total_cells);
 #else
@@ -212,13 +265,6 @@ void CloverChunk::initSizes
     {
         local_row_size = local_row_size/2;
     }
-
-    // xeon phi does not like large numbers of weird work groups
-    if (CL_DEVICE_TYPE_ACCELERATOR == desired_type)
-    {
-        local_row_size = 16;
-    }
-
     fprintf(DBGOUT, "Local row work group size is %zu\n", local_row_size);
 
     update_ud_local_size[0] = cl::NDRange(local_row_size, 1);
@@ -239,9 +285,9 @@ void CloverChunk::initSizes
         local_column_size = local_column_size/2;
     }
 
-    // as above - xeon phi
     if (CL_DEVICE_TYPE_ACCELERATOR == desired_type)
     {
+        // on xeon phi, needs to be 16 so that update left/right kernels dont go really slow
         local_column_size = 16;
     }
 

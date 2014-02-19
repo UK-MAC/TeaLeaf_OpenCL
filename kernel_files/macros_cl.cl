@@ -1,11 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
-#define IF_ROW_WITHIN(_min, _max) \
-    if (row >= (y_min + 1) + (_min) && row <= (y_max + 1) + (_max))
-#define IF_COLUMN_WITHIN(_min, _max) \
-    if (column >= (x_min + 1) + (_min) && column <= (x_max + 1) + (_max))
-
 #ifdef ONED_KERNEL_LAUNCHES
+    #error not used
     #define __kernel_indexes                            \
         const int glob_id = get_global_id(0); \
         const int row = glob_id / (x_max + 4);  \
@@ -13,11 +9,12 @@
         const int lid = get_local_id(0);
 #else
     #define __kernel_indexes                            \
-        const int column = get_global_id(0);         \
-        const int row = get_global_id(1);            \
-        const int loc_column = get_local_id(0);      \
-        const int loc_row = get_local_id(1);         \
-        const int lid = loc_row*LOCAL_X + loc_column;
+        const int column = get_global_id(0);			\
+        const int row = get_global_id(1);				\
+        const int loc_column = get_local_id(0);			\
+        const int loc_row = get_local_id(1);			\
+        const int lid = loc_row*LOCAL_X + loc_column;	\
+        const int gid = row*get_global_size(0) + column;
 #endif
 
 #define THARR2D(x_offset, y_offset, big_row)        \
@@ -78,6 +75,8 @@
         }
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
+
+    #error This is not ready to be used
 
     /*
      *  TODO

@@ -82,70 +82,6 @@ void CloverChunk::update_halo_kernel
 const int depth,
 const int* chunk_neighbours)
 {
-#ifdef CL_USE_HALO_KERNELS
-    #define top_EVENT_IDX 0
-    #define bottom_EVENT_IDX 1
-
-    #define CHECK_LAUNCH_HORZ(arr, face, dir)                                               \
-    if(chunk_neighbours[CHUNK_ ## face] == EXTERNAL_FACE)                                   \
-    {                                                                                       \
-        halo_kernel_map[#arr].face.setArg(0, depth);                                        \
-        CloverChunk::enqueueKernel(halo_kernel_map[#arr].face,                              \
-                                   __LINE__, __FILE__,                                      \
-                                   cl::NullRange,                                           \
-                                   update_##dir##_global_size[depth-1],                     \
-                                   update_##dir##_local_size[depth-1],                      \
-                                   NULL,                                                    \
-                                   &halo_kernel_map[#arr].wait_events[face##_EVENT_IDX]);   \
-    }                                                                                       \
-    else                                                                                    \
-    {                                                                                       \
-       halo_kernel_map[#arr].wait_events[face##_EVENT_IDX] = cl::Event();                   \
-    }
-
-    #define CHECK_LAUNCH_VERT(arr, face, dir)                           \
-    if(chunk_neighbours[CHUNK_ ## face] == EXTERNAL_FACE)               \
-    {                                                                   \
-        halo_kernel_map[#arr].face.setArg(0, depth);                    \
-        CloverChunk::enqueueKernel(halo_kernel_map[#arr].face,          \
-                                   __LINE__, __FILE__,                  \
-                                   cl::NullRange,                       \
-                                   update_##dir##_global_size[depth-1], \
-                                   update_##dir##_local_size[depth-1],  \
-                                   &halo_kernel_map[#arr].wait_events,  \
-                                   NULL);                               \
-    }
-
-    #define HALO_UPDATE_2(arr)                          \
-    if(fields[FIELD_ ## arr] == 1)                      \
-    {                                                   \
-        CHECK_LAUNCH_HORZ(arr, top, ud);                \
-        CHECK_LAUNCH_HORZ(arr, bottom, ud);             \
-        CHECK_LAUNCH_VERT(arr, left, lr);               \
-        CHECK_LAUNCH_VERT(arr, right, lr);              \
-    }
-
-    HALO_UPDATE_2(density0);
-    HALO_UPDATE_2(density1);
-    HALO_UPDATE_2(energy0);
-    HALO_UPDATE_2(energy1);
-    HALO_UPDATE_2(pressure);
-    HALO_UPDATE_2(viscosity);
-
-    HALO_UPDATE_2(xvel0);
-    HALO_UPDATE_2(xvel1);
-
-    HALO_UPDATE_2(yvel0);
-    HALO_UPDATE_2(yvel1);
-
-    HALO_UPDATE_2(vol_flux_x);
-    HALO_UPDATE_2(mass_flux_x);
-
-    HALO_UPDATE_2(vol_flux_y);
-    HALO_UPDATE_2(mass_flux_y);
-
-#else
-
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
     if(fields[FIELD_ ## arr] == 1)                          \
     {                                                       \
@@ -172,6 +108,5 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(mass_flux_y, Y_FACE);
 
     HALO_UPDATE_RESIDENT(u, CELL);
-#endif
 }
 

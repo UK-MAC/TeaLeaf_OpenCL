@@ -121,6 +121,11 @@ endif
 LDLIBS+=-lOpenCL -lstdc++
 CXXFLAGS+=-DCL_USE_DEPRECATED_OPENCL_1_1_APIS
 CXXFLAGS+=-D__CL_ENABLE_EXCEPTIONS
+CXXFLAGS+=-DTL_USE_CG
+VPATH+=kernel_files
+ifdef VERBOSE
+CXXFLAGS+=-DOCL_VERBOSE
+endif
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
@@ -204,10 +209,10 @@ OCL_FILES=\
 	ocl_errors.o \
 	ocl_reduction.o \
 	ocl_kernels.o \
-	ocl_halos.o \
 	ideal_gas_kernel_ocl.o \
 	accelerate_kernel_ocl.o \
 	viscosity_kernel_ocl.o \
+	set_field_kernel_ocl.o \
 	reset_field_kernel_ocl.o \
 	field_summary_kernel_ocl.o \
 	tea_leaf_kernel_ocl.o \
@@ -234,23 +239,24 @@ include make.deps
 
 %.o: %.cpp Makefile
 	$(CXX) $(CXXFLAGS) -c $< -o $*.o
+%.mod %_module.mod %_leaf_module.mod: %.f90 %.o
+	@true
 %.o %_module.mod %_leaf_module.mod: %.f90 Makefile
 	$(MPI_COMPILER) $(CFLAGS) -c $< -o $*.o
-%_module.mod %_leaf_module.mod: %.f90 %.o
-	@true
 %.o: %.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $*.o
 
-VPATH+=kernel_files/
-$(KERNEL_HDR_FILE): $(shell ls kernel_files/*.cl)
+KERNEL_HDR_FILE=ocl_kernel_hdr.hpp
+$(KERNEL_HDR_FILE): $(shell ls kernel_files/*.cl) Makefile
 	@echo "// automaticllly generated from makefile" > $(KERNEL_HDR_FILE)
-	@for i in $(shell ls ./kernel_files/*.cl); do \
-		knl_name=`echo $$i | sed 's/\.\/kernel_files\///g' | sed 's/\.cl//g'`; \
+	@for i in `ls kernel_files/*.cl`; do \
+		knl_name=`echo $$i | sed 's/\(\.\/\)\?kernel_files\///g' | sed 's/\.cl//g'`; \
 		echo -n "const static std::string src_$$knl_name(\"" >> $(KERNEL_HDR_FILE); \
+		echo "#include <kernel_files/macros_cl.cl> \\\n\\" >> $(KERNEL_HDR_FILE);\
 		cat $$i | sed 's/\\/\\\\/g' | sed 's/\([^\\]*\)$$/\1\\n\\/g' >> $(KERNEL_HDR_FILE); \
 		echo "\");" >> $(KERNEL_HDR_FILE); \
 	done
 	@echo "Remade kernel header"
 
 clean:
-	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf
+	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf $(KERNEL_HDR_FILE)

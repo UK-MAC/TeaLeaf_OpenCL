@@ -9,8 +9,8 @@ __kernel void advec_mom_vol
 {
     __kernel_indexes;
 
-    //IF_ROW_WITHIN(- 2+0, + 2+0)
-    IF_COLUMN_WITHIN(- 2+0, + 2+0)
+    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
     {
         if(mom_sweep == 1)
         {
@@ -53,16 +53,17 @@ __kernel void advec_mom_node_flux_post_x
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(- 2+0, + 2+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
     {
         node_flux[THARR2D(0, 0, 1)] = 0.25
             * (mass_flux_x[THARR2D(0, -1, 1)] + mass_flux_x[THARR2D(0, 0, 1)]
             + mass_flux_x[THARR2D(1, -1, 1)] + mass_flux_x[THARR2D(1, 0, 1)]);
+
     }
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(- 1+0, + 2+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 2)
     {
             node_mass_post[THARR2D(0, 0, 1)] = 0.25
                 *(density1[THARR2D(0, -1, 0)]  * post_vol[THARR2D(0, -1, 1)]
@@ -79,8 +80,8 @@ __kernel void advec_mom_node_pre_x
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(- 1+0, + 2+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 2)
     {
         node_mass_pre[THARR2D(0, 0, 1)] = node_mass_post[THARR2D(0, 0, 1)]
             - node_flux[THARR2D(-1, 0, 1)] + node_flux[THARR2D(0, 0, 1)];
@@ -102,8 +103,8 @@ __kernel void advec_mom_flux_x
     double sigma, width, vdiffuw, vdiffdw, limiter;
     double auw, adw, wind;
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(- 1+0, + 1+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
     {
         if(node_flux[THARR2D(0, 0, 1)] < 0.0)
         {
@@ -149,8 +150,8 @@ __kernel void advec_mom_xvel
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         xvel1[THARR2D(0, 0, 1)] = (xvel1[THARR2D(0, 0, 1)]
             * node_mass_pre[THARR2D(0, 0, 1)] + mom_flux[THARR2D(-1, 0, 1)]
@@ -170,16 +171,16 @@ __kernel void advec_mom_node_flux_post_y
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(- 2+0, + 2+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         node_flux[THARR2D(0, 0, 1)] = 0.25
             * (mass_flux_y[THARR2D(-1, 0, 0)] + mass_flux_y[THARR2D(0, 0, 0)]
             + mass_flux_y[THARR2D(-1, 1, 0)] + mass_flux_y[THARR2D(0, 1, 0)]);
     }
 
-    IF_ROW_WITHIN(- 1+0, + 2+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) - 1 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         node_mass_post[THARR2D(0, 0, 1)] = 0.25
             * (density1[THARR2D(0, -1, 0)] * post_vol[THARR2D(0, -1, 1)]
@@ -196,8 +197,8 @@ __kernel void advec_mom_node_pre_y
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(- 1+0, + 2+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) - 1 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         node_mass_pre[THARR2D(0, 0, 1)] = node_mass_post[THARR2D(0, 0, 1)]
             - node_flux[THARR2D(0, -1, 1)] + node_flux[THARR2D(0, 0, 1)];
@@ -219,8 +220,8 @@ __kernel void advec_mom_flux_y
     double sigma, width, vdiffuw, vdiffdw, limiter;
     double auw, adw, wind;
 
-    IF_ROW_WITHIN(- 1+0, + 1+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         if(node_flux[THARR2D(0, 0, 1)] < 0.0)
         {
@@ -267,8 +268,8 @@ __kernel void advec_mom_yvel
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(+0, + 1+0)
-    IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         yvel1[THARR2D(0, 0, 1)] = (yvel1[THARR2D(0, 0, 1)]
             * node_mass_pre[THARR2D(0, 0, 1)] + mom_flux[THARR2D(0, -1, 1)]

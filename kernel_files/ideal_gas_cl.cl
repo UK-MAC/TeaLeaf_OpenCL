@@ -1,4 +1,3 @@
-
 __kernel void ideal_gas
 (__global const double * __restrict const density,
  __global const double * __restrict const energy,
@@ -7,8 +6,8 @@ __kernel void ideal_gas
 {
     __kernel_indexes;
 
-    //IF_ROW_WITHIN(+0, +0)
-    //IF_COLUMN_WITHIN(+0, +0)
+    if (row >= (y_min + 1) && row <= (y_max + 1)
+    && column >= (x_min + 1) && column <= (x_max + 1))
     {
         double v, pres_by_ener, pres_by_vol, ss_sq;
 

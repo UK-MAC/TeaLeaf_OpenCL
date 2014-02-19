@@ -18,8 +18,8 @@ __kernel void accelerate
     // prevent writing to *vel1, then read from it, then write to it again
     double xvel_temp, yvel_temp;
 
-    //IF_ROW_WITHIN(+0, + 1+0)
-    //IF_COLUMN_WITHIN(+0, + 1+0)
+    if(row >= (x_min + 1) && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         nodal_mass =
             (density0[THARR2D(-1, -1, 0)] * volume[THARR2D(-1, -1, 0)]

@@ -27,9 +27,12 @@ __kernel void generate_chunk
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(- 2+0, + 2+0)
-    IF_COLUMN_WITHIN(- 2+0, + 2+0)
+    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
     {
+        const double x_cent = state_xmin[state];
+        const double y_cent = state_ymin[state];
+
         if(g_rect == state_geometry[state])
         {
             if(vertexx[1 + column] >= state_xmin[state]
@@ -56,7 +59,10 @@ __kernel void generate_chunk
         }
         else if(state_geometry[state] == g_circ)
         {
-            double radius = SQRT(cellx[column] * cellx[column] + celly[row] + celly[row]);
+            double x_pos = cellx[column]-x_cent;
+            double y_pos = celly[row]-y_cent;
+            double radius = SQRT(x_pos*x_pos + y_pos*y_pos);
+
             if(radius <= state_radius[state])
             {
                 energy0[THARR2D(0, 0, 0)] = state_energy[state];
@@ -91,8 +97,8 @@ __kernel void generate_chunk_init
 {
     __kernel_indexes;
 
-    IF_ROW_WITHIN(- 2+0, + 2+0)
-    IF_COLUMN_WITHIN(- 2+0, + 2+0)
+    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
     {
         energy0[THARR2D(0, 0, 0)] = state_energy[0];
         density0[THARR2D(0, 0, 0)] = state_density[0];

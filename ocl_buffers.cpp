@@ -19,9 +19,8 @@ void CloverChunk::initBuffers
         }                                                       \
         catch (cl::Error e)                                     \
         {                                                       \
-            fprintf(stderr, "Error in creating %s buffer %d\n", \
+            DIE("Error in creating %s buffer %d\n", \
                     #name, e.err());                            \
-            exit(1);                                            \
         }
 
     #define BUF1DX_ALLOC(name, x_e)     \
@@ -37,12 +36,14 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(density1, 0, 0);
     BUF2D_ALLOC(energy0, 0, 0);
     BUF2D_ALLOC(energy1, 0, 0);
-    BUF2D_ALLOC(u, 0, 0);
 
     BUF2D_ALLOC(pressure, 0, 0);
     BUF2D_ALLOC(soundspeed, 0, 0);
     BUF2D_ALLOC(viscosity, 0, 0);
     BUF2D_ALLOC(volume, 0, 0);
+
+    // tealeaf
+    BUF2D_ALLOC(u, 0, 0);
 
     BUF2D_ALLOC(xvel0, 1, 1);
     BUF2D_ALLOC(xvel1, 1, 1);
@@ -57,13 +58,6 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(vol_flux_y, 0, 1);
     BUF2D_ALLOC(mass_flux_y, 0, 1);
 
-    // work arrays
-    BUF2D_ALLOC(work_array_1, 1, 1);
-    BUF2D_ALLOC(work_array_2, 1, 1);
-    BUF2D_ALLOC(work_array_3, 1, 1);
-    BUF2D_ALLOC(work_array_4, 1, 1);
-    BUF2D_ALLOC(work_array_5, 1, 1);
-
     BUF1DX_ALLOC(cellx, 0);
     BUF1DX_ALLOC(celldx, 0);
     BUF1DX_ALLOC(vertexx, 1);
@@ -74,16 +68,46 @@ void CloverChunk::initBuffers
     BUF1DY_ALLOC(vertexy, 1);
     BUF1DY_ALLOC(vertexdy, 1);
 
-    #define RED_ALLOC(name) \
-        BUF_ALLOC(name, 1.5*(total_cells * sizeof(double))/(LOCAL_X*LOCAL_Y))
+    // work arrays used in various kernels (post_vol, pre_vol, mom_flux, etc)
+    BUF2D_ALLOC(work_array_1, 1, 1);
+    BUF2D_ALLOC(work_array_2, 1, 1);
+    BUF2D_ALLOC(work_array_3, 1, 1);
+    BUF2D_ALLOC(work_array_4, 1, 1);
+    BUF2D_ALLOC(work_array_5, 1, 1);
 
+#if defined(TL_USE_CG)
+    BUF2D_ALLOC(z, 1, 1);
+    BUF2D_ALLOC(work_array_6, 1, 1);
+    BUF2D_ALLOC(work_array_7, 1, 1);
+    BUF2D_ALLOC(work_array_8, 1, 1);
+#endif
+
+#if defined(NO_KERNEL_REDUCTIONS)
     // reduction arrays
-    RED_ALLOC(reduce_buf_1)
-    RED_ALLOC(reduce_buf_2)
-    RED_ALLOC(reduce_buf_3)
-    RED_ALLOC(reduce_buf_4)
-    RED_ALLOC(reduce_buf_5)
-    RED_ALLOC(PdV_reduce_buf)
+    /*
+    BUF2D_ALLOC(reduce_buf_1, 1, 1);
+    BUF2D_ALLOC(reduce_buf_2, 1, 1);
+    BUF2D_ALLOC(reduce_buf_3, 1, 1);
+    BUF2D_ALLOC(reduce_buf_4, 1, 1);
+    BUF2D_ALLOC(reduce_buf_5, 1, 1);
+    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*total_cells);
+    */
+    BUF_ALLOC(reduce_buf_1, sizeof(double)*total_cells);
+    BUF_ALLOC(reduce_buf_2, sizeof(double)*total_cells);
+    BUF_ALLOC(reduce_buf_3, sizeof(double)*total_cells);
+    BUF_ALLOC(reduce_buf_4, sizeof(double)*total_cells);
+    BUF_ALLOC(reduce_buf_5, sizeof(double)*total_cells);
+    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*total_cells)
+#else
+    // allocate enough for 1 item per work group, and then a bit extra for the reduction
+    // 1.5 should work even if wg size is 2
+    BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(reduce_buf_2, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*(x_max+4)*(y_max+4))
+#endif
 
     #undef BUF2D_ALLOC
     #undef BUF1DX_ALLOC
@@ -96,6 +120,18 @@ void CloverChunk::initBuffers
 void CloverChunk::initArgs
 (void)
 {
+    #define SETARG_CHECK(knl, idx, buf) \
+        try \
+        { \
+            knl.setArg(idx, buf); \
+        } \
+        catch (cl::Error e) \
+        { \
+            DIE("Error in setting argument index %d to %s for kernel %s (%s - %d)", \
+                idx, #buf, #knl, \
+                e.what(), e.err()); \
+        }
+
     // ideal_gas
     ideal_gas_device.setArg(2, pressure);
     ideal_gas_device.setArg(3, soundspeed);
@@ -266,6 +302,12 @@ void CloverChunk::initArgs
     reset_field_device.setArg(6, yvel0);
     reset_field_device.setArg(7, yvel1);
 
+    // set field
+    set_field_device.setArg(0, density0);
+    set_field_device.setArg(1, density1);
+    set_field_device.setArg(2, energy0);
+    set_field_device.setArg(3, energy1);
+
     // generate chunk
     generate_chunk_init_device.setArg(0, density0);
     generate_chunk_init_device.setArg(1, energy0);
@@ -345,6 +387,100 @@ void CloverChunk::initArgs
     calc_dt_device.setArg(18, reduce_buf_2);
 
     // no parameters set for update_halo here
+
+    // tealeaf
+#if defined(TL_USE_CG)
+    /*
+     *  work_array_1 = p
+     *  work_array_2 = r
+     *  work_array_3 = w / d (just for initialisation)
+     *  work_array_4 = b
+     *
+     *  work_array_5 = ae
+     *  work_array_6 = an
+     *  work_array_7 = aw
+     *  work_array_8 = as
+     *
+     *  reduce_buf_1 = bb
+     *  reduce_buf_2 = rro
+     *  reduce_buf_3 = pw
+     *  reduce_buf_4 = rrn
+     */
+    tea_leaf_cg_init_u_device.setArg(0, density1);
+    tea_leaf_cg_init_u_device.setArg(1, energy1);
+    tea_leaf_cg_init_u_device.setArg(2, u);
+    tea_leaf_cg_init_u_device.setArg(3, work_array_1);
+    tea_leaf_cg_init_u_device.setArg(4, work_array_2);
+    tea_leaf_cg_init_u_device.setArg(5, work_array_3);
+
+    tea_leaf_cg_init_directions_device.setArg(0, work_array_3);
+    tea_leaf_cg_init_directions_device.setArg(1, work_array_5);
+    tea_leaf_cg_init_directions_device.setArg(2, work_array_6);
+    tea_leaf_cg_init_directions_device.setArg(3, work_array_7);
+    tea_leaf_cg_init_directions_device.setArg(4, work_array_8);
+
+    tea_leaf_cg_init_others_device.setArg(0, reduce_buf_1);
+    tea_leaf_cg_init_others_device.setArg(1, reduce_buf_2);
+    tea_leaf_cg_init_others_device.setArg(2, work_array_1);
+    tea_leaf_cg_init_others_device.setArg(3, work_array_2);
+    tea_leaf_cg_init_others_device.setArg(4, work_array_3);
+    tea_leaf_cg_init_others_device.setArg(5, work_array_4);
+    tea_leaf_cg_init_others_device.setArg(6, u);
+    tea_leaf_cg_init_others_device.setArg(7, work_array_5);
+    tea_leaf_cg_init_others_device.setArg(8, work_array_6);
+    tea_leaf_cg_init_others_device.setArg(9, work_array_7);
+    tea_leaf_cg_init_others_device.setArg(10, work_array_8);
+    // preconditioner
+    tea_leaf_cg_init_others_device.setArg(13, z);
+
+    tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
+    tea_leaf_cg_solve_calc_w_device.setArg(1, work_array_1);
+    tea_leaf_cg_solve_calc_w_device.setArg(2, work_array_3);
+    tea_leaf_cg_solve_calc_w_device.setArg(3, work_array_5);
+    tea_leaf_cg_solve_calc_w_device.setArg(4, work_array_6);
+    tea_leaf_cg_solve_calc_w_device.setArg(5, work_array_7);
+    tea_leaf_cg_solve_calc_w_device.setArg(6, work_array_8);
+
+    //tea_leaf_cg_solve_calc_ur_device.setArg(0, rro);
+    tea_leaf_cg_solve_calc_ur_device.setArg(1, reduce_buf_3);
+    tea_leaf_cg_solve_calc_ur_device.setArg(2, reduce_buf_4);
+    tea_leaf_cg_solve_calc_ur_device.setArg(3, work_array_1);
+    tea_leaf_cg_solve_calc_ur_device.setArg(4, work_array_2);
+    tea_leaf_cg_solve_calc_ur_device.setArg(5, work_array_3);
+    tea_leaf_cg_solve_calc_ur_device.setArg(6, u);
+    // preconditioner
+    tea_leaf_cg_solve_calc_ur_device.setArg(7, z);
+    tea_leaf_cg_solve_calc_ur_device.setArg(8, work_array_4);
+
+    //tea_leaf_cg_solve_calc_p_device.setArg(0, rro);
+    tea_leaf_cg_solve_calc_p_device.setArg(1, reduce_buf_4);
+    tea_leaf_cg_solve_calc_p_device.setArg(2, work_array_1);
+    tea_leaf_cg_solve_calc_p_device.setArg(3, work_array_2);
+    tea_leaf_cg_solve_calc_p_device.setArg(4, u);
+    tea_leaf_cg_solve_calc_p_device.setArg(5, z);
+#else
+    tea_leaf_jacobi_init_device.setArg(0, density1);
+    tea_leaf_jacobi_init_device.setArg(1, energy1);
+    tea_leaf_jacobi_init_device.setArg(2, work_array_1);
+    tea_leaf_jacobi_init_device.setArg(3, work_array_2);
+    tea_leaf_jacobi_init_device.setArg(4, work_array_3);
+    tea_leaf_jacobi_init_device.setArg(5, u);
+
+    tea_leaf_jacobi_copy_u_device.setArg(0, u);
+    tea_leaf_jacobi_copy_u_device.setArg(1, work_array_4);
+
+    tea_leaf_jacobi_solve_device.setArg(2, work_array_1);
+    tea_leaf_jacobi_solve_device.setArg(3, work_array_2);
+    tea_leaf_jacobi_solve_device.setArg(4, work_array_3);
+    tea_leaf_jacobi_solve_device.setArg(5, u);
+    tea_leaf_jacobi_solve_device.setArg(6, work_array_4);
+    tea_leaf_jacobi_solve_device.setArg(7, reduce_buf_1);
+#endif
+
+    // both finalise the same
+    tea_leaf_finalise_device.setArg(0, density1);
+    tea_leaf_finalise_device.setArg(1, u);
+    tea_leaf_finalise_device.setArg(2, energy1);
 
     fprintf(DBGOUT, "Kernel arguments set\n");
 }

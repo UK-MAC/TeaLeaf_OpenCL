@@ -6,7 +6,8 @@
 template <typename T>
 T CloverChunk::reduceValue
 (reduce_info_vec_t& red_kernels,
- const cl::Buffer& results_buf)
+ const cl::Buffer& results_buf,
+ bool nocopy)
 {
     // enqueue the kernels in order
     for (size_t ii = 0; ii < red_kernels.size(); ii++)
@@ -18,6 +19,11 @@ T CloverChunk::reduceValue
                                    red_kernels.at(ii).global_size,
                                    red_kernels.at(ii).local_size);
     }
+
+	if (nocopy)
+	{
+		return -1;
+	}
 
     T result;
 

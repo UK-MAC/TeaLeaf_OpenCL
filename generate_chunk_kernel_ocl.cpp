@@ -60,9 +60,8 @@ const int g_rect, const int g_circ, const int g_point)
         }                                                           \
         catch (cl::Error e)                                     \
         {                                                       \
-            fprintf(stderr, "Error in creating %s buffer %d\n", \
+            DIE("Error in creating %s buffer %d\n", \
                     #arr, e.err());                             \
-            exit(1);                                            \
         }
 
     TEMP_ALLOC(density);

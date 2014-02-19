@@ -1,10 +1,3 @@
-#undef __kernel_indexes
-    #define __kernel_indexes                            \
-        const int column = get_global_id(0);         \
-        const int row = get_global_id(1);            \
-        const int loc_column = get_local_id(0);      \
-        const int loc_row = get_local_id(1);         \
-        const int lid = loc_row*LOCAL_X + loc_column;
 
 __kernel void update_halo_bottom
 (int x_extra,   int y_extra,

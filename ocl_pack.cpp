@@ -79,9 +79,8 @@ void CloverChunk::packRect
     CASE_BUF(mass_flux_x); break;
     CASE_BUF(mass_flux_y); break;
     default:
-        fprintf(stderr, "Invalid face %d passed to left/right pack buffer\n",
+        DIE("Invalid face %d passed to left/right pack buffer\n",
                 which_field);
-        exit(1);
     }
 
     switch (edge)
@@ -122,10 +121,7 @@ void CloverChunk::packRect
         region[2] = 1;
         break;
     default:
-        fprintf(stderr,
-                "Invalid face identifier %d passed to mpi buffer packing\n",
-                edge);
-        exit(1);
+        DIE("Invalid face identifier %d passed to mpi buffer packing\n", edge);
     }
 
     // [0] is in bytes
@@ -152,8 +148,7 @@ void CloverChunk::packRect
     }
     catch (cl::Error e)
     {
-        fprintf(stderr, "Error in copying rect (%s), error %d\n", e.what(), e.err());
-        exit(1);
+        DIE("Error in copying rect (%s), error %d\n", e.what(), e.err());
     }
 }
 

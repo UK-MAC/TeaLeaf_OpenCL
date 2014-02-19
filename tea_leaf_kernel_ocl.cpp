@@ -17,7 +17,7 @@ extern "C" void tea_leaf_kernel_init_ocl_
  const double * work_array5,
  const double * work_array6,
  const double * work_array7,
- const double * coefficient,
+ const int    * coefficient,
        double * dt,
        double * rx,
        double * ry)
@@ -50,6 +50,10 @@ extern "C" void tea_leaf_kernel_finalise_ocl_
     chunk.tea_leaf_finalise();
 }
 
+#include <iostream>
+#include <algorithm>
+#include <numeric>
+
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 
@@ -74,9 +78,8 @@ void CloverChunk::calcrxry
     }
     catch (cl::Error e)
     {
-        fprintf(stderr, "Error in copying back value from celldx/celldy (%d - %s)\n",
+        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
             e.err(), e.what());
-        exit(e.err());
     }
 
     *rx = dt/(dx*dx);
@@ -106,9 +109,32 @@ void CloverChunk::tea_leaf_init
     tea_leaf_cg_init_others_device.setArg(12, ry);
     ENQUEUE(tea_leaf_cg_init_others_device);
 
-    // FIXME stop it copying back which wastes time (not much though...)
+    // number of bytes to allocate for 2d array
+    #define BUFSZ2D(x_extra, y_extra)   \
+        ( ((x_max) + 4 + x_extra)       \
+        * ((y_max) + 4 + y_extra)       \
+        * sizeof(double) )
+    std::vector<double> host_buffer(BUFSZ2D(0, 0)/sizeof(double));
+    queue.finish();
+
+    #define RPRINT(arr, name)\
+        queue.enqueueReadBuffer(arr, CL_TRUE, 0, BUFSZ2D(0, 0), &host_buffer[0]); \
+        fprintf(stdout, "sum %s: %.16f\n", #name, \
+        std::accumulate(host_buffer.begin(), host_buffer.end(), 0.0));
+    fprintf(stdout, "\n");
+    RPRINT(work_array_5, ae);
+    RPRINT(work_array_6, an);
+    RPRINT(work_array_7, aw);
+    RPRINT(work_array_8, as);
+
+    // stop it copying back which wastes time
     double bb = reduceValue<double>(sum_red_kernels_double, reduce_buf_1, true);
     double rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
+
+    fprintf(stdout, "\n");
+    fprintf(stdout, "%d %f %f\n", coefficient, *rx, *ry);
+    fprintf(stdout, "%.16f\n", rro);
+    DIE("DONE");
 
     // only needs to be set once
     tea_leaf_cg_solve_calc_w_device.setArg(7, rx);

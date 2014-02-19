@@ -42,8 +42,7 @@ CloverChunk::CloverChunk
 #else
     if (NULL == (DBGOUT = fopen("/dev/null", "w")))
     {
-        fprintf(stderr, "Unable to open /dev/null to discard output\n");
-        exit(1);
+        DIE("Unable to open /dev/null to discard output\n");
     }
 #endif
 
@@ -96,14 +95,12 @@ void CloverChunk::initOcl
     }
     catch (cl::Error e)
     {
-        fprintf(stderr, "Error in fetching platforms (%s), error %d\n", e.what(), e.err());
-        exit(1);
+        DIE("Error in fetching platforms (%s), error %d\n", e.what(), e.err());
     }
 
     if (platforms.size() < 1)
     {
-        fprintf(stderr, "No platforms found\n");
-        exit(1);
+        DIE("No platforms found\n");
     }
 
     // Read in from file - easier than passing in from fortran
@@ -111,8 +108,7 @@ void CloverChunk::initOcl
     if (NULL == input)
     {
         // should never happen
-        fprintf(stderr, "Input file not found\n");
-        exit(1);
+        DIE("Input file not found\n");
     }
     int desired_vendor = platformRead(input);
     int preferred_device = preferredDevice(input);
@@ -140,8 +136,7 @@ void CloverChunk::initOcl
         // if there are no platforms left to match
         if (platforms.size() == ++ii)
         {
-            fprintf(stderr, "correct vendor platform NOT found\n");
-            exit(1);
+            DIE("correct vendor platform NOT found\n");
         }
     }
 
@@ -167,19 +162,18 @@ void CloverChunk::initOcl
             {
                 std::string devname;
                 cl_device_type dtype;
-                devices[ii].getInfo(CL_DEVICE_NAME, &devname);
-                devices[ii].getInfo(CL_DEVICE_TYPE, &dtype);
+                devices.at(ii).getInfo(CL_DEVICE_NAME, &devname);
+                devices.at(ii).getInfo(CL_DEVICE_TYPE, &dtype);
 
                 std::string dtype_str = strType(dtype);
                 fprintf(stderr, "%s (%s)\n", devname.c_str(), dtype_str.c_str());
             }
 
-            exit(1);
+            DIE("Unable to get devices of desired type");
         }
         else
         {
-            fprintf(stderr, "Error in creating context %d\n", e.err());
-            exit(1);
+            DIE("Error in creating context %d\n", e.err());
         }
     }
 
@@ -206,7 +200,7 @@ void CloverChunk::initOcl
                 // if none specified or invalid choice, choose 0
                 fprintf(stdout,
                     "No device specified, choosing device 0\n");
-                device = devices[0];
+                device = devices.at(0);
             }
             else if (preferred_device+rank > devices.size())
             {
@@ -214,19 +208,19 @@ void CloverChunk::initOcl
                 fprintf(stderr,
                     "WARNING - device %d does not exist as there are only %zu available - choosing 0\n",
                     preferred_device, devices.size());
-                device = devices[0];
+                device = devices.at(0);
             }
             else
             {
-                device = devices[preferred_device+rank];
+                device = devices.at(preferred_device);
             }
 
             device.getInfo(CL_DEVICE_NAME, &devname);
 
 #if defined(MPI_HDR)
-            fprintf(stdout, "Using %s in rank %d\n", devname.c_str(), rank);
+            fprintf(stdout, "OpenCL using %s in rank %d\n", devname.c_str(), rank);
 #else
-            fprintf(stdout, "Using %s\n", devname.c_str());
+            fprintf(stdout, "OpenCL using %s\n", devname.c_str());
 #endif
             // choose reduction based on device type
             switch (desired_type)
@@ -263,52 +257,5 @@ void CloverChunk::initOcl
     {
         queue = cl::CommandQueue(context, device);
     }
-}
-
-void CloverChunk::compileProgram
-(const std::string& source,
-const std::string& options)
-{
-    // catches any warnings/errors in the build
-    std::stringstream errstream("");
-
-    // very verbose
-    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
-    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
-    fflush(DBGOUT);
-
-    cl::Program::Sources sources;
-    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
-
-    try
-    {
-        program = cl::Program(context, sources);
-        std::vector<cl::Device> dev_vec(1, device);
-        program.build(dev_vec, options.c_str());
-    }
-    catch (cl::Error e)
-    {
-        fprintf(stderr, "Errors in creating program\n");
-
-        try
-        {
-            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        }
-        catch (cl::Error ie)
-        {
-            fprintf(stderr, "Error in retrieving build info\n");
-            exit(1);
-        }
-
-        std::string errs(errstream.str());
-        fprintf(stderr, "%s\n", errs.c_str());
-
-        exit(1);
-    }
-
-    // return
-    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    std::string errs(errstream.str());
-    fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
 }
 

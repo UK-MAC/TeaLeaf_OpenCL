@@ -84,6 +84,7 @@ private:
     cl::Kernel viscosity_device;
     cl::Kernel revert_device;
     cl::Kernel reset_field_device;
+    cl::Kernel set_field_device;
     cl::Kernel field_summary_device;
     cl::Kernel calc_dt_device;
 
@@ -166,7 +167,6 @@ private:
     cl::Platform platform;
     cl::Device device;
     cl::Context context;
-    cl::Program program;
 
     // for passing into kernels for changing operation based on device type
     std::string device_type_prepro;
@@ -267,27 +267,43 @@ private:
         cl::Event
     ) const;
 
-    // initialisation subroutines
+    // compile a file and the contained kernels, and check for errors
+    void compileKernel
+    (const std::string& options,
+     const std::string& source_name,
+     const char* kernel_name,
+     cl::Kernel& kernel);
+    cl::Program compileProgram
+    (const std::string& source,
+     const std::string& options);
+
+    /*
+     *  initialisation subroutines
+     */
+
+    // initialise context, queue, etc
     void initOcl
     (void);
+    // initialise all program stuff, kernels, etc
     void initProgram
     (void);
+    // intialise local/global sizes
     void initSizes
     (void);
+    // initialise buffers for device
     void initBuffers
     (void);
+    // initialise all the arguments for each kernel
     void initArgs
     (void);
+    // create reduction kernels
     void initReduction
     (void);
 
-    typedef struct {
-        cl::Kernel top, bottom, left, right;
-        std::vector<cl::Event> wait_events;
-    } halo_struct_t;
-    std::map<std::string, halo_struct_t> halo_kernel_map;
-    void initHaloKernels
-    (void);
+    // this function gets called when something goes wrong
+    #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
+    void cloverDie
+    (int line, const char* filename, const char* format, ...);
 
 public:
     // kernels
@@ -352,11 +368,6 @@ public:
     ~CloverChunk
     (void);
 
-    // compile a set of kernels with given options
-    void compileProgram
-    (const std::string& source,
-    const std::string& options);
-
     // enqueue a kernel
     void enqueueKernel
     (cl::Kernel const& kernel,
@@ -383,7 +394,8 @@ public:
     template <typename T>
     T reduceValue
     (reduce_info_vec_t& red_kernels,
-     const cl::Buffer& results_buf);
+     const cl::Buffer& results_buf,
+	 bool nocopy=false);
 
     // mpi packing
     #define PACK_ARGS                                       \

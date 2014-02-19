@@ -1,5 +1,5 @@
 #include "ocl_common.hpp"
-#include "kernel_files/ocl_kernel_hdr.hpp"
+#include "ocl_kernel_hdr.hpp"
 
 #include <cstdio>
 #include <sstream>
@@ -13,11 +13,18 @@ void CloverChunk::initReduction
      */
     fprintf(DBGOUT, "\n---- Reduction ----\n");
 
-    fprintf(DBGOUT, "Total cells = %lu\n", total_cells);
+    fprintf(DBGOUT, "Total cells = %zu\n", total_cells);
 
+#if defined(NO_KERNEL_REDUCTIONS)
+    // no reduction inside kernel
+    const size_t total_to_reduce = total_cells;
+#else
     // each work group reduces to 1 value inside each kernel
-    size_t reduction_global_size = ceil(total_cells/(LOCAL_X*LOCAL_Y));
-    fprintf(DBGOUT, "Reduction within work group reduces to = %lu\n", reduction_global_size);
+    const size_t total_to_reduce = ceil(float(total_cells)/(LOCAL_X*LOCAL_Y));
+#endif
+
+    size_t reduction_global_size = total_to_reduce;
+    fprintf(DBGOUT, "Reduction within work group reduces to = %zu\n", reduction_global_size);
 
     // each thread can load 2 values to reduce at once
     //reduction_global_size /= 2;
@@ -36,6 +43,7 @@ void CloverChunk::initReduction
         // different kernels for different types and operations
         cl::Kernel sum_double, min_double, max_double;
         cl::Kernel max_int;
+        cl::Program program;
 
         std::stringstream ss;
 
@@ -57,24 +65,25 @@ void CloverChunk::initReduction
         // which stage this reduction kernel is at - starts at 1
         options << "-DRED_STAGE=" << ii << " ";
         // original total number of elements to reduce
-        options << "-DORIG_ELEMS_TO_REDUCE=" << total_cells/(LOCAL_X*LOCAL_Y) << " ";
+        options << "-DORIG_ELEMS_TO_REDUCE=" << total_to_reduce << " ";
 
         // device type in the form "-D..."
         options << device_type_prepro;
         options << "-w ";
 
-        // the actual number of elements that needs to be reduced
-        const size_t elems_to_reduce = reduction_global_size;
-        options << "-DELEMS_TO_REDUCE=" << elems_to_reduce << " ";
+        // the actual number of elements that needs to be reduced in this stage
+        const size_t stage_elems_to_reduce = reduction_global_size;
+        options << "-DELEMS_TO_REDUCE=" << stage_elems_to_reduce << " ";
 
         fprintf(DBGOUT, "\n\nStage %d:\n", ii);
-        fprintf(DBGOUT, "%zu elements remaining to reduce\n", elems_to_reduce);
+        fprintf(DBGOUT, "%zu elements remaining to reduce\n", stage_elems_to_reduce);
 
         /*
          *  To get the local size to use at this stage, figure out the largest
          *  power of 2 that is under the global size
          *
          *  NB at the moment, enforcing power of 2 local size anyway
+         *  NB also, 128 was preferred work group size on phi
          */
         size_t reduction_local_size = LOCAL_X*LOCAL_Y;
 
@@ -128,7 +137,7 @@ void CloverChunk::initReduction
         // FIXME not working properly - just load one per thread for now
         #if 0
         // threshold for a thread loading 2 values
-        size_t red_load_threshold = elems_to_reduce/2;
+        size_t red_load_threshold = stage_elems_to_reduce/2;
         options << "-DRED_LOAD_THRESHOLD=" << red_load_threshold << " ";
         fprintf(DBGOUT, "Load threshold is %zu\n", red_load_threshold);
         #endif
@@ -146,15 +155,14 @@ void CloverChunk::initReduction
             fprintf(DBGOUT, "Making reduction kernel '%s' ", #name);    \
             fprintf(DBGOUT, "with options string:\n%s\n",               \
                     red_options.c_str());                               \
-            compileProgram(ss.str(), red_options);                      \
+            program = compileProgram(ss.str(), red_options);                      \
             try                                                         \
             {                                                           \
                 name##_##data_type = cl::Kernel(program, "reduction");  \
             }                                                           \
             catch (cl::Error e){                                        \
-                fprintf(stderr,"Error in creating %s kernel %d\n",                 \
+                DIE("Error in creating %s kernel %d\n",                 \
                         #name, e.err());                                \
-                exit(1); \
             }                                                           \
             fprintf(DBGOUT, "Kernel '%s_%s' successfully built\n",      \
                     #name, #data_type);                                 \

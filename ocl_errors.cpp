@@ -135,17 +135,38 @@ void CloverChunk::enqueueKernel
         std::string func_name;
         kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &func_name);
 
-        fflush(stderr);
-        fprintf(stderr, "@@@@@@@@@@@@@@@@@@@@\n");
-        fprintf(stderr, "Error in enqueueing kernel '%s' at line %d in %s\n",
-                func_name.c_str(), line, file);
-        fprintf(stderr, "Error in %s, code %d (%s) - exiting\n",
-                e.what(), e.err(), errToString(e.err()).c_str());
-        fprintf(stderr, "@@@@@@@@@@@@@@@@@@@@\n");
-        fflush(stderr);
-
-        exit(e.err());
+        DIE("Error in enqueueing kernel '%s' at line %d in %s\n"
+            "Error in %s, code %d (%s) - exiting\n",
+             e.what(), e.err(), errToString(e.err()).c_str(),
+             func_name.c_str(), line, file);
     }
+}
+
+#include <cstdarg>
+
+// called when something goes wrong
+void CloverChunk::cloverDie
+(int line, const char* filename, const char* format, ...)
+{
+    fprintf(stderr, "@@@@@\n");
+    fprintf(stderr, "\x1b[31m");
+    fprintf(stderr, "Fatal error at line %d in %s:\n", line, filename);
+    fprintf(stderr, "\x1b[0m");
+
+    va_list arglist;
+    va_start(arglist, format);
+    vfprintf(stderr, format, arglist);
+    va_end(arglist);
+
+    // TODO add logging or something
+
+    fprintf(stderr, "\nExiting\n");
+
+#if defined(MPI_HDR)
+    MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+    exit(1);
+#endif
 }
 
 // print out timing info when done

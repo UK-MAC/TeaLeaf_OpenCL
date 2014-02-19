@@ -7,8 +7,8 @@ __kernel void revert
 {
     __kernel_indexes;
 
-    //IF_ROW_WITHIN(+0, +0)
-    //IF_COLUMN_WITHIN(+0, +0)
+    if(row >= (y_min + 1) && row <= (y_max + 1)
+    && column >= (x_min + 1) && column <= (x_max + 1))
     {
         density1[THARR2D(0, 0, 0)] = density0[THARR2D(0, 0, 0)];
         energy1[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)];
