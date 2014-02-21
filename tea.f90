@@ -33,7 +33,7 @@ SUBROUTINE tea_leaf()
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n, j,k
-  REAL(KIND=8) :: ry,rx, error
+  REAL(KIND=8) :: ry,rx, error, old_error
 
   INTEGER :: fields(NUM_FIELDS)
 
@@ -42,6 +42,9 @@ SUBROUTINE tea_leaf()
   DO c=1,number_of_chunks
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
+
+      ! set old error to 0 initially
+      old_error = 0.0
 
       fields=0
       fields(FIELD_ENERGY1) = 1
@@ -171,6 +174,10 @@ SUBROUTINE tea_leaf()
         CALL clover_max(error)
 
         IF (abs(error) .LT. eps) EXIT
+
+        ! if the error isn't getting any better, then exit - no point in going further
+        IF (abs(error - old_error) .LT. eps) EXIT
+        old_error = error
 
       ENDDO
 

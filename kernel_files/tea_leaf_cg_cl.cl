@@ -16,12 +16,12 @@ __kernel void tea_leaf_cg_init_u
 {
     __kernel_indexes;
 
-    p[THARR2D(0, 0, 0)] = 0.0;
-    r[THARR2D(0, 0, 0)] = 0.0;
-
     if (row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
     && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
     {
+        p[THARR2D(0, 0, 0)] = 0.0;
+        r[THARR2D(0, 0, 0)] = 0.0;
+
         u[THARR2D(0, 0, 0)] = energy1[THARR2D(0, 0, 0)]*density1[THARR2D(0, 0, 0)];
 
         if (CONDUCTIVITY == coefficient)
@@ -76,11 +76,6 @@ __kernel void tea_leaf_cg_init_others
     bb_shared[lid] = 0.0;
     rro_shared[lid] = 0.0;
 #endif
-
-    w[THARR2D(0, 0, 0)] = 0.0;
-    b[THARR2D(0, 0, 0)] = 0.0;
-    z[THARR2D(0, 0, 0)] = 0.0;
-    r[THARR2D(0, 0, 0)] = 0.0;
 
     // used to make ifdefs for reductions less messy
     double rro_val;
