@@ -72,6 +72,7 @@ __kernel void field_summary
         mass_shared[lid] = cell_mass;
         ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         ke_shared[lid] = cell_mass * 0.5 * vsqrd;
+        press_shared[lid] = cell_vol * pressure[THARR2D(0, 0, 0)];
         temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
 #endif
     }
