@@ -1,5 +1,12 @@
 # TeaLeaf
 
+## TODO
+
+* Merge fortran/c implementation of CG solver
+* Make CG selectable from tea.in and not a compile time flag
+* Make preconditioner selectable from tea.in and not a compile time flag
+* Make CG solver work with MPI - need to change order of calling functions for CG solver to get additional global reductions etc.
+
 ## Compling
 
 - In many case just typing `make` in the required software version will work. 
