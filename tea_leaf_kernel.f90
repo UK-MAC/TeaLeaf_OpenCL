@@ -1,4 +1,4 @@
-!Crown Copyright 2014 AWE.
+!cROWn Copyright 2014 AWE.
 !
 ! This file is part of TeaLeaf.
 !
@@ -99,8 +99,8 @@ SUBROUTINE tea_leaf_kernel_init(x_min,             &
 !$OMP DO
   DO k=y_min,y_max+1
     DO j=x_min,x_max+1
-         Kx(j,k)=(Kx_tmp(j-1,k  )+Kx_tmp(j,k  ))/(2.0_8*Kx_tmp(j-1,k)*Kx_tmp(j,k))
-         Ky(j,k)=(Ky_tmp(j,k-1)+Ky_tmp(j,k))/(2.0_8*Ky_tmp(j,k-1)*Ky_tmp(j,k))
+         Kx(j,k)=(Kx_tmp(j-1,k  )+Kx_tmp(j,k))/(2.0_8*Kx_tmp(j-1,k  )*Kx_tmp(j,k))
+         Ky(j,k)=(Ky_tmp(j  ,k-1)+Ky_tmp(j,k))/(2.0_8*Ky_tmp(j,  k-1)*Ky_tmp(j,k))
     ENDDO
   ENDDO
 !$OMP END DO
@@ -166,10 +166,16 @@ SUBROUTINE tea_leaf_kernel_solve(x_min,       &
 !$OMP DO REDUCTION(MAX:error)
     DO k=y_min, y_max
       DO j=x_min, x_max
-        u1(j,k) = (u0(j,k) + Kx(j+1,k)*rx*un(j+1,k) + Kx(j,k)*rx*un(j-1,k) &
-                           + Ky(j,k+1)*ry*un(j,k+1) + Ky(j,k)*ry*un(j,k-1)) &
-                             /(1.0_8+2.0_8*(0.5_8*(Kx(j,k)+Kx(j+1,k)))*rx &
-                                +2.0_8*(0.5_8*(Ky(j,k)+Ky(j,k+1)))*ry)
+        u1(j,k) = (u0(j,k) + rx*(Kx(j+1,k  )*un(j+1,k  ) + Kx(j  ,k  )*un(j-1,k  )) &
+                           + ry*(Ky(j  ,k+1)*un(j  ,k+1) + Ky(j  ,k  )*un(j  ,k-1))) &
+                             /(1.0_8 &
+                                + rx*2.0_8*(0.5_8*(Kx(j,k)+Kx(j+1,k))) &
+                                + ry*2.0_8*(0.5_8*(Ky(j,k)+Ky(j,k+1))))
+
+!        u1(j,k) = (u0(j,k) + Kx(j+1,k)*rx*un(j+1,k) + Kx(j,k)*rx*un(j-1,k) &
+!                           + Ky(j,k+1)*ry*un(j,k+1) + Ky(j,k)*ry*un(j,k-1)) &
+!                             /(1.0_8+2.0_8*(0.5_8*(Kx(j,k)+Kx(j+1,k)))*rx &
+!                                +2.0_8*(0.5_8*(Ky(j,k)+Ky(j,k+1)))*ry)
 
         error = MAX(error, ABS(u1(j,k)-u0(j,k)))
       ENDDO

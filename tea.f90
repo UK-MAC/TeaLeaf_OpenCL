@@ -91,6 +91,11 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               coefficient, dt, rx, ry)
+
+        ! CALL update_halo
+        fields=0
+        fields(FIELD_U) = 1
+        CALL update_halo(fields,2)
       ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_init_c(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
@@ -165,7 +170,7 @@ SUBROUTINE tea_leaf()
 
         CALL clover_max(error)
 
-        IF (error .LT. eps) EXIT
+        IF (abs(error) .LT. eps) EXIT
 
       ENDDO
 

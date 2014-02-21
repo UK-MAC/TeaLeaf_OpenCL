@@ -131,10 +131,8 @@ private:
 
     cl::Buffer z;
 
-    // need more for the an/ae/as/aw/dens_coeffed arrays
+    // need more for the Kx/Ky arrays
     cl::Buffer work_array_6;
-    cl::Buffer work_array_7;
-    cl::Buffer work_array_8;
 #else
     cl::Kernel tea_leaf_jacobi_init_device;
     cl::Kernel tea_leaf_jacobi_copy_u_device;
@@ -219,6 +217,7 @@ private:
     cl::Buffer reduce_buf_3;
     cl::Buffer reduce_buf_4;
     cl::Buffer reduce_buf_5;
+    cl::Buffer reduce_buf_6;
 
     // global size for kernels
     cl::NDRange global_size;

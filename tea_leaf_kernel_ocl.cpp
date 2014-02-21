@@ -50,10 +50,6 @@ extern "C" void tea_leaf_kernel_finalise_ocl_
     chunk.tea_leaf_finalise();
 }
 
-#include <iostream>
-#include <algorithm>
-#include <numeric>
-
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 
@@ -73,8 +69,11 @@ void CloverChunk::calcrxry
 
     try
     {
-        queue.enqueueReadBuffer(celldx, CL_TRUE, sizeof(double)*x_min, sizeof(double), &dx);
-        queue.enqueueReadBuffer(celldy, CL_TRUE, sizeof(double)*y_min, sizeof(double), &dy);
+        // celldx/celldy never change, but done for consistency with fortran
+        queue.enqueueReadBuffer(celldx, CL_TRUE,
+            sizeof(double)*x_min, sizeof(double), &dx);
+        queue.enqueueReadBuffer(celldy, CL_TRUE,
+            sizeof(double)*y_min, sizeof(double), &dy);
     }
     catch (cl::Error e)
     {
@@ -89,56 +88,34 @@ void CloverChunk::calcrxry
 void CloverChunk::tea_leaf_init
 (int coefficient, double dt, double * rx, double * ry)
 {
-    calcrxry(dt, rx, ry);
-
-#if defined(TL_USE_CG)
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
     {
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
     }
 
+    // copy back dx/dy and calculate rx/ry
+    calcrxry(dt, rx, ry);
+
+#if defined(TL_USE_CG)
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);
     ENQUEUE(tea_leaf_cg_init_u_device);
 
-    // init ae, an, as, aw
+    // init Kx, Ky
     ENQUEUE(tea_leaf_cg_init_directions_device);
 
     // get initial guess in w, r, etc
-    tea_leaf_cg_init_others_device.setArg(11, rx);
-    tea_leaf_cg_init_others_device.setArg(12, ry);
+    tea_leaf_cg_init_others_device.setArg(9, *rx);
+    tea_leaf_cg_init_others_device.setArg(10, *ry);
     ENQUEUE(tea_leaf_cg_init_others_device);
-
-    // number of bytes to allocate for 2d array
-    #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 4 + x_extra)       \
-        * ((y_max) + 4 + y_extra)       \
-        * sizeof(double) )
-    std::vector<double> host_buffer(BUFSZ2D(0, 0)/sizeof(double));
-    queue.finish();
-
-    #define RPRINT(arr, name)\
-        queue.enqueueReadBuffer(arr, CL_TRUE, 0, BUFSZ2D(0, 0), &host_buffer[0]); \
-        fprintf(stdout, "sum %s: %.16f\n", #name, \
-        std::accumulate(host_buffer.begin(), host_buffer.end(), 0.0));
-    fprintf(stdout, "\n");
-    RPRINT(work_array_5, ae);
-    RPRINT(work_array_6, an);
-    RPRINT(work_array_7, aw);
-    RPRINT(work_array_8, as);
 
     // stop it copying back which wastes time
     double bb = reduceValue<double>(sum_red_kernels_double, reduce_buf_1, true);
     double rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 
-    fprintf(stdout, "\n");
-    fprintf(stdout, "%d %f %f\n", coefficient, *rx, *ry);
-    fprintf(stdout, "%.16f\n", rro);
-    DIE("DONE");
-
     // only needs to be set once
-    tea_leaf_cg_solve_calc_w_device.setArg(7, rx);
-    tea_leaf_cg_solve_calc_w_device.setArg(8, ry);
+    tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
+    tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
 
     // initialise rro
     tea_leaf_cg_solve_calc_p_device.setArg(0, rro);
@@ -146,6 +123,9 @@ void CloverChunk::tea_leaf_init
 #else
     tea_leaf_jacobi_init_device.setArg(6, coefficient);
     ENQUEUE(tea_leaf_jacobi_init_device);
+
+    tea_leaf_jacobi_solve_device.setArg(0, *rx);
+    tea_leaf_jacobi_solve_device.setArg(1, *ry);
 #endif
 }
 
@@ -168,9 +148,6 @@ void CloverChunk::tea_leaf_kernel
     *error = rrn;
 #else
     ENQUEUE(tea_leaf_jacobi_copy_u_device);
-
-    tea_leaf_jacobi_solve_device.setArg(0, rx);
-    tea_leaf_jacobi_solve_device.setArg(1, ry);
     ENQUEUE(tea_leaf_jacobi_solve_device);
 
     *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);

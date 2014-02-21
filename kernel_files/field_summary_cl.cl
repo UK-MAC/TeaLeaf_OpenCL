@@ -6,12 +6,14 @@ __kernel void field_summary
  __global const double * __restrict const pressure,
  __global const double * __restrict const xvel0,
  __global const double * __restrict const yvel0,
+ __global const double * __restrict const u,
 
  __global       double * __restrict const vol,
  __global       double * __restrict const mass,
  __global       double * __restrict const ie,
  __global       double * __restrict const ke,
- __global       double * __restrict const press)
+ __global       double * __restrict const press,
+ __global       double * __restrict const temp)
 {
     __kernel_indexes;
 
@@ -21,17 +23,20 @@ __kernel void field_summary
     ie[gid] = 0.0;
     ke[gid] = 0.0;
     press[gid] = 0.0;
+    temp[gid] = 0.0;
 #else
     __local double vol_shared[BLOCK_SZ];
     __local double mass_shared[BLOCK_SZ];
     __local double ie_shared[BLOCK_SZ];
     __local double ke_shared[BLOCK_SZ];
     __local double press_shared[BLOCK_SZ];
+    __local double temp_shared[BLOCK_SZ];
     vol_shared[lid] = 0.0;
     mass_shared[lid] = 0.0;
     ie_shared[lid] = 0.0;
     ke_shared[lid] = 0.0;
     press_shared[lid] = 0.0;
+    temp_shared[lid] = 0.0;
 #endif
 
     if(row >= (y_min + 1) && row <= (y_max + 1)
@@ -61,12 +66,13 @@ __kernel void field_summary
         ie[gid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         ke[gid] = cell_mass * 0.5 * vsqrd;
         press[gid] = cell_vol * pressure[THARR2D(0, 0, 0)];
+        temp[gid] = cell_mass*u[THARR2D(0, 0, 0)];
 #else
         vol_shared[lid] = cell_vol;
         mass_shared[lid] = cell_mass;
         ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         ke_shared[lid] = cell_mass * 0.5 * vsqrd;
-        press_shared[lid] = cell_vol * pressure[THARR2D(0, 0, 0)];
+        temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
 #endif
     }
 
@@ -76,6 +82,7 @@ __kernel void field_summary
     REDUCTION(ie_shared, ie, SUM)
     REDUCTION(ke_shared, ke, SUM)
     REDUCTION(press_shared, press, SUM)
+    REDUCTION(temp_shared, temp, SUM)
 #endif
 }
 

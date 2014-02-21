@@ -336,6 +336,7 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(reset_field, 0, 1, 0, 1); // works
     FIND_PADDING_SIZE(field_summary, 0, 0, 0, 0);
     FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
+
     FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2);
     //FIND_PADDING_SIZE(advec_mom_node_flux_post_x);
     FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2);
@@ -345,12 +346,14 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1);
     FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1);
     FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1);
+
     FIND_PADDING_SIZE(advec_cell_pre_vol_x, -2, 2, -2, 2);
     FIND_PADDING_SIZE(advec_cell_ener_flux_x, 0, 0, 0, 2);
     FIND_PADDING_SIZE(advec_cell_x, 0, 0, 0, 0);
     FIND_PADDING_SIZE(advec_cell_pre_vol_y, -2, 2, -2, 2);
     FIND_PADDING_SIZE(advec_cell_ener_flux_y, 0, 2, 0, 0);
     FIND_PADDING_SIZE(advec_cell_y, 0, 0, 0, 0);
+
     FIND_PADDING_SIZE(PdV_predict, 0, 0, 0, 0); // works
     FIND_PADDING_SIZE(PdV_not_predict, 0, 0, 0, 0); // works
 
@@ -358,5 +361,22 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(initialise_chunk_second, -2, 2, -2, 2);
     FIND_PADDING_SIZE(generate_chunk_init, -2, 2, -2, 2);
     FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
+
+    FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
+
+#if defined(TL_USE_CG)
+    FIND_PADDING_SIZE(tea_leaf_cg_init_u, -1, 1, -1, 1);
+    FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1);
+    FIND_PADDING_SIZE(tea_leaf_cg_init_others, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0);
+#else
+    FIND_PADDING_SIZE(tea_leaf_jacobi_init, -1, 1, -1, 1);
+    FIND_PADDING_SIZE(tea_leaf_jacobi_copy_u, -1, 1, -1, 1);
+    FIND_PADDING_SIZE(tea_leaf_jacobi_solve, 0, 0, 0, 0);
+#endif
+
+    FIND_PADDING_SIZE(tea_leaf_jacobi_finalise, 0, 0, 0, 0);
 }
 

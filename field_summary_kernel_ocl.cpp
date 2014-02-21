@@ -34,5 +34,6 @@ void CloverChunk::field_summary_kernel
     *ie = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
     *ke = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
     *press = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
+    *temp = reduceValue<double>(sum_red_kernels_double, reduce_buf_6);
 }
 

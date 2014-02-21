@@ -78,8 +78,6 @@ void CloverChunk::initBuffers
 #if defined(TL_USE_CG)
     BUF2D_ALLOC(z, 1, 1);
     BUF2D_ALLOC(work_array_6, 1, 1);
-    BUF2D_ALLOC(work_array_7, 1, 1);
-    BUF2D_ALLOC(work_array_8, 1, 1);
 #endif
 
 #if defined(NO_KERNEL_REDUCTIONS)
@@ -90,6 +88,7 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(reduce_buf_3, 1, 1);
     BUF2D_ALLOC(reduce_buf_4, 1, 1);
     BUF2D_ALLOC(reduce_buf_5, 1, 1);
+    BUF2D_ALLOC(reduce_buf_6, 1, 1);
     BUF_ALLOC(PdV_reduce_buf, sizeof(int)*total_cells);
     */
     BUF_ALLOC(reduce_buf_1, sizeof(double)*total_cells);
@@ -97,6 +96,7 @@ void CloverChunk::initBuffers
     BUF_ALLOC(reduce_buf_3, sizeof(double)*total_cells);
     BUF_ALLOC(reduce_buf_4, sizeof(double)*total_cells);
     BUF_ALLOC(reduce_buf_5, sizeof(double)*total_cells);
+    BUF_ALLOC(reduce_buf_6, sizeof(double)*total_cells);
     BUF_ALLOC(PdV_reduce_buf, sizeof(int)*total_cells)
 #else
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
@@ -106,6 +106,7 @@ void CloverChunk::initBuffers
     BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
     BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
     BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
+    BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
     BUF_ALLOC(PdV_reduce_buf, sizeof(int)*(x_max+4)*(y_max+4))
 #endif
 
@@ -361,12 +362,14 @@ void CloverChunk::initArgs
     field_summary_device.setArg(3, pressure);
     field_summary_device.setArg(4, xvel0);
     field_summary_device.setArg(5, yvel0);
+    field_summary_device.setArg(6, u);
 
-    field_summary_device.setArg(6, reduce_buf_1);
-    field_summary_device.setArg(7, reduce_buf_2);
-    field_summary_device.setArg(8, reduce_buf_3);
-    field_summary_device.setArg(9, reduce_buf_4);
-    field_summary_device.setArg(10, reduce_buf_5);
+    field_summary_device.setArg(7, reduce_buf_1);
+    field_summary_device.setArg(8, reduce_buf_2);
+    field_summary_device.setArg(9, reduce_buf_3);
+    field_summary_device.setArg(10, reduce_buf_4);
+    field_summary_device.setArg(11, reduce_buf_5);
+    field_summary_device.setArg(12, reduce_buf_6);
 
     // calc dt
     /*
@@ -396,10 +399,8 @@ void CloverChunk::initArgs
      *  work_array_3 = w / d (just for initialisation)
      *  work_array_4 = b
      *
-     *  work_array_5 = ae
-     *  work_array_6 = an
-     *  work_array_7 = aw
-     *  work_array_8 = as
+     *  work_array_5 = Kx
+     *  work_array_6 = Ky
      *
      *  reduce_buf_1 = bb
      *  reduce_buf_2 = rro
@@ -416,8 +417,6 @@ void CloverChunk::initArgs
     tea_leaf_cg_init_directions_device.setArg(0, work_array_3);
     tea_leaf_cg_init_directions_device.setArg(1, work_array_5);
     tea_leaf_cg_init_directions_device.setArg(2, work_array_6);
-    tea_leaf_cg_init_directions_device.setArg(3, work_array_7);
-    tea_leaf_cg_init_directions_device.setArg(4, work_array_8);
 
     tea_leaf_cg_init_others_device.setArg(0, reduce_buf_1);
     tea_leaf_cg_init_others_device.setArg(1, reduce_buf_2);
@@ -428,18 +427,14 @@ void CloverChunk::initArgs
     tea_leaf_cg_init_others_device.setArg(6, u);
     tea_leaf_cg_init_others_device.setArg(7, work_array_5);
     tea_leaf_cg_init_others_device.setArg(8, work_array_6);
-    tea_leaf_cg_init_others_device.setArg(9, work_array_7);
-    tea_leaf_cg_init_others_device.setArg(10, work_array_8);
     // preconditioner
-    tea_leaf_cg_init_others_device.setArg(13, z);
+    tea_leaf_cg_init_others_device.setArg(11, z);
 
     tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
     tea_leaf_cg_solve_calc_w_device.setArg(1, work_array_1);
     tea_leaf_cg_solve_calc_w_device.setArg(2, work_array_3);
     tea_leaf_cg_solve_calc_w_device.setArg(3, work_array_5);
     tea_leaf_cg_solve_calc_w_device.setArg(4, work_array_6);
-    tea_leaf_cg_solve_calc_w_device.setArg(5, work_array_7);
-    tea_leaf_cg_solve_calc_w_device.setArg(6, work_array_8);
 
     //tea_leaf_cg_solve_calc_ur_device.setArg(0, rro);
     tea_leaf_cg_solve_calc_ur_device.setArg(1, reduce_buf_3);

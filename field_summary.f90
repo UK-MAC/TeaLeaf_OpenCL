@@ -118,7 +118,7 @@ SUBROUTINE field_summary()
 
   IF(parallel%boss) THEN
 !$  IF(OMP_GET_THREAD_NUM().EQ.0) THEN
-      WRITE(g_out,'(a6,i7,8e16.4)')' step:',step,vol,mass,mass/vol,press/vol,ie,ke,ie+ke,temp
+      WRITE(g_out,'(a6,i7,8e16.7)')' step:',step,vol,mass,mass/vol,press/vol,ie,ke,ie+ke,temp
       WRITE(g_out,*)
 !$  ENDIF
   ENDIF
