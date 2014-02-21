@@ -133,7 +133,16 @@ void CloverChunk::compileKernel
 {
     const std::string source_str(source_name);
     fprintf(DBGOUT, "Compiling %s...", kernel_name);
-    cl::Program program = compileProgram(source_str, options);
+    cl::Program program;
+
+    try
+    {
+        program = compileProgram(source_str, options);
+    }
+    catch (std::string errs)
+    {
+        DIE("Errors in compiling %s:\n%s\n", kernel_name, errs.c_str());
+    }
 
     size_t max_wg_size;
 
@@ -202,7 +211,8 @@ cl::Program CloverChunk::compileProgram
         }
 
         std::string errs(errstream.str());
-        DIE("%s\n", errs.c_str());
+        //DIE("%s\n", errs.c_str());
+        throw errs;
     }
 
     // return
