@@ -31,7 +31,10 @@ void CloverChunk::initProgram
     options << "-DONED_KERNEL_LAUNCHES ";
 #endif
 
+#ifdef TL_USE_CG_PRECONDITIONER
+    // use jacobi preconditioner when running CG solver
     options << "-DCG_DO_PRECONDITION ";
+#endif
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
