@@ -323,6 +323,7 @@ void CloverChunk::initArgs
     generate_chunk_device.setArg(5, energy0);
     generate_chunk_device.setArg(6, xvel0);
     generate_chunk_device.setArg(7, yvel0);
+    generate_chunk_device.setArg(8, u);
 
     // PdV
     PdV_predict_device.setArg(1, PdV_reduce_buf);

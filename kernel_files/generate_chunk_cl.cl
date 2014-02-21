@@ -8,6 +8,7 @@ __kernel void generate_chunk
  __global       double * __restrict const energy0,
  __global       double * __restrict const xvel0,
  __global       double * __restrict const yvel0,
+ __global       double * __restrict const u,
 
  __global const double * __restrict const state_density,
  __global const double * __restrict const state_energy,
@@ -23,19 +24,20 @@ __kernel void generate_chunk
  const int g_rect,
  const int g_circ,
  const int g_point,
+
  const int state)
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
     && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
     {
         const double x_cent = state_xmin[state];
         const double y_cent = state_ymin[state];
 
-        if(g_rect == state_geometry[state])
+        if (g_rect == state_geometry[state])
         {
-            if(vertexx[1 + column] >= state_xmin[state]
+            if (vertexx[1 + column] >= state_xmin[state]
             && vertexx[column] <  state_xmax[state]
             && vertexy[1 + row]    >= state_ymin[state]
             && vertexy[row]    <  state_ymax[state])
@@ -57,13 +59,34 @@ __kernel void generate_chunk
                 yvel0[THARR2D(1, 1, 1)] = state_yvel[state];
             }
         }
-        else if(state_geometry[state] == g_circ)
+        else if (state_geometry[state] == g_circ)
         {
             double x_pos = cellx[column]-x_cent;
             double y_pos = celly[row]-y_cent;
             double radius = SQRT(x_pos*x_pos + y_pos*y_pos);
 
-            if(radius <= state_radius[state])
+            if (radius <= state_radius[state])
+            {
+                energy0[THARR2D(0, 0, 0)] = state_energy[state];
+                density0[THARR2D(0, 0, 0)] = state_density[state];
+
+                //unrolled do loop
+                xvel0[THARR2D(0, 0, 1)] = state_xvel[state];
+                yvel0[THARR2D(0, 0, 1)] = state_yvel[state];
+
+                xvel0[THARR2D(1, 0, 1)] = state_xvel[state];
+                yvel0[THARR2D(1, 0, 1)] = state_yvel[state];
+
+                xvel0[THARR2D(0, 1, 1)] = state_xvel[state];
+                yvel0[THARR2D(0, 1, 1)] = state_yvel[state];
+
+                xvel0[THARR2D(1, 1, 1)] = state_xvel[state];
+                yvel0[THARR2D(1, 1, 1)] = state_yvel[state];
+            }
+        }
+        else if (state_geometry[state] == g_point)
+        {
+            if (vertexx[column] == x_cent && vertexy[row] == y_cent)
             {
                 energy0[THARR2D(0, 0, 0)] = state_energy[state];
                 density0[THARR2D(0, 0, 0)] = state_density[state];

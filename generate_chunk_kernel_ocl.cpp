@@ -84,24 +84,24 @@ const int g_rect, const int g_circ, const int g_point)
 
     ENQUEUE(generate_chunk_init_device);
 
-    generate_chunk_device.setArg(8, tmp_state_density);
-    generate_chunk_device.setArg(9, tmp_state_energy);
-    generate_chunk_device.setArg(10, tmp_state_xvel);
-    generate_chunk_device.setArg(11, tmp_state_yvel);
-    generate_chunk_device.setArg(12, tmp_state_xmin);
-    generate_chunk_device.setArg(13, tmp_state_xmax);
-    generate_chunk_device.setArg(14, tmp_state_ymin);
-    generate_chunk_device.setArg(15, tmp_state_ymax);
-    generate_chunk_device.setArg(16, tmp_state_radius);
-    generate_chunk_device.setArg(17, tmp_state_geometry);
+    generate_chunk_device.setArg(9, tmp_state_density);
+    generate_chunk_device.setArg(10, tmp_state_energy);
+    generate_chunk_device.setArg(11, tmp_state_xvel);
+    generate_chunk_device.setArg(12, tmp_state_yvel);
+    generate_chunk_device.setArg(13, tmp_state_xmin);
+    generate_chunk_device.setArg(14, tmp_state_xmax);
+    generate_chunk_device.setArg(15, tmp_state_ymin);
+    generate_chunk_device.setArg(16, tmp_state_ymax);
+    generate_chunk_device.setArg(17, tmp_state_radius);
+    generate_chunk_device.setArg(18, tmp_state_geometry);
 
-    generate_chunk_device.setArg(18, g_rect);
-    generate_chunk_device.setArg(19, g_circ);
-    generate_chunk_device.setArg(20, g_point);
+    generate_chunk_device.setArg(19, g_rect);
+    generate_chunk_device.setArg(20, g_circ);
+    generate_chunk_device.setArg(21, g_point);
 
     for (int state = 1; state < number_of_states; state++)
     {
-        generate_chunk_device.setArg(21, state);
+        generate_chunk_device.setArg(22, state);
         ENQUEUE(generate_chunk_device);
     }
 }
