@@ -377,10 +377,10 @@ public:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL) ;
 
-    #define ENQUEUE_OFFSET(knl)                                    \
-        CloverChunk::enqueueKernel(knl, __LINE__, __FILE__, \
-                                   launch_specs.at(#knl).offset,           \
-                                   launch_specs.at(#knl).global,             \
+    #define ENQUEUE_OFFSET(knl)                                     \
+        CloverChunk::enqueueKernel(knl, __LINE__, __FILE__,         \
+                                   launch_specs.at(#knl).offset,    \
+                                   launch_specs.at(#knl).global,    \
                                    local_group_size);
 
     #define ENQUEUE(knl)                                    \

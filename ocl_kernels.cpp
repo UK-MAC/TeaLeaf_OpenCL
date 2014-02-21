@@ -62,6 +62,7 @@ void CloverChunk::initProgram
     const std::string options_str = options.str();
 
     fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
+    fprintf(stdout, "Compiling kernels (may take some time)...");
 
     compileKernel(options_str, src_ideal_gas_cl, "ideal_gas", ideal_gas_device);
     compileKernel(options_str, src_accelerate_cl, "accelerate", accelerate_device);
@@ -120,6 +121,7 @@ void CloverChunk::initProgram
 
     compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_finalise", tea_leaf_finalise_device);
 
+    fprintf(stdout, "done.\n");
     fprintf(DBGOUT, "All kernels compiled\n");
 }
 

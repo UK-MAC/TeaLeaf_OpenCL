@@ -99,15 +99,18 @@ void CloverChunk::tea_leaf_init
 #if defined(TL_USE_CG)
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);
-    ENQUEUE(tea_leaf_cg_init_u_device);
+    //ENQUEUE(tea_leaf_cg_init_u_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_init_u_device);
 
     // init Kx, Ky
-    ENQUEUE(tea_leaf_cg_init_directions_device);
+    //ENQUEUE(tea_leaf_cg_init_directions_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
 
     // get initial guess in w, r, etc
     tea_leaf_cg_init_others_device.setArg(9, *rx);
     tea_leaf_cg_init_others_device.setArg(10, *ry);
     ENQUEUE(tea_leaf_cg_init_others_device);
+    //ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
     // stop it copying back which wastes time
     double bb = reduceValue<double>(sum_red_kernels_double, reduce_buf_1, true);
@@ -134,12 +137,15 @@ void CloverChunk::tea_leaf_kernel
 {
 #if defined(TL_USE_CG)
     ENQUEUE(tea_leaf_cg_solve_calc_w_device);
+    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     double pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3, true);
 
-    ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
+    //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
     double rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 
-    ENQUEUE(tea_leaf_cg_solve_calc_p_device);
+    //ENQUEUE(tea_leaf_cg_solve_calc_p_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
 
     // re set rro to rrn
     tea_leaf_cg_solve_calc_p_device.setArg(0, rrn);
