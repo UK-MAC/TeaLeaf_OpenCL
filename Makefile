@@ -231,6 +231,7 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 	$(FORTRAN_FILES)	\
 	$(C_FILES)	\
 	$(OCL_FILES) \
+	$(LDFLAGS) \
 	$(LDLIBS) \
 	-o tea_leaf
 	@echo $(MESSAGE)

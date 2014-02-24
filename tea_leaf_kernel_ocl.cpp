@@ -3,21 +3,7 @@
 extern CloverChunk chunk;
 
 extern "C" void tea_leaf_kernel_init_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
- const double * celldx,
- const double * celldy,
- const double * volume,
- const double * density1,
- const double * energy1,
- const double * work_array1,
- const double * u,
- const double * work_array2,
- const double * work_array3,
- const double * work_array4,
- const double * work_array5,
- const double * work_array6,
- const double * work_array7,
- const int    * coefficient,
+(const int    * coefficient,
        double * dt,
        double * rx,
        double * ry)
@@ -26,30 +12,20 @@ extern "C" void tea_leaf_kernel_init_ocl_
 }
 
 extern "C" void tea_leaf_kernel_solve_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
- const double * rx,
+(const double * rx,
  const double * ry,
- const double * work_array6,
- const double * work_array7,
-       double * error,
- const double * work_array1,
- const double * u,
- const double * work_array2)
+       double * error)
 {
     chunk.tea_leaf_kernel(*rx, *ry, error);
 }
 
 extern "C" void tea_leaf_kernel_finalise_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
- const double * rx,
- const double * ry,
- const double * density1,
- const double * energy1,
- const double * u)
+(void)
 {
     chunk.tea_leaf_finalise();
 }
 
+// same as in fortran
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 

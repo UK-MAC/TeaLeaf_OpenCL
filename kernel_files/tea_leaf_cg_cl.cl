@@ -58,7 +58,7 @@ __kernel void tea_leaf_cg_init_others
  __global       double * __restrict const p,
  __global       double * __restrict const r,
  __global       double * __restrict const w,
- __global       double * __restrict const b,
+ __global       double * __restrict const Mi,
  __global const double * __restrict const u,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
@@ -92,11 +92,11 @@ __kernel void tea_leaf_cg_init_others
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
 #ifdef CG_DO_PRECONDITION
-        b[THARR2D(0, 0, 0)] = 1.0/(1.0
+        Mi[THARR2D(0, 0, 0)] = 1.0/(1.0
             + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
 
-        z[THARR2D(0, 0, 0)] = b[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
         rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
 #else
@@ -170,7 +170,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
  __global const double * __restrict const w,
  __global       double * __restrict const u,
  __global       double * __restrict const z,
- __global const double * __restrict const b)
+ __global const double * __restrict const Mi)
 {
     __kernel_indexes;
 
@@ -192,7 +192,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
 #ifdef CG_DO_PRECONDITION
-        z[THARR2D(0, 0, 0)] = b[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
 #else
         rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];

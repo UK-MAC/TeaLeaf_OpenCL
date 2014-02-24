@@ -63,6 +63,7 @@ void CloverChunk::initProgram
 
     fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
     fprintf(stdout, "Compiling kernels (may take some time)...");
+    fflush(stdout);
 
     compileKernel(options_str, src_ideal_gas_cl, "ideal_gas", ideal_gas_device);
     compileKernel(options_str, src_accelerate_cl, "accelerate", accelerate_device);

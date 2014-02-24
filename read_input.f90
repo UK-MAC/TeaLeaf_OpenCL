@@ -89,6 +89,9 @@ SUBROUTINE read_input()
   profiler%flux=0.0
   profiler%halo_exchange=0.0
 
+  tl_use_cg = .false.
+  tl_use_jacobi = .true.
+
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
 
@@ -189,6 +192,12 @@ SUBROUTINE read_input()
         use_C_kernels=.FALSE.
         use_OA_kernels=.TRUE.
         use_ocl_kernels=.FALSE.
+      CASE('tl_use_jacobi')
+        tl_use_cg = .false.
+        tl_use_jacobi = .true.
+      CASE('tl_use_cg')
+        tl_use_cg = .true.
+        tl_use_jacobi = .false.
       CASE('use_vector_loops')
         use_vector_loops=.TRUE.
       CASE('profiler_on')

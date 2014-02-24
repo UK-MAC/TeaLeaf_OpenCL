@@ -74,6 +74,8 @@ MODULE definitions_module
    LOGICAL      :: use_ocl_kernels
    LOGICAL      :: use_Tealeaf
    LOGICAL      :: use_Hydro
+   LOGICAL      :: tl_use_cg
+   LOGICAL      :: tl_use_jacobi
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
    INTEGER      :: coefficient

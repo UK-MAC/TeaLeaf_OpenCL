@@ -19,7 +19,6 @@
   end_time=1.0
   end_step=87
 
-  use_ocl_kernels
   opencl_vendor=nvidia
   opencl_type=gpu
   opencl_device=0
@@ -27,4 +26,5 @@
   tl_max_iters=10000
   test_problem 1
   tl_eps=0.000000000000001
+  tl_use_cg
 *endtea
