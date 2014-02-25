@@ -216,7 +216,7 @@ void CloverChunk::initOcl
             }
             else
             {
-                device = devices.at(preferred_device);
+                device = devices.at(preferred_device+rank);
             }
 
             device.getInfo(CL_DEVICE_NAME, &devname);
