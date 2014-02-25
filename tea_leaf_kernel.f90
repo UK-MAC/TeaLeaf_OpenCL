@@ -186,17 +186,17 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
                            y_max,             &
                            density,           &
                            energy,            &
-                           u,                &
-                           p,            &
-                           r,            &
-                           Mi,                &
-                           w,     &
-                           z, &
-                           Kx,            &
-                           Ky, &
-                           rx, &
-                           ry, &
-                           rro, &
+                           u,                 &
+                           p,           & ! 1
+                           r,           & ! 2
+                           Mi,          & ! 3
+                           w,           & ! 4
+                           z,           & ! 5
+                           Kx,          & ! 6
+                           Ky,          & ! 7
+                           rx,          &
+                           ry,          &
+                           rro,         &
                            coef)
 
   USE clover_module
@@ -206,8 +206,8 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: density
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: energy
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
@@ -294,50 +294,36 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
 
 END SUBROUTINE tea_leaf_kernel_init_cg_fortran
 
-SUBROUTINE tea_leaf_kernel_solve_cg_fortran(x_min,             &
+SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
-                           u,                &
                            p,            &
-                           r,            &
-                           Mi,                &
                            w,     &
-                           z,     &
                            Kx,  &
                            Ky,            &
                            rx, &
                            ry, &
-                           rro, &
-                           error)
+                           pw)
 
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
-
-    INTEGER(KIND=4) :: coef
 
     REAL(KIND=8) ::  rx, ry
 
     REAL(kind=8) :: rro, error
 
     INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: pw, alpha, rrn, beta
+    REAL(kind=8) :: pw
 
     pw = 0.0
-    rrn = 0.0
-    alpha = 0.0
-    beta = 0.0
 
-!$OMP PARALLEL private(alpha, beta)
+!$OMP PARALLEL
 !$OMP DO REDUCTION(+:pw)
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -351,9 +337,45 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran(x_min,             &
         ENDDO
     ENDDO
 !$OMP END DO
+!$OMP END PARALLEL
+
+END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
+
+SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           u,                &
+                           p,            &
+                           r,            &
+                           Mi,                &
+                           w,     &
+                           z,     &
+                           alpha, &
+                           pw, &
+                           rrn, &
+                           rro)
+
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+
+    REAL(kind=8) :: rro
+
+    INTEGER(KIND=4) :: j,k,n
+    REAL(kind=8) :: pw, alpha, rrn
     
     alpha = rro/pw
 
+    rrn = 0.0
+
+!$OMP PARALLEL
 !$OMP DO REDUCTION(+:rrn)
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -365,9 +387,39 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran(x_min,             &
         ENDDO
     ENDDO
 !$OMP END DO
+!$OMP END PARALLEL
+
+END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur
+
+SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           u,                &
+                           p,            &
+                           r,            &
+                           z,     &
+                           rro, &
+                           rrn, &
+                           beta, &
+                           error)
+
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+
+    REAL(kind=8) :: rro, error
+
+    INTEGER(KIND=4) :: j,k,n
+    REAL(kind=8) :: rrn, beta
 
     beta = rrn/rro
 
+!$OMP PARALLEL
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -380,7 +432,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran(x_min,             &
     error = rrn
     rro = rrn
 
-END SUBROUTINE tea_leaf_kernel_solve_cg_fortran
+END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
 
 ! Finalise routine is used by both implementations
 SUBROUTINE tea_leaf_kernel_finalise(x_min,    &
@@ -411,3 +463,4 @@ SUBROUTINE tea_leaf_kernel_finalise(x_min,    &
 END SUBROUTINE tea_leaf_kernel_finalise
 
 END MODULE tea_leaf_kernel_module
+

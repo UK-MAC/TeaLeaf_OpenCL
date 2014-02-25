@@ -25,6 +25,7 @@ CONTAINS
 
 SUBROUTINE tea_leaf()
  
+  USE report_module
   USE clover_module
   USE tea_leaf_kernel_module
   USE update_halo_module
@@ -40,7 +41,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: kernel_time,timer
 
   ! For CG solver
-  REAL(KIND=8) :: rro
+  REAL(KIND=8) :: rro, pw, rrn, alpha, beta
 
   DO c=1,number_of_chunks
 
@@ -80,6 +81,7 @@ SUBROUTINE tea_leaf()
         ELSEIF(use_ocl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry)
         ELSEIF(use_C_kernels) THEN
+          CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
           ! TODO
           !rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
           !ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
@@ -104,9 +106,13 @@ SUBROUTINE tea_leaf()
           !    coefficient)
         ENDIF
 
+        ! need to update p at this stage
         fields=0
         fields(FIELD_U) = 1
         CALL update_halo(fields,2)
+
+        ! and globally sum rro
+        call clover_allsum(rro)
       ELSE
         IF (use_fortran_kernels) THEN
           rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
@@ -162,7 +168,19 @@ SUBROUTINE tea_leaf()
 
         if(tl_use_cg) then
           IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran(chunks(c)%field%x_min,&
+            CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%work_array1,                 &
+                chunks(c)%field%work_array4,                 &
+                chunks(c)%field%work_array6,                 &
+                chunks(c)%field%work_array7,                 &
+                rx, ry, pw)
+
+            CALL clover_allsum(pw)
+
+            CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
                 chunks(c)%field%x_max,                       &
                 chunks(c)%field%y_min,                       &
                 chunks(c)%field%y_max,                       &
@@ -172,25 +190,36 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array3,                 &
                 chunks(c)%field%work_array4,                 &
                 chunks(c)%field%work_array5,                 &
-                chunks(c)%field%work_array6,                 &
-                chunks(c)%field%work_array7,                 &
-                rx, ry, rro, error)
+                alpha, pw, rrn, rro)
+
+            CALL clover_allsum(rrn)
+
+            CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%u,                           &
+                chunks(c)%field%work_array1,                 &
+                chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array5,                 &
+                rro, rrn, beta, error)
           ELSEIF(use_ocl_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_ocl(rx, ry, error)
+            CALL tea_leaf_kernel_solve_cg_ocl(rx, ry, error)
           ELSEIF(use_C_kernels) THEN
-              ! TODO
-              !CALL tea_leaf_kernel_solve_cg_c(chunks(c)%field%x_min,&
-              !    chunks(c)%field%x_max,                       &
-              !    chunks(c)%field%y_min,                       &
-              !    chunks(c)%field%y_max,                       &
-              !    rx,                                          &
-              !    ry,                                          &
-              !    chunks(c)%field%work_array6,                 &
-              !    chunks(c)%field%work_array7,                 &
-              !    error,                                       &
-              !    chunks(c)%field%work_array1,                 &
-              !    chunks(c)%field%u,                           &
-              !    chunks(c)%field%work_array2)
+            CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
+            ! TODO
+            !CALL tea_leaf_kernel_solve_cg_c(chunks(c)%field%x_min,&
+            !    chunks(c)%field%x_max,                       &
+            !    chunks(c)%field%y_min,                       &
+            !    chunks(c)%field%y_max,                       &
+            !    rx,                                          &
+            !    ry,                                          &
+            !    chunks(c)%field%work_array6,                 &
+            !    chunks(c)%field%work_array7,                 &
+            !    error,                                       &
+            !    chunks(c)%field%work_array1,                 &
+            !    chunks(c)%field%u,                           &
+            !    chunks(c)%field%work_array2)
           ENDIF
         ELSE
           IF(use_fortran_kernels) THEN
