@@ -42,6 +42,12 @@ std::string errToString
 (cl_int err);
 
 /*
+ *  Find if tl_use_cg is in the input file
+ */
+bool cgEnabled
+(FILE* input);
+
+/*
  *  Returns index of desired device, or -1 if some error occurs (none specified, invalid specification, etc)
  */
 int preferredDevice

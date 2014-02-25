@@ -83,7 +83,7 @@ __kernel void tea_leaf_jacobi_solve
             /(1.0 + 2.0*(0.5*(Kx[THARR2D(0, 0, 1)] + Kx[THARR2D(1, 0, 1)]))*rx
                   + 2.0*(0.5*(Ky[THARR2D(0, 0, 1)] + Ky[THARR2D(0, 1, 1)]))*ry);
         
-        error_local[lid] = u1[THARR2D(0, 0, 0)] - u0[THARR2D(0, 0, 1)];
+        error_local[lid] = u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 1)];
     }
 
     REDUCTION(error_local, error, MAX);

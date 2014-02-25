@@ -114,6 +114,10 @@ void CloverChunk::initOcl
     int preferred_device = preferredDevice(input);
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
     desired_type = typeRead(input);
+
+    tl_use_cg = cgEnabled(input);
+    fprintf(DBGOUT, "Using %s solver for tealeaf\n", (tl_use_cg ? "CG" : "Jacobi"));
+
     fclose(input);
 
     size_t ii = 0;

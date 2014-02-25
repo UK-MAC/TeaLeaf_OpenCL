@@ -2,33 +2,44 @@
 
 extern CloverChunk chunk;
 
+// same as in fortran
+#define CONDUCTIVITY 1
+#define RECIP_CONDUCTIVITY 2
+
+// jacobi solver functions
 extern "C" void tea_leaf_kernel_init_ocl_
-(const int    * coefficient,
-       double * dt,
-       double * rx,
-       double * ry)
+(const int * coefficient, double * dt, double * rx, double * ry)
 {
-    chunk.tea_leaf_init(*coefficient, *dt, rx, ry);
+    chunk.tea_leaf_init_jacobi(*coefficient, *dt, rx, ry);
 }
 
 extern "C" void tea_leaf_kernel_solve_ocl_
-(const double * rx,
- const double * ry,
-       double * error)
+(const double * rx, const double * ry, double * error)
 {
-    chunk.tea_leaf_kernel(*rx, *ry, error);
+    chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
 }
 
+// CG solver functions
+extern "C" void tea_leaf_kernel_init_cg_ocl_
+(const int * coefficient, double * dt, double * rx, double * ry)
+{
+    chunk.tea_leaf_init_cg(*coefficient, *dt, rx, ry);
+}
+
+extern "C" void tea_leaf_kernel_solve_cg_ocl_
+(const double * rx, const double * ry, double * error)
+{
+    chunk.tea_leaf_kernel_cg(*rx, *ry, error);
+}
+
+// used by both
 extern "C" void tea_leaf_kernel_finalise_ocl_
 (void)
 {
     chunk.tea_leaf_finalise();
 }
 
-// same as in fortran
-#define CONDUCTIVITY 1
-#define RECIP_CONDUCTIVITY 2
-
+// copy back dx/dy and calculate rx/ry
 void CloverChunk::calcrxry
 (double dt, double * rx, double * ry)
 {
@@ -61,7 +72,7 @@ void CloverChunk::calcrxry
     *ry = dt/(dy*dy);
 }
 
-void CloverChunk::tea_leaf_init
+void CloverChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry)
 {
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
@@ -69,10 +80,8 @@ void CloverChunk::tea_leaf_init
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
     }
 
-    // copy back dx/dy and calculate rx/ry
     calcrxry(dt, rx, ry);
 
-#if defined(TL_USE_CG)
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);
     //ENQUEUE(tea_leaf_cg_init_u_device);
@@ -99,19 +108,11 @@ void CloverChunk::tea_leaf_init
     // initialise rro
     tea_leaf_cg_solve_calc_p_device.setArg(0, rro);
     tea_leaf_cg_solve_calc_ur_device.setArg(0, rro);
-#else
-    tea_leaf_jacobi_init_device.setArg(6, coefficient);
-    ENQUEUE(tea_leaf_jacobi_init_device);
-
-    tea_leaf_jacobi_solve_device.setArg(0, *rx);
-    tea_leaf_jacobi_solve_device.setArg(1, *ry);
-#endif
 }
 
-void CloverChunk::tea_leaf_kernel
+void CloverChunk::tea_leaf_kernel_cg
 (double rx, double ry, double* error)
 {
-#if defined(TL_USE_CG)
     ENQUEUE(tea_leaf_cg_solve_calc_w_device);
     //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     double pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3, true);
@@ -128,12 +129,32 @@ void CloverChunk::tea_leaf_kernel
     tea_leaf_cg_solve_calc_ur_device.setArg(0, rrn);
 
     *error = rrn;
-#else
+}
+
+void CloverChunk::tea_leaf_init_jacobi
+(int coefficient, double dt, double * rx, double * ry)
+{
+    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
+    {
+        DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
+    }
+
+    calcrxry(dt, rx, ry);
+
+    tea_leaf_jacobi_init_device.setArg(6, coefficient);
+    ENQUEUE(tea_leaf_jacobi_init_device);
+
+    tea_leaf_jacobi_solve_device.setArg(0, *rx);
+    tea_leaf_jacobi_solve_device.setArg(1, *ry);
+}
+
+void CloverChunk::tea_leaf_kernel_jacobi
+(double rx, double ry, double* error)
+{
     ENQUEUE(tea_leaf_jacobi_copy_u_device);
     ENQUEUE(tea_leaf_jacobi_solve_device);
 
     *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
-#endif
 }
 
 void CloverChunk::tea_leaf_finalise

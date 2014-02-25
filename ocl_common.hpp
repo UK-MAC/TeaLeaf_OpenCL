@@ -121,7 +121,7 @@ private:
     cl::Kernel update_halo_right_device;
 
     // tea leaf
-#if defined(TL_USE_CG)
+    bool tl_use_cg;
     cl::Kernel tea_leaf_cg_init_u_device;
     cl::Kernel tea_leaf_cg_init_directions_device;
     cl::Kernel tea_leaf_cg_init_others_device;
@@ -133,11 +133,9 @@ private:
 
     // need more for the Kx/Ky arrays
     cl::Buffer work_array_6;
-#else
     cl::Kernel tea_leaf_jacobi_init_device;
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
-#endif
 
     cl::Buffer u;
     cl::Kernel tea_leaf_finalise_device;
@@ -347,14 +345,19 @@ public:
 
     void revert_kernel();
 
+    void set_field_kernel();
     void reset_field_kernel();
 
     void viscosity_kernel();
 
-    void tea_leaf_init(int, double, double*, double*);
-    void tea_leaf_kernel(double, double, double*);
+    // Tea leaf
+    void tea_leaf_init_jacobi(int, double, double*, double*);
+    void tea_leaf_kernel_jacobi(double, double, double*);
+
+    void tea_leaf_init_cg(int, double, double*, double*);
+    void tea_leaf_kernel_cg(double, double, double*);
+
     void tea_leaf_finalise();
-    void set_field_kernel();
 
     // ctor
     CloverChunk

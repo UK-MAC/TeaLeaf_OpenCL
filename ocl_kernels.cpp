@@ -31,10 +31,8 @@ void CloverChunk::initProgram
     options << "-DONED_KERNEL_LAUNCHES ";
 #endif
 
-#ifdef TL_USE_CG_PRECONDITIONER
     // use jacobi preconditioner when running CG solver
     options << "-DCG_DO_PRECONDITION ";
-#endif
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -107,18 +105,21 @@ void CloverChunk::initProgram
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_y", advec_cell_y_device);
 
-#if defined(TL_USE_CG)
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_others", tea_leaf_cg_init_others_device);
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
-    compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
-#else
-    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_init", tea_leaf_jacobi_init_device);
-    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device);
-    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device);
-#endif
+    if (tl_use_cg)
+    {
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_others", tea_leaf_cg_init_others_device);
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
+        compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
+    }
+    else
+    {
+        compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_init", tea_leaf_jacobi_init_device);
+        compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device);
+        compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device);
+    }
 
     compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_finalise", tea_leaf_finalise_device);
 
@@ -380,18 +381,21 @@ void CloverChunk::initSizes
 
     FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
 
-#if defined(TL_USE_CG)
-    FIND_PADDING_SIZE(tea_leaf_cg_init_u, -1, 1, -1, 1);
-    FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1);
-    FIND_PADDING_SIZE(tea_leaf_cg_init_others, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0);
-#else
-    FIND_PADDING_SIZE(tea_leaf_jacobi_init, -1, 1, -1, 1);
-    FIND_PADDING_SIZE(tea_leaf_jacobi_copy_u, -1, 1, -1, 1);
-    FIND_PADDING_SIZE(tea_leaf_jacobi_solve, 0, 0, 0, 0);
-#endif
+    if (tl_use_cg)
+    {
+        FIND_PADDING_SIZE(tea_leaf_cg_init_u, -1, 1, -1, 1);
+        FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1);
+        FIND_PADDING_SIZE(tea_leaf_cg_init_others, 0, 0, 0, 0);
+        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
+        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
+        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0);
+    }
+    else
+    {
+        FIND_PADDING_SIZE(tea_leaf_jacobi_init, -1, 1, -1, 1);
+        FIND_PADDING_SIZE(tea_leaf_jacobi_copy_u, -1, 1, -1, 1);
+        FIND_PADDING_SIZE(tea_leaf_jacobi_solve, 0, 0, 0, 0);
+    }
 
     FIND_PADDING_SIZE(tea_leaf_jacobi_finalise, 0, 0, 0, 0);
 }

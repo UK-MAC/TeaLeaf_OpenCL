@@ -19,6 +19,7 @@
   end_time=1.0
   end_step=87
 
+  use_ocl_kernels
   opencl_vendor=nvidia
   opencl_type=gpu
   opencl_device=0

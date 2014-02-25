@@ -56,11 +56,12 @@ SUBROUTINE tea_leaf()
 
       ! INIT
       IF(profiler_on) kernel_time=timer()
-      IF(use_fortran_kernels) THEN
-        rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-        ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
 
-        if(tl_use_cg) then
+      IF(tl_use_cg) then
+        IF(use_fortran_kernels) THEN
+          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
+          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
+
           CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -76,7 +77,41 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               rx, ry, rro, coefficient)
-        else
+        ELSEIF(use_ocl_kernels) THEN
+          CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry)
+        ELSEIF(use_C_kernels) THEN
+          ! TODO
+          !rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
+          !ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
+
+          !CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
+          !    chunks(c)%field%x_max,                       &
+          !    chunks(c)%field%y_min,                       &
+          !    chunks(c)%field%y_max,                       &
+          !    chunks(c)%field%celldx,                      &
+          !    chunks(c)%field%celldy,                      &
+          !    chunks(c)%field%volume,                      &
+          !    chunks(c)%field%density1,                    &
+          !    chunks(c)%field%energy1,                     &
+          !    chunks(c)%field%work_array1,                 &
+          !    chunks(c)%field%u,                           &
+          !    chunks(c)%field%work_array2,                 &
+          !    chunks(c)%field%work_array3,                 &
+          !    chunks(c)%field%work_array4,                 &
+          !    chunks(c)%field%work_array5,                 &
+          !    chunks(c)%field%work_array6,                 &
+          !    chunks(c)%field%work_array7,                 &
+          !    coefficient)
+        ENDIF
+
+        fields=0
+        fields(FIELD_U) = 1
+        CALL update_halo(fields,2)
+      ELSE
+        IF (use_fortran_kernels) THEN
+          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
+          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
+
           CALL tea_leaf_kernel_init(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -95,18 +130,9 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               coefficient)
-        endif
-
-        fields=0
-        fields(FIELD_U) = 1
-        CALL update_halo(fields,2)
-      ELSEIF(use_ocl_kernels) THEN
+        ELSEIF(use_ocl_kernels) THEN
           CALL tea_leaf_kernel_init_ocl(coefficient, dt, rx, ry)
-
-          fields=0
-          fields(FIELD_U) = 1
-          CALL update_halo(fields,2)
-      ELSEIF(use_C_kernels) THEN
+        ELSEIF(use_C_kernels) THEN
           rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
           ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
 
@@ -128,12 +154,14 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               coefficient)
+        ENDIF
+
       ENDIF
 
       DO n=1,max_iters
 
-        IF(use_fortran_kernels) THEN
-          if(tl_use_cg) then
+        if(tl_use_cg) then
+          IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran(chunks(c)%field%x_min,&
                 chunks(c)%field%x_max,                       &
                 chunks(c)%field%y_min,                       &
@@ -147,7 +175,25 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array6,                 &
                 chunks(c)%field%work_array7,                 &
                 rx, ry, rro, error)
-          else
+          ELSEIF(use_ocl_kernels) THEN
+              CALL tea_leaf_kernel_solve_cg_ocl(rx, ry, error)
+          ELSEIF(use_C_kernels) THEN
+              ! TODO
+              !CALL tea_leaf_kernel_solve_cg_c(chunks(c)%field%x_min,&
+              !    chunks(c)%field%x_max,                       &
+              !    chunks(c)%field%y_min,                       &
+              !    chunks(c)%field%y_max,                       &
+              !    rx,                                          &
+              !    ry,                                          &
+              !    chunks(c)%field%work_array6,                 &
+              !    chunks(c)%field%work_array7,                 &
+              !    error,                                       &
+              !    chunks(c)%field%work_array1,                 &
+              !    chunks(c)%field%u,                           &
+              !    chunks(c)%field%work_array2)
+          ENDIF
+        ELSE
+          IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve(chunks(c)%field%x_min,&
                 chunks(c)%field%x_max,                       &
                 chunks(c)%field%y_min,                       &
@@ -160,22 +206,22 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%u,                           &
                 chunks(c)%field%work_array2)
-          endif
-        ELSEIF(use_ocl_kernels) THEN
-            CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
-        ELSEIF(use_C_kernels) THEN
-            CALL tea_leaf_kernel_solve_c(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                rx,                                          &
-                ry,                                          &
-                chunks(c)%field%work_array6,                 &
-                chunks(c)%field%work_array7,                 &
-                error,                                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%u,                           &
-                chunks(c)%field%work_array2)
+          ELSEIF(use_ocl_kernels) THEN
+              CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
+          ELSEIF(use_C_kernels) THEN
+              CALL tea_leaf_kernel_solve_c(chunks(c)%field%x_min,&
+                  chunks(c)%field%x_max,                       &
+                  chunks(c)%field%y_min,                       &
+                  chunks(c)%field%y_max,                       &
+                  rx,                                          &
+                  ry,                                          &
+                  chunks(c)%field%work_array6,                 &
+                  chunks(c)%field%work_array7,                 &
+                  error,                                       &
+                  chunks(c)%field%work_array1,                 &
+                  chunks(c)%field%u,                           &
+                  chunks(c)%field%work_array2)
+          ENDIF
         ENDIF
 
         ! CALL update_halo

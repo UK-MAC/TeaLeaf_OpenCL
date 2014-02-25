@@ -8,6 +8,7 @@
 // match something like param_name=param_string
 #define MATCH_PARAM(param_name) \
     static char name_buf[101]; \
+    bool found = false; \
     rewind(input); \
     /* read in line from file */ \
     while (NULL != fgets(name_buf, 100, input)) \
@@ -15,13 +16,16 @@
         /* if it has the parameter name, its the line we want */ \
         if (NULL != strstr(name_buf, param_name)) \
         { \
-            /* breaks if there isn't an = in the string, but this would be
-             * picked up earlier in fortran anyway */ \
-            *(strstr(name_buf, "=")) = ' ';\
-            char param_buf[100]; \
-            sscanf(name_buf, "%*s %s", param_buf); \
-            param_string = std::string(param_buf); \
-            break; \
+            /* mark as found for params which don't have an argument */ \
+            found = true;\
+            if (NULL != strstr(name_buf, "=")) \
+            { \
+                *(strstr(name_buf, "=")) = ' ';\
+                char param_buf[100]; \
+                sscanf(name_buf, "%*s %s", param_buf); \
+                param_string = std::string(param_buf); \
+                break; \
+            }   \
         }   \
     }
 
@@ -121,6 +125,15 @@ std::string strType
     default :
         return std::string("Device type does not match known values");
     }
+}
+
+bool cgEnabled
+(FILE* input)
+{
+    std::string param_string;
+    MATCH_PARAM("tl_use_cg");
+
+    return found;
 }
 
 int preferredDevice

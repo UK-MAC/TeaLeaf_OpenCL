@@ -172,12 +172,7 @@ SUBROUTINE tea_leaf_kernel_solve(x_min,       &
                                 + rx*2.0_8*(0.5_8*(Kx(j,k)+Kx(j+1,k))) &
                                 + ry*2.0_8*(0.5_8*(Ky(j,k)+Ky(j,k+1))))
 
-!        u1(j,k) = (u0(j,k) + Kx(j+1,k)*rx*un(j+1,k) + Kx(j,k)*rx*un(j-1,k) &
-!                           + Ky(j,k+1)*ry*un(j,k+1) + Ky(j,k)*ry*un(j,k-1)) &
-!                             /(1.0_8+2.0_8*(0.5_8*(Kx(j,k)+Kx(j+1,k)))*rx &
-!                                +2.0_8*(0.5_8*(Ky(j,k)+Ky(j,k+1)))*ry)
-
-        error = MAX(error, ABS(u1(j,k)-u0(j,k)))
+        error = MAX(error, ABS(u1(j,k)-un(j,k)))
       ENDDO
     ENDDO
 !$OMP END DO
