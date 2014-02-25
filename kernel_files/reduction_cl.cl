@@ -92,7 +92,7 @@ __kernel void reduction
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-#if defined(CL_DEVICE_TYPE_GPU) || defined(CL_DEVICE_TYPE_ACCELERATOR)
+#if defined(CL_DEVICE_TYPE_GPU)
 
     for (int offset = LOCAL_SZ / 2; offset > 0; offset /= 2)
     {
@@ -105,6 +105,17 @@ __kernel void reduction
 
 #elif defined(CL_DEVICE_TYPE_CPU)
 
+    if (0 == lid)
+    {
+        for (int offset = 1; offset < LOCAL_SZ; offset++)
+        {
+            scratch[0] = REDUCE(scratch[0], scratch[offset]);
+        }
+    }
+
+#elif defined(CL_DEVICE_TYPE_ACCELERATOR)
+
+    // TODO special reductions for xeon phi in some fashion
     if (0 == lid)
     {
         for (int offset = 1; offset < LOCAL_SZ; offset++)

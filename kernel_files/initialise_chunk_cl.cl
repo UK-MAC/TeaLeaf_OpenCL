@@ -15,7 +15,7 @@ __kernel void initialise_chunk_first
     if (row == 0 && column <= (x_max + 1) + 3)
     {
         vertexx[column] = d_xmin +
-            d_dx*(double)((column - 1) - x_min);
+            d_dx*(double)((((int)column) - 1) - x_min);
         vertexdx[column] = d_dx;
     }
 
@@ -23,7 +23,7 @@ __kernel void initialise_chunk_first
     if (column == 0 && row <= (y_max + 1) + 3)
     {
         vertexy[row] = d_ymin +
-            d_dy*(double)((row - 1) - y_min);
+            d_dy*(double)((((int)row) - 1) - y_min);
         vertexdy[row] = d_dy;
     }
 }

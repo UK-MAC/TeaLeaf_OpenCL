@@ -236,9 +236,7 @@ void CloverChunk::initOcl
                 device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
                 break;
             case CL_DEVICE_TYPE_ACCELERATOR : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-                // TODO reductions for the xeon phi - anything special?
-                //device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
+                device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
                 break;
             default :
                 device_type_prepro = "-DNODEVICETYPE ";
