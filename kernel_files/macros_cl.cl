@@ -76,7 +76,7 @@
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
 
-    #warning Using CPU style reduction for xeon phi - better performance may be obtained by using the NO_KERNEL_REDUCTIONS option which removes the need for the barrier
+    //#warning Using CPU style reduction for xeon phi - better performance may be obtained by using the NO_KERNEL_REDUCTIONS option which removes the need for the barrier
 
     // loop in first thread
     #define REDUCTION(in, out, operation)                    \

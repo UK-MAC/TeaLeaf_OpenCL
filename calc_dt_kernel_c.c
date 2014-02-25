@@ -135,7 +135,10 @@ void calc_dt_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
     }
   }
 
+// min: is not defined for some old versions of GCC
+#ifndef __GNUC__
 #pragma omp for private(j) reduction(min:dt_min_val)
+#endif
   for (k=y_min;k<=y_max;k++) {
 #pragma ivdep
     for (j=x_min;j<=x_max;j++) {

@@ -88,6 +88,9 @@ SUBROUTINE start
 
   ENDDO
 
+  ! Makes it work in old versions of gfortran (???)
+  write(*,*)
+
   DEALLOCATE(left,right,bottom,top)
 
   CALL clover_barrier
