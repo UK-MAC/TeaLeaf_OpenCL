@@ -423,11 +423,11 @@ void CloverChunk::initArgs
 
         tea_leaf_cg_init_others_device.setArg(0, reduce_buf_1);
         tea_leaf_cg_init_others_device.setArg(1, reduce_buf_2);
-        tea_leaf_cg_init_others_device.setArg(2, work_array_1);
-        tea_leaf_cg_init_others_device.setArg(3, work_array_2);
-        tea_leaf_cg_init_others_device.setArg(4, work_array_3);
-        tea_leaf_cg_init_others_device.setArg(5, work_array_4);
-        tea_leaf_cg_init_others_device.setArg(6, u);
+        tea_leaf_cg_init_others_device.setArg(2, u);
+        tea_leaf_cg_init_others_device.setArg(3, work_array_1);
+        tea_leaf_cg_init_others_device.setArg(4, work_array_2);
+        tea_leaf_cg_init_others_device.setArg(5, work_array_3);
+        tea_leaf_cg_init_others_device.setArg(6, work_array_4);
         tea_leaf_cg_init_others_device.setArg(7, work_array_5);
         tea_leaf_cg_init_others_device.setArg(8, work_array_6);
         // preconditioner
@@ -439,23 +439,19 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_w_device.setArg(3, work_array_5);
         tea_leaf_cg_solve_calc_w_device.setArg(4, work_array_6);
 
-        //tea_leaf_cg_solve_calc_ur_device.setArg(0, rro);
-        tea_leaf_cg_solve_calc_ur_device.setArg(1, reduce_buf_3);
-        tea_leaf_cg_solve_calc_ur_device.setArg(2, reduce_buf_4);
+        tea_leaf_cg_solve_calc_ur_device.setArg(1, reduce_buf_4);
+        tea_leaf_cg_solve_calc_ur_device.setArg(2, u);
         tea_leaf_cg_solve_calc_ur_device.setArg(3, work_array_1);
         tea_leaf_cg_solve_calc_ur_device.setArg(4, work_array_2);
         tea_leaf_cg_solve_calc_ur_device.setArg(5, work_array_3);
-        tea_leaf_cg_solve_calc_ur_device.setArg(6, u);
         // preconditioner
-        tea_leaf_cg_solve_calc_ur_device.setArg(7, z);
-        tea_leaf_cg_solve_calc_ur_device.setArg(8, work_array_4);
+        tea_leaf_cg_solve_calc_ur_device.setArg(6, z);
+        tea_leaf_cg_solve_calc_ur_device.setArg(7, work_array_4);
 
-        //tea_leaf_cg_solve_calc_p_device.setArg(0, rro);
-        tea_leaf_cg_solve_calc_p_device.setArg(1, reduce_buf_4);
+        tea_leaf_cg_solve_calc_p_device.setArg(1, u);
         tea_leaf_cg_solve_calc_p_device.setArg(2, work_array_1);
         tea_leaf_cg_solve_calc_p_device.setArg(3, work_array_2);
-        tea_leaf_cg_solve_calc_p_device.setArg(4, u);
-        tea_leaf_cg_solve_calc_p_device.setArg(5, z);
+        tea_leaf_cg_solve_calc_p_device.setArg(4, z);
     }
     else
     {

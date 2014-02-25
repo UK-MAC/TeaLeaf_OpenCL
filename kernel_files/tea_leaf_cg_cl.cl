@@ -55,11 +55,11 @@ __kernel void tea_leaf_cg_init_directions
 __kernel void tea_leaf_cg_init_others
 (__global       double * __restrict const bb,
  __global       double * __restrict const rro,
+ __global const double * __restrict const u,
  __global       double * __restrict const p,
  __global       double * __restrict const r,
  __global       double * __restrict const w,
  __global       double * __restrict const Mi,
- __global const double * __restrict const u,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
  double rx, double ry,
@@ -162,13 +162,12 @@ __kernel void tea_leaf_cg_solve_calc_w
 /* reduce pw */
 
 __kernel void tea_leaf_cg_solve_calc_ur
-(double rro,
- __global const double * __restrict const pw,
+(double alpha,
  __global       double * __restrict const rrn,
+ __global       double * __restrict const u,
  __global const double * __restrict const p,
  __global       double * __restrict const r,
  __global const double * __restrict const w,
- __global       double * __restrict const u,
  __global       double * __restrict const z,
  __global const double * __restrict const Mi)
 {
@@ -180,8 +179,6 @@ __kernel void tea_leaf_cg_solve_calc_ur
     __local double rrn_shared[BLOCK_SZ];
     rrn_shared[lid] = 0.0;
 #endif
-
-    const double alpha = rro/pw[0];
 
     // as above
     double rrn_val;
@@ -213,16 +210,13 @@ __kernel void tea_leaf_cg_solve_calc_ur
 /* reduce rrn */
 
 __kernel void tea_leaf_cg_solve_calc_p
-(double rro,
- __global const double * __restrict const rrn,
+(double beta,
+ __global const double * __restrict const u,
  __global       double * __restrict const p,
  __global const double * __restrict const r,
- __global const double * __restrict const u,
  __global const double * __restrict const z)
 {
     __kernel_indexes;
-
-    const double beta = rrn[0]/rro;
 
     if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
     && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)

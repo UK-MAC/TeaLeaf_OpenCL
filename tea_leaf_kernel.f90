@@ -316,8 +316,6 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
 
     REAL(KIND=8) ::  rx, ry
 
-    REAL(kind=8) :: rro, error
-
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: pw
 
@@ -352,9 +350,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
                            w,     &
                            z,     &
                            alpha, &
-                           pw, &
-                           rrn, &
-                           rro)
+                           rrn)
 
   IMPLICIT NONE
 
@@ -366,12 +362,8 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
-    REAL(kind=8) :: rro
-
     INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: pw, alpha, rrn
-    
-    alpha = rro/pw
+    REAL(kind=8) :: alpha, rrn
 
     rrn = 0.0
 
@@ -399,10 +391,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
                            p,            &
                            r,            &
                            z,     &
-                           rro, &
-                           rrn, &
-                           beta, &
-                           error)
+                           beta)
 
   IMPLICIT NONE
 
@@ -412,12 +401,10 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
-    REAL(kind=8) :: rro, error
+    REAL(kind=8) :: error
 
     INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: rrn, beta
-
-    beta = rrn/rro
+    REAL(kind=8) :: beta
 
 !$OMP PARALLEL
 !$OMP DO
@@ -428,9 +415,6 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
-
-    error = rrn
-    rro = rrn
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
 
