@@ -233,7 +233,7 @@ cl::Program CloverChunk::compileProgram
 void CloverChunk::initSizes
 (void)
 {
-#ifdef ONED_KERNEL_LAUNCHES
+#if defined(ONED_KERNEL_LAUNCHES)
     size_t glob_x = x_max+5;
     size_t glob_y = y_max+5;
     total_cells = glob_x*glob_y;
@@ -337,12 +337,6 @@ void CloverChunk::initSizes
         cur_specs.global = cl::NDRange(global_row_size, global_col_size);       \
         cur_specs.offset = cl::NDRange(x_min + 1 + (rmin), y_min + 1 + (cmin)); \
         launch_specs[#knl"_device"] = cur_specs;                                \
-        /*fprintf(stdout, "Kernel:%s\n global:%zu %zu\n offset:%zu %zu\n",      \
-            #knl,                                                               \
-            launch_specs.at(#knl "_device").global[0],                          \
-            launch_specs.at(#knl "_device").global[1],                          \
-            launch_specs.at(#knl "_device").offset[0],                          \
-            launch_specs.at(#knl "_device").offset[1]);*/                       \
     }
 
     FIND_PADDING_SIZE(ideal_gas, 0, 0, 0, 0); // works

@@ -1,7 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 #ifdef ONED_KERNEL_LAUNCHES
-    #error not used
     #define __kernel_indexes                            \
         const size_t glob_id = get_global_id(0); \
         const size_t row = glob_id / (x_max + 4);  \

@@ -1,6 +1,7 @@
 #include "ocl_common.hpp"
 
 #include <cstdio>
+#include <sstream>
 
 std::string errToString(cl_int err)
 {
@@ -135,10 +136,37 @@ void CloverChunk::enqueueKernel
         std::string func_name;
         kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &func_name);
 
-        DIE("Error in enqueueing kernel '%s' at line %d in %s\n"
-            "Error in %s, code %d (%s) - exiting\n",
-             e.what(), e.err(), errToString(e.err()).c_str(),
-             func_name.c_str(), line, file);
+        // invalid work group size
+        if (e.err() == -54)
+        {
+            std::stringstream errstr;
+            errstr << "Error in enqueueing kernel " << func_name;
+            errstr << " at line " << line << " in " << file << std::endl;
+            errstr << errToString(e.err()).c_str() << std::endl;
+
+            errstr << "Launched with ";
+            errstr << global_range.dimensions() << " global dimensions, ";
+            errstr << local_range.dimensions() << " local dimensions." << std::endl;
+
+            for (int ii = 0; ii < global_range.dimensions(); ii++)
+            {
+                errstr << "Launch dimension " << ii << ": ";
+                errstr << "global " << global_range[ii] << ", ";
+                errstr << "local " << local_range[ii] << " ";
+                errstr << "(offset " << offset_range[ii] << ") - ";
+                errstr << "(" << global_range[ii] << "%" << local_range[ii] << ") ";
+                errstr << "= " << global_range[ii] % local_range[ii] << std::endl;
+            }
+
+            DIE(errstr.str().c_str());
+        }
+        else
+        {
+            DIE("Error in enqueueing kernel '%s' at line %d in %s\n"
+                "Error in %s, code %d (%s) - exiting\n",
+                 func_name.c_str(), line, file,
+                 e.what(), e.err(), errToString(e.err()).c_str());
+        }
     }
 }
 

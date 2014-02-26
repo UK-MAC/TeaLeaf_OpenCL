@@ -252,8 +252,8 @@ include make.deps
 	$(CC) $(CFLAGS) -c $< -o $*.o
 
 KERNEL_HDR_FILE=ocl_kernel_hdr.hpp
-_kernel_strings.cpp: $(KERNEL_HDR_FILE)
-$(KERNEL_HDR_FILE): $(shell ls kernel_files/*.cl) Makefile
+$(KERNEL_HDR_FILE): _kernel_strings.o
+_kernel_strings.cpp: Makefile $(shell ls kernel_files/*.cl)
 	@echo "// automaticllly generated from makefile" > $(KERNEL_HDR_FILE)
 	@echo "#include <string>" > $(KERNEL_HDR_FILE); \
 	echo "#include \"$(KERNEL_HDR_FILE)\"" > _kernel_strings.cpp; \
