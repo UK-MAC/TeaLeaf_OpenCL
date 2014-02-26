@@ -6,8 +6,8 @@ __kernel void ideal_gas
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if (/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         double v, pres_by_ener, pres_by_vol, ss_sq;
 

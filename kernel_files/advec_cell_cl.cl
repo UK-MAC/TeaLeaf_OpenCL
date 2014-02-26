@@ -19,8 +19,8 @@ __kernel void advec_cell_pre_vol_x
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if(/*row >= (y_min + 1) - 2 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) - 2 &&*/ column <= (x_max + 1) + 2)
     {
         if(swp_nmbr == 1)
         {
@@ -58,8 +58,8 @@ __kernel void advec_cell_ener_flux_x
     //  +++++++++++++++++++++
     //  +++++++++++++++++++++
     //
-    if(row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1) + 2)
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1) + 2)
     {
         // if flowing right
         if(vol_flux_x[THARR2D(0, 0, 1)] > 0.0)
@@ -137,8 +137,8 @@ __kernel void advec_cell_x
     //  +++++++++++++++++++++
     //  +++++++++++++++++++++
     //
-    if(row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         pre_mass = density1[THARR2D(0, 0, 0)] * pre_vol[THARR2D(0, 0, 1)];
 
@@ -170,8 +170,8 @@ __kernel void advec_cell_pre_vol_y
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if(/*row >= (y_min + 1) - 2 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) - 2 &&*/ column <= (x_max + 1) + 2)
     {
         if(swp_nmbr == 1)
         {
@@ -208,8 +208,8 @@ __kernel void advec_cell_ener_flux_y
     //  ++xxxxxxxxxxxxxxxxx++
     //  ++xxxxxxxxxxxxxxxxx++
     //
-    if(row >= (y_min + 1) && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         // if flowing up
         if(vol_flux_y[THARR2D(0, 0, 0)] > 0.0)
@@ -289,8 +289,8 @@ __kernel void advec_cell_y
     //  +++++++++++++++++++++
     //  +++++++++++++++++++++
     //
-    if(row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         pre_mass = density1[THARR2D(0, 0, 0)] * pre_vol[THARR2D(0, 0, 1)];
 

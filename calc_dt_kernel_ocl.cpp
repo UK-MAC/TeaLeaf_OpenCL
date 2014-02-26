@@ -42,11 +42,10 @@ double* xl_pos, double* yl_pos, int* jldt, int* kldt, int* small)
     calc_dt_device.setArg(6, dtdiv_safe);
 
     ENQUEUE(calc_dt_device)
+    //ENQUEUE_OFFSET(calc_dt_device)
 
-    *dt_min_val = reduceValue<double>(min_red_kernels_double,
-                                      reduce_buf_2);
-    double jk_control = reduceValue<double>(max_red_kernels_double,
-                                            reduce_buf_1);
+    *dt_min_val = reduceValue<double>(min_red_kernels_double, reduce_buf_2);
+    double jk_control = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
 
     *dtl_control = 10.01 * (jk_control - (int)jk_control);
 

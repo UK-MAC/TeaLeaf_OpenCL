@@ -9,8 +9,8 @@ __kernel void advec_mom_vol
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if(/*row >= (y_min + 1) - 2 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) - 2 &&*/ column <= (x_max + 1) + 2)
     {
         if(mom_sweep == 1)
         {
@@ -80,8 +80,8 @@ __kernel void advec_mom_node_pre_x
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 2)
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 2)
     {
         node_mass_pre[THARR2D(0, 0, 1)] = node_mass_post[THARR2D(0, 0, 1)]
             - node_flux[THARR2D(-1, 0, 1)] + node_flux[THARR2D(0, 0, 1)];
@@ -104,7 +104,7 @@ __kernel void advec_mom_flux_x
     double auw, adw, wind;
 
     if(row >= (y_min + 1) && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
+    && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 1)
     {
         if(node_flux[THARR2D(0, 0, 1)] < 0.0)
         {
@@ -150,8 +150,8 @@ __kernel void advec_mom_xvel
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1) + 1)
     {
         xvel1[THARR2D(0, 0, 1)] = (xvel1[THARR2D(0, 0, 1)]
             * node_mass_pre[THARR2D(0, 0, 1)] + mom_flux[THARR2D(-1, 0, 1)]
@@ -197,8 +197,8 @@ __kernel void advec_mom_node_pre_y
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) - 1 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
+    if(/*row >= (y_min + 1) - 1 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1) + 1)
     {
         node_mass_pre[THARR2D(0, 0, 1)] = node_mass_post[THARR2D(0, 0, 1)]
             - node_flux[THARR2D(0, -1, 1)] + node_flux[THARR2D(0, 0, 1)];
@@ -220,7 +220,7 @@ __kernel void advec_mom_flux_y
     double sigma, width, vdiffuw, vdiffdw, limiter;
     double auw, adw, wind;
 
-    if(row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
+    if(/*row >= (y_min + 1) - 1 &&*/ row <= (y_max + 1) + 1
     && column >= (x_min + 1) && column <= (x_max + 1) + 1)
     {
         if(node_flux[THARR2D(0, 0, 1)] < 0.0)
@@ -268,8 +268,8 @@ __kernel void advec_mom_yvel
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) && column <= (x_max + 1) + 1)
+    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1) + 1)
     {
         yvel1[THARR2D(0, 0, 1)] = (yvel1[THARR2D(0, 0, 1)]
             * node_mass_pre[THARR2D(0, 0, 1)] + mom_flux[THARR2D(0, -1, 1)]

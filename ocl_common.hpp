@@ -8,7 +8,7 @@
 #include <map>
 
 // 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_X = 128;
+const static size_t LOCAL_X = 256;
 
 #ifdef ONED_KERNEL_LAUNCHES
 const static size_t LOCAL_Y = 1;

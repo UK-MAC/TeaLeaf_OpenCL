@@ -91,8 +91,6 @@ __kernel void calc_dt
 
         dtdivt = (div < (-g_small)) ? dtdiv_safe * (-1.0/div) : g_big;
 
-        //jk_ctrl_shared[lid] = jk_control;
-        //jk_ctrl_shared=(j+(x_max)*(k-1))+0.4_8
 #if defined(NO_KERNEL_REDUCTIONS)
         dt_min_out[gid] = MIN(dtdivt, MIN(dtvt, MIN(dtct, dtut)));
         jk_ctrl_out[gid] = (column + (x_max * (row - 1))) + 0.4;

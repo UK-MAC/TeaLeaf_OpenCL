@@ -36,11 +36,11 @@ void CloverChunk::advec_mom_kernel
     {
         ENQUEUE(advec_mom_node_flux_post_x_device);
 
-        ENQUEUE(advec_mom_node_pre_x_device);
-        //ENQUEUE_OFFSET(advec_mom_node_pre_x_device);
+        //ENQUEUE(advec_mom_node_pre_x_device);
+        ENQUEUE_OFFSET(advec_mom_node_pre_x_device);
 
-        ENQUEUE(advec_mom_flux_x_device);
-        //ENQUEUE_OFFSET(advec_mom_flux_x_device);
+        //ENQUEUE(advec_mom_flux_x_device);
+        ENQUEUE_OFFSET(advec_mom_flux_x_device);
 
         //ENQUEUE(advec_mom_xvel_device);
         ENQUEUE_OFFSET(advec_mom_xvel_device);
@@ -49,8 +49,8 @@ void CloverChunk::advec_mom_kernel
     {
         ENQUEUE(advec_mom_node_flux_post_y_device);
 
-        ENQUEUE(advec_mom_node_pre_y_device);
-        //ENQUEUE_OFFSET(advec_mom_node_pre_y_device);
+        //ENQUEUE(advec_mom_node_pre_y_device);
+        ENQUEUE_OFFSET(advec_mom_node_pre_y_device);
 
         //ENQUEUE(advec_mom_flux_y_device);
         ENQUEUE_OFFSET(advec_mom_flux_y_device);

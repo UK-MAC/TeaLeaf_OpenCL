@@ -19,8 +19,8 @@ void CloverChunk::advec_cell_kernel
         //ENQUEUE(advec_cell_pre_vol_x_device);
         ENQUEUE_OFFSET(advec_cell_pre_vol_x_device);
 
-        ENQUEUE(advec_cell_ener_flux_x_device);
-        //ENQUEUE_OFFSET(advec_cell_ener_flux_x_device);
+        //ENQUEUE(advec_cell_ener_flux_x_device);
+        ENQUEUE_OFFSET(advec_cell_ener_flux_x_device);
 
         //ENQUEUE(advec_cell_x_device);
         ENQUEUE_OFFSET(advec_cell_x_device);
@@ -34,8 +34,8 @@ void CloverChunk::advec_cell_kernel
         //ENQUEUE(advec_cell_pre_vol_y_device);
         ENQUEUE_OFFSET(advec_cell_pre_vol_y_device);
 
-        ENQUEUE(advec_cell_ener_flux_y_device);
-        //ENQUEUE_OFFSET(advec_cell_ener_flux_y_device);
+        //ENQUEUE(advec_cell_ener_flux_y_device);
+        ENQUEUE_OFFSET(advec_cell_ener_flux_y_device);
 
         //ENQUEUE(advec_cell_y_device);
         ENQUEUE_OFFSET(advec_cell_y_device);

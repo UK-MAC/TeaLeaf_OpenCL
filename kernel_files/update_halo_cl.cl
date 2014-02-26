@@ -61,10 +61,6 @@ __kernel void update_halo_left
     // offset by 1 if it is anything but a CELL grid
     int l_offset = (grid_type != CELL_DATA) ? 1 : 0;
 
-    // special indexes for specific depth
-    //const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
-    //const int row = glob_id / depth;
-    //const int column = glob_id % depth;
     __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
@@ -86,9 +82,6 @@ __kernel void update_halo_right
     // offset source by -1 if its a y face
     int y_f_offset = (y_face) ? 1 : 0;
 
-    //const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
-    //const int row = glob_id / depth;
-    //const int column = glob_id % depth;
     __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)

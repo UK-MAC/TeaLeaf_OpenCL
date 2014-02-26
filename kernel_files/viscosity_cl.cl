@@ -13,8 +13,8 @@ __kernel void viscosity
     double ugrad, vgrad, grad2, pgradx, pgrady, pgradx2, pgrady2,
         grad, ygrad, pgrad, xgrad, div, strain2, limiter;
 
-    if(row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if(/*row >= (y_min + 1) && */ row <= (y_max + 1)
+    && /*column >= (x_min + 1) && */ column <= (x_max + 1))
     {
         ugrad = (xvel0[THARR2D(1, 0, 1)] + xvel0[THARR2D(1, 1, 1)])
               - (xvel0[THARR2D(0, 0, 1)] + xvel0[THARR2D(0, 1, 1)]);

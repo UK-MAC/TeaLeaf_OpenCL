@@ -29,8 +29,8 @@ __kernel void PdV_predict
     double recip_volume, energy_change, min_cell_volume,
         right_flux, left_flux, top_flux, bottom_flux, total_flux;
     
-    if (row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if (/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         left_flux   = (xarea[THARR2D(0, 0, 1)]
             * (xvel0[THARR2D(0, 0, 1)] + xvel0[THARR2D(0, 1, 1)] 
@@ -126,8 +126,8 @@ __kernel void PdV_not_predict
     double recip_volume, energy_change, min_cell_volume,
         right_flux, left_flux, top_flux, bottom_flux, total_flux;
     
-    if (row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if (/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         left_flux   = (xarea[THARR2D(0, 0, 1)]
             * (xvel0[THARR2D(0, 0, 1)] + xvel0[THARR2D(0, 1, 1)] 

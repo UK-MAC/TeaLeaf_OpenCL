@@ -327,15 +327,15 @@ void CloverChunk::initSizes
      *  figure out offset launch sizes for the various kernels
      *  no 'smart' way to do this?
      */
-    #define FIND_PADDING_SIZE(knl, rmin, rmax, cmin, cmax)                      \
-    {                                                                           \
-        size_t global_row_size = (-(rmin)) + (rmax) + x_max;                    \
-        while (global_row_size % LOCAL_X) global_row_size++;                    \
-        size_t global_col_size = (-(cmin)) + (cmax) + y_max;                    \
-        while (global_col_size % LOCAL_Y) global_col_size++;                    \
+    #define FIND_PADDING_SIZE(knl, vmin, vmax, hmin, hmax)                      \
+    {                                                                            \
+        size_t global_horz_size = (-(hmin)) + (hmax) + x_max;                   \
+        while (global_horz_size % LOCAL_X) global_horz_size++;                  \
+        size_t global_vert_size = (-(vmin)) + (vmax) + y_max;                   \
+        while (global_vert_size % LOCAL_Y) global_vert_size++;                  \
         launch_specs_t cur_specs;                                               \
-        cur_specs.global = cl::NDRange(global_row_size, global_col_size);       \
-        cur_specs.offset = cl::NDRange(x_min + 1 + (rmin), y_min + 1 + (cmin)); \
+        cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);     \
+        cur_specs.offset = cl::NDRange(x_min + 1 + (vmin), y_min + 1 + (hmin)); \
         launch_specs[#knl"_device"] = cur_specs;                                \
     }
 
@@ -350,11 +350,11 @@ void CloverChunk::initSizes
 
     FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2); // works
     //FIND_PADDING_SIZE(advec_mom_node_flux_post_x);
-    FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2);
-    FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1);
+    FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2); // works
+    FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1); // works
     FIND_PADDING_SIZE(advec_mom_xvel, 0, 1, 0, 1); // works
     //FIND_PADDING_SIZE(advec_mom_node_flux_post_y);
-    FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1);
+    FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1); // works
 
@@ -362,7 +362,7 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(advec_cell_ener_flux_x, 0, 0, 0, 2); // works
     FIND_PADDING_SIZE(advec_cell_x, 0, 0, 0, 0); // works
     FIND_PADDING_SIZE(advec_cell_pre_vol_y, -2, 2, -2, 2); // works
-    FIND_PADDING_SIZE(advec_cell_ener_flux_y, 0, 2, 0, 0);
+    FIND_PADDING_SIZE(advec_cell_ener_flux_y, 0, 2, 0, 2); // works
     FIND_PADDING_SIZE(advec_cell_y, 0, 0, 0, 0); // works
 
     FIND_PADDING_SIZE(PdV_predict, 0, 0, 0, 0); // works
