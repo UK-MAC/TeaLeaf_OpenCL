@@ -211,7 +211,7 @@ __kernel void advec_cell_ener_flux_y
     if(row >= (y_min + 1) && row <= (y_max + 1) + 2
     && column >= (x_min + 1) && column <= (x_max + 1))
     {
-        // if flowing right
+        // if flowing up
         if(vol_flux_y[THARR2D(0, 0, 0)] > 0.0)
         {
             upwind = -2;

@@ -16,9 +16,14 @@ void CloverChunk::advec_cell_kernel
         advec_cell_ener_flux_x_device.setArg(0, swp_nmbr);
         advec_cell_x_device.setArg(0, swp_nmbr);
 
-        ENQUEUE(advec_cell_pre_vol_x_device);
-        ENQUEUE(advec_cell_ener_flux_x_device);
-        ENQUEUE(advec_cell_x_device);
+        //ENQUEUE(advec_cell_pre_vol_x_device);
+        ENQUEUE_OFFSET(advec_cell_pre_vol_x_device);
+
+        //ENQUEUE(advec_cell_ener_flux_x_device);
+        ENQUEUE_OFFSET(advec_cell_ener_flux_x_device);
+
+        //ENQUEUE(advec_cell_x_device);
+        ENQUEUE_OFFSET(advec_cell_x_device);
     }
     else
     {
@@ -26,9 +31,14 @@ void CloverChunk::advec_cell_kernel
         advec_cell_ener_flux_y_device.setArg(0, swp_nmbr);
         advec_cell_y_device.setArg(0, swp_nmbr);
 
-        ENQUEUE(advec_cell_pre_vol_y_device);
+        //ENQUEUE(advec_cell_pre_vol_y_device);
+        ENQUEUE_OFFSET(advec_cell_pre_vol_y_device);
+
         ENQUEUE(advec_cell_ener_flux_y_device);
-        ENQUEUE(advec_cell_y_device);
+        //ENQUEUE_OFFSET(advec_cell_ener_flux_y_device);
+
+        //ENQUEUE(advec_cell_y_device);
+        ENQUEUE_OFFSET(advec_cell_y_device);
     }
 }
 
