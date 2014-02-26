@@ -53,8 +53,7 @@ __kernel void tea_leaf_cg_init_directions
 }
 
 __kernel void tea_leaf_cg_init_others
-(__global       double * __restrict const bb,
- __global       double * __restrict const rro,
+(__global       double * __restrict const rro,
  __global const double * __restrict const u,
  __global       double * __restrict const p,
  __global       double * __restrict const r,
@@ -68,12 +67,9 @@ __kernel void tea_leaf_cg_init_others
     __kernel_indexes;
 
 #if defined(NO_KERNEL_REDUCTIONS)
-    bb[gid] = 0.0;
     rro[gid] = 0.0;
 #else
-    __local double bb_shared[BLOCK_SZ];
     __local double rro_shared[BLOCK_SZ];
-    bb_shared[lid] = 0.0;
     rro_shared[lid] = 0.0;
 #endif
 
@@ -106,20 +102,17 @@ __kernel void tea_leaf_cg_init_others
 
 #if defined(NO_KERNEL_REDUCTIONS)
         rro[gid] = rro_val;
-        bb[gid] = u[THARR2D(0, 0, 0)]*u[THARR2D(0, 0, 0)];
 #else
         rro_shared[lid] = rro_val;
-        bb_shared[lid] = u[THARR2D(0, 0, 0)]*u[THARR2D(0, 0, 0)];
 #endif
     }
 
 #if !defined(NO_KERNEL_REDUCTIONS)
-    REDUCTION(bb_shared, bb, SUM)
     REDUCTION(rro_shared, rro, SUM)
 #endif
 }
 
-/* reduce rro/bb */
+/* reduce rro */
 
 __kernel void tea_leaf_cg_solve_calc_w
 (__global       double * __restrict const pw,

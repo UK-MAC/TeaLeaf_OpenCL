@@ -398,8 +398,7 @@ public:
     template <typename T>
     T reduceValue
     (reduce_info_vec_t& red_kernels,
-     const cl::Buffer& results_buf,
-	 bool nocopy=false);
+     const cl::Buffer& results_buf);
 
     // mpi packing
     #define PACK_ARGS                                       \

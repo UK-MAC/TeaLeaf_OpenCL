@@ -102,13 +102,11 @@ void CloverChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
 
     // get initial guess in w, r, etc
-    tea_leaf_cg_init_others_device.setArg(9, *rx);
-    tea_leaf_cg_init_others_device.setArg(10, *ry);
+    tea_leaf_cg_init_others_device.setArg(8, *rx);
+    tea_leaf_cg_init_others_device.setArg(9, *ry);
     ENQUEUE(tea_leaf_cg_init_others_device);
     //ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
-    // stop it copying back which wastes time
-    double bb = reduceValue<double>(sum_red_kernels_double, reduce_buf_1, true);
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 
     // only needs to be set once
@@ -133,8 +131,8 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
+    ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
+    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 }
 
@@ -151,6 +149,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_p
     tea_leaf_cg_solve_calc_ur_device.setArg(0, rrn);
 }
 
+// jacobi
 void CloverChunk::tea_leaf_init_jacobi
 (int coefficient, double dt, double * rx, double * ry)
 {
@@ -177,6 +176,7 @@ void CloverChunk::tea_leaf_kernel_jacobi
     *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
 }
 
+// both
 void CloverChunk::tea_leaf_finalise
 (void)
 {

@@ -2,10 +2,9 @@
 
 ## TODO
 
-* Merge fortran/c implementation of CG solver
-* Make CG selectable from tea.in and not a compile time flag
+* Merge c implementation of CG solver
 * Make preconditioner selectable from tea.in and not a compile time flag
-* Make CG solver work with MPI - need to change order of calling functions for CG solver to get additional global reductions etc.
+* Asynchronous memory copies after reductions to avoid waiting for each one
 
 ## Compling
 

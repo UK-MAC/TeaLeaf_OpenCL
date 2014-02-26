@@ -3,7 +3,7 @@
 void CloverChunk::initBuffers
 (void)
 {
-    std::vector<double> zeros((x_max+5) * (y_max+5), 0.0);
+    const std::vector<double> zeros(total_cells, 0.0);
 
     #define BUF_ALLOC(name, size)                               \
         try                                                     \
@@ -421,17 +421,16 @@ void CloverChunk::initArgs
         tea_leaf_cg_init_directions_device.setArg(1, work_array_5);
         tea_leaf_cg_init_directions_device.setArg(2, work_array_6);
 
-        tea_leaf_cg_init_others_device.setArg(0, reduce_buf_1);
-        tea_leaf_cg_init_others_device.setArg(1, reduce_buf_2);
-        tea_leaf_cg_init_others_device.setArg(2, u);
-        tea_leaf_cg_init_others_device.setArg(3, work_array_1);
-        tea_leaf_cg_init_others_device.setArg(4, work_array_2);
-        tea_leaf_cg_init_others_device.setArg(5, work_array_3);
-        tea_leaf_cg_init_others_device.setArg(6, work_array_4);
-        tea_leaf_cg_init_others_device.setArg(7, work_array_5);
-        tea_leaf_cg_init_others_device.setArg(8, work_array_6);
+        tea_leaf_cg_init_others_device.setArg(0, reduce_buf_2);
+        tea_leaf_cg_init_others_device.setArg(1, u);
+        tea_leaf_cg_init_others_device.setArg(2, work_array_1);
+        tea_leaf_cg_init_others_device.setArg(3, work_array_2);
+        tea_leaf_cg_init_others_device.setArg(4, work_array_3);
+        tea_leaf_cg_init_others_device.setArg(5, work_array_4);
+        tea_leaf_cg_init_others_device.setArg(6, work_array_5);
+        tea_leaf_cg_init_others_device.setArg(7, work_array_6);
         // preconditioner
-        tea_leaf_cg_init_others_device.setArg(11, z);
+        tea_leaf_cg_init_others_device.setArg(10, z);
 
         tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
         tea_leaf_cg_solve_calc_w_device.setArg(1, work_array_1);

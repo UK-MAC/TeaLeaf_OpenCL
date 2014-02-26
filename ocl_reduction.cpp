@@ -131,8 +131,8 @@ void CloverChunk::initReduction
         fprintf(DBGOUT, "Padded total number of threads to launch is %zu\n", reduction_global_size);
         fprintf(DBGOUT, "Local size for reduction is %zu\n", reduction_local_size);
 
-        options << "-DGLOBAL_SZ=" << reduction_global_size << " ";
-        options << "-DLOCAL_SZ=" << reduction_local_size << " ";
+        options << "-D GLOBAL_SZ=" << reduction_global_size << " ";
+        options << "-D LOCAL_SZ=" << reduction_local_size << " ";
 
         // FIXME not working properly - just load one per thread for now
         #if 0
@@ -141,7 +141,7 @@ void CloverChunk::initReduction
         options << "-DRED_LOAD_THRESHOLD=" << red_load_threshold << " ";
         fprintf(DBGOUT, "Load threshold is %zu\n", red_load_threshold);
         #endif
-        options << "-DRED_LOAD_THRESHOLD=" << 0 << " ";
+        options << "-D RED_LOAD_THRESHOLD=" << 0 << " ";
 
         fprintf(DBGOUT, "\n");
 
@@ -149,9 +149,9 @@ void CloverChunk::initReduction
         #define MAKE_REDUCE_KNL(name, data_type, init_val)              \
         {                                                               \
             std::string red_options = options.str()                     \
-                + "-Dred_"+#name+" "                                    \
-                + "-Dreduce_t="#data_type+" "                           \
-                + "-DINIT_RED_VAL="+#init_val+" ";                      \
+                + "-D red_"+#name+" "                                    \
+                + "-D reduce_t="#data_type+" "                           \
+                + "-D INIT_RED_VAL="+#init_val+" ";                      \
             fprintf(DBGOUT, "Making reduction kernel '%s' ", #name);    \
             fprintf(DBGOUT, "with options string:\n%s\n",               \
                     red_options.c_str());                               \
