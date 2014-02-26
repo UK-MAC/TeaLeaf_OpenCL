@@ -2,18 +2,7 @@
 extern CloverChunk chunk;
 
 extern "C" void generate_chunk_kernel_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
-const double* vertexx,
-const double* vertexy,
-const double* cellx,
-const double* celly,
-      double* density0,
-      double* energy0,
-      double* xvel0,
-      double* yvel0,
-      double* u,
-
-const int* number_of_states,
+(const int* number_of_states,
 
 const double* state_density,
 const double* state_energy,

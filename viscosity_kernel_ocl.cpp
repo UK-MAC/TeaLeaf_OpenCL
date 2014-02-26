@@ -2,14 +2,7 @@
 extern CloverChunk chunk;
 
 extern "C" void viscosity_kernel_ocl_
-(int *xmin,int *x_max,int *ymin,int *y_max,
-const double *celldx,
-const double *celldy,
-const double *density0,
-const double *pressure,
-double *viscosity,
-const double *xvel0,
-const double *yvel0)
+(void)
 {
     chunk.viscosity_kernel();
 }

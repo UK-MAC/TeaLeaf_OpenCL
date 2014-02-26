@@ -16,27 +16,7 @@ const static cell_info_t X_FACE(  1, 0, -1,  1, 1, 0, X_FACE_DATA);
 const static cell_info_t Y_FACE(  0, 1,  1, -1, 0, 1, Y_FACE_DATA);
 
 extern "C" void update_halo_kernel_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
-
-const int* chunk_neighbours,
-
-double* density0,
-double* energy0,
-double* pressure,
-double* viscosity,
-double* soundspeed,
-double* density1,
-double* energy1,
-double* xvel0,
-double* yvel0,
-double* xvel1,
-double* yvel1,
-double* vol_flux_x,
-double* vol_flux_y,
-double* mass_flux_x,
-double* mass_flux_y,
-double* u,
-
+(const int* chunk_neighbours,
 const int* fields,
 const int* depth)
 {

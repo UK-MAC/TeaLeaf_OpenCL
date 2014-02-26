@@ -3,20 +3,7 @@
 extern CloverChunk chunk;
 
 extern "C" void pdv_kernel_ocl_
-(int *errorcondition,int *prdct,
-int *xmin,int *xmax,int *ymin,int *ymax,double *dtbyt,
-double *xarea,double *yarea,double *volume,
-double *density0,
-double *density1,
-double *energy0,
-double *energy1,
-double *pressure,
-double *viscosity,
-double *xvel0,
-double *xvel1,
-double *yvel0,
-double *yvel1,
-double *unused_array)
+(int *errorcondition, int *prdct, double *dtbyt)
 {
     chunk.PdV_kernel(errorcondition, *prdct, *dtbyt);
 }

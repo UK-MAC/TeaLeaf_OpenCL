@@ -2,24 +2,7 @@
 extern CloverChunk chunk;
 
 extern "C" void initialise_chunk_kernel_ocl_
-(int *x_min,int *x_max,int *y_min,int *y_max,
-double* d_xmin,
-double* d_ymin,
-double* d_dx,
-double* d_dy,
-
-double* vertexx,
-double* vertexdx,
-double* vertexy,
-double* vertexdy,
-double* cellx,
-double* celldx,
-double* celly,
-double* celldy,
-
-double* volume, 
-double* xarea, 
-double* yarea)
+(double* d_xmin, double* d_ymin, double* d_dx, double* d_dy)
 {
     chunk.initialise_chunk_kernel(*d_xmin, *d_ymin, *d_dx, *d_dy);
 }

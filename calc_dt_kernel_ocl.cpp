@@ -5,41 +5,22 @@ extern CloverChunk chunk;
 #include <iostream>
 
 extern "C" void calc_dt_kernel_ocl_
-(int* xmin, int* xmax, int* ymin, int* ymax,
-
-double* g_small,
-double* g_big,
-double* dtmin,
-double* dtc_safe,
-double* dtu_safe,
-double* dtv_safe,
-double* dtdiv_safe,
-
-double* xarea,
-double* yarea,
-double* cellx,
-double* celly,
-double* celldx,
-double* celldy,
-double* volume,
-double* density0,
-double* energy0,
-double* pressure,
-double* viscosity,
-double* soundspeed,
-double* xvel0,
-double* yvel0,
-
-double* unused,
-
-//output
-double* dt_min_val,
-int* dtl_control,
-double* xl_pos,
-double* yl_pos,
-int* jldt,
-int* kldt,
-int* small)
+(double* g_small,
+ double* g_big,
+ double* dtmin,
+ double* dtc_safe,
+ double* dtu_safe,
+ double* dtv_safe,
+ double* dtdiv_safe,
+ 
+ //output
+ double* dt_min_val,
+ int* dtl_control,
+ double* xl_pos,
+ double* yl_pos,
+ int* jldt,
+ int* kldt,
+ int* small)
 {
     chunk.calc_dt_kernel(*g_small, *g_big, *dtmin, *dtc_safe, *dtu_safe,
         *dtv_safe, *dtdiv_safe, dt_min_val, dtl_control, xl_pos, yl_pos,

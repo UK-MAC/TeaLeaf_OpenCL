@@ -75,20 +75,7 @@ SUBROUTINE generate_chunk(chunk)
                                g_circ,                                &
                                g_point)
       ELSEIF(use_ocl_kernels)THEN
-        CALL generate_chunk_kernel_ocl(chunks(chunk)%field%x_min,         &
-                                       chunks(chunk)%field%x_max,               &
-                                       chunks(chunk)%field%y_min,             &
-                                       chunks(chunk)%field%y_max,             &
-                                       chunks(chunk)%field%vertexx,           &
-                                       chunks(chunk)%field%vertexy,           &
-                                       chunks(chunk)%field%cellx,             &
-                                       chunks(chunk)%field%celly,             &
-                                       chunks(chunk)%field%density0,          &
-                                       chunks(chunk)%field%energy0,           &
-                                       chunks(chunk)%field%xvel0,             &
-                                       chunks(chunk)%field%yvel0,             &
-                                       chunks(chunk)%field%u,                 &
-                                       number_of_states,                      &
+        CALL generate_chunk_kernel_ocl(number_of_states,                      &
                                        state_density,                         &
                                        state_energy,                          &
                                        state_xvel,                            &

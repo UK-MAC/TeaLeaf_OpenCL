@@ -53,18 +53,7 @@ SUBROUTINE reset_field()
                               chunks(c)%field%yvel0,     &
                               chunks(c)%field%yvel1      )
       ELSEIF(use_ocl_kernels)THEN
-        CALL reset_field_kernel_ocl(chunks(c)%field%x_min, &
-                              chunks(c)%field%x_max,     &
-                              chunks(c)%field%y_min,     &
-                              chunks(c)%field%y_max,     &
-                              chunks(c)%field%density0,  &
-                              chunks(c)%field%density1,  &
-                              chunks(c)%field%energy0,   &
-                              chunks(c)%field%energy1,   &
-                              chunks(c)%field%xvel0,     &
-                              chunks(c)%field%xvel1,     &
-                              chunks(c)%field%yvel0,     &
-                              chunks(c)%field%yvel1      )
+        CALL reset_field_kernel_ocl()
       ELSEIF(use_C_kernels)THEN
         CALL reset_field_kernel_c(chunks(c)%field%x_min, &
                               chunks(c)%field%x_max,     &

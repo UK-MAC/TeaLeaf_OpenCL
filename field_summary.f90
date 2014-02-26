@@ -75,18 +75,7 @@ SUBROUTINE field_summary()
   ELSEIF(use_ocl_kernels)THEN
     DO c=1,number_of_chunks
       IF(chunks(c)%task.EQ.parallel%task) THEN
-        CALL field_summary_kernel_ocl(chunks(c)%field%x_min,               &
-                                      chunks(c)%field%x_max,               &
-                                      chunks(c)%field%y_min,               &
-                                      chunks(c)%field%y_max,               &
-                                      chunks(c)%field%volume,              &
-                                      chunks(c)%field%density0,            &
-                                      chunks(c)%field%energy0,             &
-                                      chunks(c)%field%u,                   &
-                                      chunks(c)%field%pressure,            &
-                                      chunks(c)%field%xvel0,               &
-                                      chunks(c)%field%yvel0,               &
-                                      vol,mass,ie,ke,press,temp            )
+        CALL field_summary_kernel_ocl(vol,mass,ie,ke,press,temp)
       ENDIF
     ENDDO
   ELSEIF(use_C_kernels)THEN
