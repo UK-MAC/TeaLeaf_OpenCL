@@ -212,6 +212,7 @@ OCL_FILES=\
 	ocl_errors.o \
 	ocl_reduction.o \
 	ocl_kernels.o \
+	_kernel_strings.o \
 	ideal_gas_kernel_ocl.o \
 	accelerate_kernel_ocl.o \
 	viscosity_kernel_ocl.o \
@@ -251,16 +252,20 @@ include make.deps
 	$(CC) $(CFLAGS) -c $< -o $*.o
 
 KERNEL_HDR_FILE=ocl_kernel_hdr.hpp
+_kernel_strings.cpp: $(KERNEL_HDR_FILE)
 $(KERNEL_HDR_FILE): $(shell ls kernel_files/*.cl) Makefile
 	@echo "// automaticllly generated from makefile" > $(KERNEL_HDR_FILE)
-	@for i in `ls kernel_files/*.cl`; do \
+	@echo "#include <string>" > $(KERNEL_HDR_FILE); \
+	echo "#include \"$(KERNEL_HDR_FILE)\"" > _kernel_strings.cpp; \
+	for i in `ls kernel_files/*.cl`; do \
 		knl_name=`echo $$i | sed 's/\(\.\/\)\?kernel_files\///g' | sed 's/\.cl//g'`; \
-		echo -n "const static std::string src_$$knl_name(\"" >> $(KERNEL_HDR_FILE); \
-		echo "#include <kernel_files/macros_cl.cl> \\\n\\" >> $(KERNEL_HDR_FILE);\
-		cat $$i | sed 's/\\/\\\\/g' | sed 's/\([^\\]*\)$$/\1\\n\\/g' >> $(KERNEL_HDR_FILE); \
-		echo "\");" >> $(KERNEL_HDR_FILE); \
+		echo "extern const std::string src_$$knl_name;" >> $(KERNEL_HDR_FILE); \
+		echo -n "const std::string src_$$knl_name(\"" >> _kernel_strings.cpp; \
+		echo "#include <kernel_files/macros_cl.cl> \\\n\\" >> _kernel_strings.cpp;\
+		cat $$i | sed 's/\\/\\\\/g' | sed 's/\([^\\]*\)$$/\1\\n\\/g' >> _kernel_strings.cpp; \
+		echo "\");" >> _kernel_strings.cpp; \
 	done
 	@echo "Remade kernel header"
 
 clean:
-	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf $(KERNEL_HDR_FILE)
+	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf $(KERNEL_HDR_FILE) _kernel_strings.cpp
