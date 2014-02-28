@@ -8,7 +8,7 @@
 #include <map>
 
 // 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_X = 256;
+const static size_t LOCAL_X = 64;
 
 #ifdef ONED_KERNEL_LAUNCHES
 const static size_t LOCAL_Y = 1;
@@ -273,6 +273,8 @@ private:
     cl::Program compileProgram
     (const std::string& source,
      const std::string& options);
+    // keep track of built programs to avoid rebuilding them
+    std::map<std::string, cl::Program> built_programs;
 
     /*
      *  initialisation subroutines

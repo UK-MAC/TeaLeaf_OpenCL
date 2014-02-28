@@ -137,13 +137,22 @@ void CloverChunk::compileKernel
     fprintf(DBGOUT, "Compiling %s...", kernel_name);
     cl::Program program;
 
-    try
+    if (built_programs.find(source_name) == built_programs.end())
     {
-        program = compileProgram(source_str, options);
+        try
+        {
+            program = compileProgram(source_str, options);
+        }
+        catch (std::string errs)
+        {
+            DIE("Errors in compiling %s:\n%s\n", kernel_name, errs.c_str());
+        }
+
+        built_programs[source_name] = program;
     }
-    catch (std::string errs)
+    else
     {
-        DIE("Errors in compiling %s:\n%s\n", kernel_name, errs.c_str());
+        program = built_programs.at(source_name);
     }
 
     size_t max_wg_size;
@@ -349,11 +358,11 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
 
     FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2); // works
-    //FIND_PADDING_SIZE(advec_mom_node_flux_post_x);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_x, -1, 1, -1, 2);
     FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2); // works
     FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1); // works
     FIND_PADDING_SIZE(advec_mom_xvel, 0, 1, 0, 1); // works
-    //FIND_PADDING_SIZE(advec_mom_node_flux_post_y);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_y, -1, 2, -1, 1);
     FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1); // works

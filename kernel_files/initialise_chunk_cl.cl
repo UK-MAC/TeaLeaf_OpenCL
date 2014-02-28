@@ -61,8 +61,8 @@ __kernel void initialise_chunk_second
         celldy[row] = d_dy;
     }
 
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if (/*row >= (y_min + 1) - 2 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) - 2 &&*/ column <= (x_max + 1) + 2)
     {
         volume[THARR2D(0, 0, 0)] = d_dx * d_dy;
         xarea[THARR2D(0, 0, 1)] = d_dy;

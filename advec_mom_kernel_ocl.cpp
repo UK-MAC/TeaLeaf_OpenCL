@@ -34,7 +34,8 @@ void CloverChunk::advec_mom_kernel
 
     if (1 == direction)
     {
-        ENQUEUE(advec_mom_node_flux_post_x_device);
+        //ENQUEUE(advec_mom_node_flux_post_x_device);
+        ENQUEUE_OFFSET(advec_mom_node_flux_post_x_device);
 
         //ENQUEUE(advec_mom_node_pre_x_device);
         ENQUEUE_OFFSET(advec_mom_node_pre_x_device);
@@ -47,7 +48,8 @@ void CloverChunk::advec_mom_kernel
     }
     else if (2 == direction)
     {
-        ENQUEUE(advec_mom_node_flux_post_y_device);
+        //ENQUEUE(advec_mom_node_flux_post_y_device);
+        ENQUEUE_OFFSET(advec_mom_node_flux_post_y_device);
 
         //ENQUEUE(advec_mom_node_pre_y_device);
         ENQUEUE_OFFSET(advec_mom_node_pre_y_device);
