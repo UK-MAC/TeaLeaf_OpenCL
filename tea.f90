@@ -219,7 +219,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array5,                 &
                 beta)
           ELSEIF(use_ocl_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta, rrn)
+            CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
           ELSEIF(use_c_kernels) THEN
             ! TODO
             CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")

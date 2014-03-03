@@ -35,6 +35,8 @@ SUBROUTINE update_halo(fields,depth)
 
   ! used in tea leaf to update p without having to change the actual kernel
   INTEGER :: p_fields(NUM_FIELDS)
+  p_fields = 0
+  p_fields(FIELD_U) = 1
 
   CALL clover_exchange(fields,depth)
 
@@ -44,9 +46,6 @@ SUBROUTINE update_halo(fields,depth)
 
       IF(use_fortran_kernels)THEN
         IF (tl_use_cg .and. fields(field_u) .eq. 1) THEN
-          p_fields = 0
-          p_fields(FIELD_U) = 1
-
           CALL update_halo_kernel(chunks(c)%field%x_min,          &
                                   chunks(c)%field%x_max,          &
                                   chunks(c)%field%y_min,          &

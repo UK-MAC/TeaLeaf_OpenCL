@@ -57,6 +57,8 @@ int depth)
     CHECK_LAUNCH(bottom, ud)
 }
 
+#include <numeric>
+
 void CloverChunk::update_halo_kernel
 (const int* fields,
 const int depth,
@@ -90,14 +92,12 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(vol_flux_y, Y_FACE);
     HALO_UPDATE_RESIDENT(mass_flux_y, Y_FACE);
 
-    if (tl_use_cg)
+    if (tl_use_cg && (std::accumulate(fields, fields+15, 0) == 0))
     {
-        // update 'p' instead
+        // update 'p' as well
         HALO_UPDATE_RESIDENT(work_array_1, CELL);
     }
-    else
-    {
-        HALO_UPDATE_RESIDENT(u, CELL);
-    }
+
+    HALO_UPDATE_RESIDENT(u, CELL);
 }
 

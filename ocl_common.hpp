@@ -359,7 +359,7 @@ public:
     void tea_leaf_init_cg(int, double, double*, double*, double*);
     void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
     void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
-    void tea_leaf_kernel_cg_calc_p(double beta, double rrn);
+    void tea_leaf_kernel_cg_calc_p(double beta);
 
     void tea_leaf_finalise();
 

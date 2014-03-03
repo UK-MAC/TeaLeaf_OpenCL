@@ -37,9 +37,9 @@ extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_ur_
     chunk.tea_leaf_kernel_cg_calc_ur(*alpha, rrn);
 }
 extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_p_
-(double * beta, double * rrn)
+(double * beta)
 {
-    chunk.tea_leaf_kernel_cg_calc_p(*beta, *rrn);
+    chunk.tea_leaf_kernel_cg_calc_p(*beta);
 }
 
 // used by both
@@ -92,6 +92,13 @@ void CloverChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
+    tea_leaf_cg_init_others_device.setArg(8, *rx);
+    tea_leaf_cg_init_others_device.setArg(9, *ry);
+
+    // only needs to be set once
+    tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
+    tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
+
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);
     //ENQUEUE(tea_leaf_cg_init_u_device);
@@ -102,20 +109,10 @@ void CloverChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
 
     // get initial guess in w, r, etc
-    tea_leaf_cg_init_others_device.setArg(8, *rx);
-    tea_leaf_cg_init_others_device.setArg(9, *ry);
     ENQUEUE(tea_leaf_cg_init_others_device);
     //ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
-
-    // only needs to be set once
-    tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
-    tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
-
-    // initialise rro
-    tea_leaf_cg_solve_calc_p_device.setArg(0, *rro);
-    tea_leaf_cg_solve_calc_ur_device.setArg(0, *rro);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_w
@@ -137,16 +134,12 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_p
-(double beta, double rrn)
+(double beta)
 {
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
 
     //ENQUEUE(tea_leaf_cg_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
-
-    // re set rro to rrn
-    tea_leaf_cg_solve_calc_p_device.setArg(0, rrn);
-    tea_leaf_cg_solve_calc_ur_device.setArg(0, rrn);
 }
 
 // jacobi

@@ -22,6 +22,7 @@
   opencl_vendor=nvidia
   opencl_type=gpu
   opencl_device=1
+  use_ocl_kernels
 
   tl_max_iters=10000
   test_problem 1

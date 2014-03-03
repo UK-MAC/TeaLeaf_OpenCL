@@ -354,6 +354,7 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(viscosity, 0, 0, 0, 0); // works
     FIND_PADDING_SIZE(revert, 0, 0, 0, 0); // works
     FIND_PADDING_SIZE(reset_field, 0, 1, 0, 1); // works
+    FIND_PADDING_SIZE(set_field, 0, 1, 0, 1); // works
     FIND_PADDING_SIZE(field_summary, 0, 0, 0, 0);
     FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
 
@@ -386,7 +387,7 @@ void CloverChunk::initSizes
 
     if (tl_use_cg)
     {
-        FIND_PADDING_SIZE(tea_leaf_cg_init_u, -1, 1, -1, 1); // works
+        FIND_PADDING_SIZE(tea_leaf_cg_init_u, -2, 2, -2, 2); // works
         FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1); // works
         FIND_PADDING_SIZE(tea_leaf_cg_init_others, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
