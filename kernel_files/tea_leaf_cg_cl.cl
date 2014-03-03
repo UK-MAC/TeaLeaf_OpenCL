@@ -204,7 +204,6 @@ __kernel void tea_leaf_cg_solve_calc_ur
 
 __kernel void tea_leaf_cg_solve_calc_p
 (double beta,
- __global const double * __restrict const u,
  __global       double * __restrict const p,
  __global const double * __restrict const r,
  __global const double * __restrict const z)

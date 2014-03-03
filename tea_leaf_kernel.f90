@@ -21,6 +21,10 @@
 
 MODULE tea_leaf_kernel_module
 
+! clover_module used for coefficient constants
+  USE clover_module
+  USE report_module
+
 CONTAINS
 
 SUBROUTINE tea_leaf_kernel_init(x_min,             &
@@ -41,10 +45,6 @@ SUBROUTINE tea_leaf_kernel_init(x_min,             &
                            Kx,                &
                            Ky,                &
                            coef)
-
-! clover_module used for coefficient constants
-  USE clover_module
-  USE report_module
 
   IMPLICIT NONE
 
@@ -199,8 +199,6 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
                            rro,         &
                            coef)
 
-  USE clover_module
-  USE report_module
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
@@ -269,7 +267,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
 !$OMP DO REDUCTION(+:rro)
     DO k=y_min,y_max
         DO j=x_min,x_max
-            w(j, k) = (1.0                                      &
+            w(j, k) = (1.0_8                                      &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
                 + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
@@ -278,7 +276,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
             r(j, k) = u(j, k) - w(j, k)
 
             ! inverse diagonal used as preconditioner
-            Mi(j, k) = (1.0                                      &
+            Mi(j, k) = (1.0_8                                     &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
                 + rx*(Kx(j+1, k) + Kx(j, k)))
             Mi(j, k) = 1.0_8/Mi(j, k)
@@ -319,13 +317,13 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: pw
 
-    pw = 0.0
+    pw = 0.0_08
 
 !$OMP PARALLEL
 !$OMP DO REDUCTION(+:pw)
     DO k=y_min,y_max
         DO j=x_min,x_max
-            w(j, k) = (1.0                                      &
+            w(j, k) = (1.0_8                                      &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
                 + rx*(Kx(j+1, k) + Kx(j, k)))*p(j, k)             &
                 - ry*(Ky(j, k+1)*p(j, k+1) + Ky(j, k)*p(j, k-1))  &
@@ -365,7 +363,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: alpha, rrn
 
-    rrn = 0.0
+    rrn = 0.0_08
 
 !$OMP PARALLEL
 !$OMP DO REDUCTION(+:rrn)
@@ -387,7 +385,6 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
-                           u,                &
                            p,            &
                            r,            &
                            z,     &
@@ -396,7 +393,6 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z

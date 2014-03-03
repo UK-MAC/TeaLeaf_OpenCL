@@ -214,7 +214,6 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%x_max,                       &
                 chunks(c)%field%y_min,                       &
                 chunks(c)%field%y_max,                       &
-                chunks(c)%field%u,                           &
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%work_array2,                 &
                 chunks(c)%field%work_array5,                 &
