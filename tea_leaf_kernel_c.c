@@ -63,55 +63,45 @@ void tea_leaf_kernel_init_c_(
 
         if(coefficient == RECIP_CONDUCTIVITY) {
 #pragma omp for 
-            for(k = y_min-1; k <= y_max+1; k++) {
-                for(j = x_min-1; j <= x_max+1; j++) {
-                    Kx_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
-                    Kx_tmp[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)];
-                    Ky_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
-                    Ky_tmp[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)];
+            for(k = y_min-1; k <= y_max+2; k++) {
+                for(j = x_min-1; j <= x_max+2; j++) {
+                    Kx_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+                    Ky_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
                 }
             }
         }
         else if(coefficient == CONDUCTIVITY) {
 #pragma omp for
-            for(k = y_min-1; k <= y_max+1; k++) {
-                for(j = x_min-1; j <= x_max+1; j++) {
-                    Kx_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]=density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
-                    Kx_tmp[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]=density[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)];
-                    Ky_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]=density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
-                    Ky_tmp[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]=density[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)];
+            for(k = y_min-1; k <= y_max+2; k++) {
+                for(j = x_min-1; j <= x_max+2; j++) {
+                    Kx_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+                    Ky_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
                 }
             }
         }
 
 #pragma omp for
-        for(k = y_min-1; k <= y_max+1; k++) {
-            for(j = x_min-1; j <= x_max+1; j++) {
-                Kx[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)] = 
-                    (Kx_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]+Kx_tmp[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)])
-                    /(2.0*Kx_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*Kx_tmp[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]);
+        for(k = y_min; k <= y_max+1; k++) {
+            for(j = x_min; j <= x_max+1; j++) {
+                Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
+                    (Kx_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Kx_tmp[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)])
+                    /(2.0*Kx_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*Kx_tmp[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]);
 
-                Ky[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)] = 
-                    (Ky_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]+Ky_tmp[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)])
-                    /(2.0*Ky_tmp[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*Ky_tmp[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]);
+                Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
+                    (Ky_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Ky_tmp[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)])
+                    /(2.0*Ky_tmp[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*Ky_tmp[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]);
             }
         }
 
 #pragma omp for 
         for(k = y_min-1; k <=  y_max+1; k++) {
             for(j = x_min-1; j <=  x_max+1; j++) {
-                u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] =  
+                u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] =
+                u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] =
                     energy[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
                     * density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
             }
         }
-
-#pragma omp for
-            for(k = y_min-1; k <=  y_max+1; k++) {
-                for(j = x_min-1; j <=  x_max+1; j++) {
-                    u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
-                }
-            }
     }
 }
 
@@ -133,7 +123,6 @@ void tea_leaf_kernel_solve_c_(
     int x_max = *xmax;
     int y_min = *ymin;
     int y_max = *ymax;
-
     int j,k;
 
     double rx = *rxp;
@@ -154,18 +143,18 @@ void tea_leaf_kernel_solve_c_(
     // #pragma omp for reduction(max:error)
     for(k = y_min; k <=  y_max; k++) {
         for(j = x_min; j <=  x_max; j++) {
-
-            u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
-                (u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] 
-                 + Kx[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]
-                 + Kx[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j-1,k,x_max+4,x_min-2,y_min-2)]
-                 + Ky[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] 
-                 + Ky[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k-1,x_max+4,x_min-2,y_min-2)])
-                / (1+2.0*rx+2.0*ry);
+            u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = (u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
+                + rx*(Kx[FTNREF2D(j+1,k  ,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j+1,k  ,x_max+4,x_min-2,y_min-2)]
+                    + Kx[FTNREF2D(j  ,k  ,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j-1,k  ,x_max+4,x_min-2,y_min-2)])
+                + ry*(Ky[FTNREF2D(j  ,k+1,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j  ,k+1,x_max+4,x_min-2,y_min-2)]
+                    + Ky[FTNREF2D(j  ,k  ,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j  ,k-1,x_max+4,x_min-2,y_min-2)]))
+                                 /(1.0
+                                    + rx*(Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)])
+                                    + ry*(Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]));
 
             *error = fmax(*error,
                     fabs(u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] 
-                        - u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
+                        - un[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
         }
     }
     //  }
@@ -196,8 +185,8 @@ void tea_leaf_kernel_init_cg_c_(
     int x_max = *xmax;
     int y_min = *ymin;
     int y_max = *ymax;
-
     int j,k;
+
     double rx = *_rx;
     double ry = *_ry;
     int coefficient = *_coef;

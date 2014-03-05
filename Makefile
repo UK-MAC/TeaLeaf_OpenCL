@@ -149,6 +149,7 @@ C_FILES=\
 	tea_leaf_kernel_c.o			\
 	revert_kernel_c.o               \
 	reset_field_kernel_c.o          \
+	set_field_kernel_c.o          \
 	ideal_gas_kernel_c.o            \
 	viscosity_kernel_c.o            \
 	advec_cell_kernel_c.o			\
