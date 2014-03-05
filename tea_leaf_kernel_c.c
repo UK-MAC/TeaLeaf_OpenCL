@@ -100,7 +100,7 @@ void tea_leaf_kernel_init_c_(
 #pragma omp for 
         for(k = y_min-1; k <=  y_max+1; k++) {
             for(j = x_min-1; j <=  x_max+1; j++) {
-                u0[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)] =  
+                u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] =  
                     energy[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
                     * density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
             }
@@ -109,7 +109,7 @@ void tea_leaf_kernel_init_c_(
 #pragma omp for
             for(k = y_min-1; k <=  y_max+1; k++) {
                 for(j = x_min-1; j <=  x_max+1; j++) {
-                    u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u0[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)];
+                    u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
                 }
             }
     }
@@ -146,7 +146,7 @@ void tea_leaf_kernel_solve_c_(
 #pragma omp for
         for(k = y_min-1; k <=  y_max+1; k++) {
             for(j = x_min-1; j <=  x_max+1; j++) {
-                un[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)] = u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+                un[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
             }
         }
     }
@@ -156,20 +156,224 @@ void tea_leaf_kernel_solve_c_(
         for(j = x_min; j <=  x_max; j++) {
 
             u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
-                (u0[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)] 
-                 + Kx[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]
-                 + Kx[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j-1,k,x_max+5,x_min-2,y_min-2)]
-                 + Ky[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)] 
-                 + Ky[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k-1,x_max+5,x_min-2,y_min-2)])
+                (u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] 
+                 + Kx[FTNREF2D(j+1,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]
+                 + Kx[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*rx*un[FTNREF2D(j-1,k,x_max+4,x_min-2,y_min-2)]
+                 + Ky[FTNREF2D(j,k+1,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] 
+                 + Ky[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]*ry*un[FTNREF2D(j,k-1,x_max+4,x_min-2,y_min-2)])
                 / (1+2.0*rx+2.0*ry);
 
             *error = fmax(*error,
                     fabs(u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] 
-                        - u0[FTNREF2D(j,k,x_max+5,x_min-2,y_min-2)]));
+                        - u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
         }
     }
     //  }
 }
+
+// tea leaf
+void tea_leaf_kernel_init_cg_c_(
+        int* xmin,
+        int* xmax,
+        int* ymin,
+        int* ymax,
+        double* density,
+        double* energy,
+        double* u,
+        double* p,
+        double* r,
+        double* Mi,
+        double* w,
+        double* z,
+        double* Kx,
+        double* Ky,
+        double* _rx,
+        double* _ry,
+        double* _rro,
+        int* _coef)
+{
+    int x_min = *xmin;
+    int x_max = *xmax;
+    int y_min = *ymin;
+    int y_max = *ymax;
+
+    int j,k;
+    double rx = *_rx;
+    double ry = *_ry;
+    int coefficient = *_coef;
+    double rro = 0.0;
+
+#pragma omp parallel
+{
+
+    #pragma omp for 
+    for(k = y_min-1; k <=  y_max+1; k++) {
+        for(j = x_min-1; j <=  x_max+1; j++) {
+            u[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] =  
+                energy[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
+                * density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+        }
+    }
+
+    if(coefficient == RECIP_CONDUCTIVITY) {
+        #pragma omp for 
+        for(k = y_min-1; k <= y_max+1; k++) {
+            for(j = x_min-1; j <= x_max+1; j++) {
+                w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=1.0/density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+            }
+        }
+    }
+    else if(coefficient == CONDUCTIVITY) {
+        #pragma omp for
+        for(k = y_min-1; k <= y_max+1; k++) {
+            for(j = x_min-1; j <= x_max+1; j++) {
+                w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]=density[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+            }
+        }
+    }
+
+    #pragma omp for
+    for(k = y_min-1; k <= y_max+1; k++) {
+        for(j = x_min-1; j <= x_max+1; j++) {
+            Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
+            (w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+w[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)])
+            /(2.0*w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*w[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]);
+
+            Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 
+            (w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+w[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)])
+            /(2.0*w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*w[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]);
+        }
+    }
+
+    #pragma omp for reduction(+:rro)
+    for(k = y_min-1; k <=  y_max+1; k++) {
+        for(j = x_min-1; j <=  x_max+1; j++) {
+            w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = (1.0
+                + ry*(Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)])
+                + rx*(Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]))*u[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
+                - ry*(Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]*u[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*u[FTNREF2D(j,k-1,x_max+4,x_min-2,y_min-2)])
+                - rx*(Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]*u[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*u[FTNREF2D(j-1,k,x_max+4,x_min-2,y_min-2)]);
+
+            r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] - w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+
+            Mi[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = (1.0
+                + ry*(Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)])
+                + rx*(Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
+            Mi[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = 1.0/Mi[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+
+            z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = Mi[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+            p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+
+            rro = rro + r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+        }
+    }
+}
+    *_rro = rro;
+}
+
+void tea_leaf_kernel_solve_cg_c_calc_w_(
+        int* xmin,
+        int* xmax,
+        int* ymin,
+        int* ymax,
+        double* p,
+        double* w,
+        double* Kx,
+        double* Ky,
+        double* _rx,
+        double* _ry,
+        double* _pw)
+{
+    int x_min = *xmin;
+    int x_max = *xmax;
+    int y_min = *ymin;
+    int y_max = *ymax;
+    int j,k;
+
+    double rx = *_rx;
+    double ry = *_ry;
+    double pw = 0.0;
+
+    #pragma omp parallel for reduction(+:pw)
+    for(k = y_min-1; k <=  y_max+1; k++) {
+        for(j = x_min-1; j <=  x_max+1; j++) {
+            w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = (1.0
+                + ry*(Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)])
+                + rx*(Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]))*p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
+                - ry*(Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]*p[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*p[FTNREF2D(j,k-1,x_max+4,x_min-2,y_min-2)])
+                - rx*(Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)]*p[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*p[FTNREF2D(j-1,k,x_max+4,x_min-2,y_min-2)]);
+
+            pw = pw + w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+        }
+    }
+
+    *_pw = pw;
+}
+
+void tea_leaf_kernel_solve_cg_c_calc_ur_(
+        int* xmin,
+        int* xmax,
+        int* ymin,
+        int* ymax,
+        double* u,
+        double* p,
+        double* r,
+        double* Mi,
+        double* w,
+        double* z,
+        double* _alpha,
+        double* _rrn)
+{
+    int x_min = *xmin;
+    int x_max = *xmax;
+    int y_min = *ymin;
+    int y_max = *ymax;
+    int j,k;
+
+    double alpha = *_alpha;
+    double rrn = 0.0;
+
+    #pragma omp parallel for reduction(+:rrn)
+    for(k = y_min-1; k <=  y_max+1; k++) {
+        for(j = x_min-1; j <=  x_max+1; j++) {
+            u[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = u[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] + alpha*p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+            r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] - alpha*w[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+            z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = Mi[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+
+            rrn = rrn + r[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]*z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+        }
+    }
+
+    *_rrn = rrn;
+}
+
+void tea_leaf_kernel_solve_cg_c_calc_p_(
+        int* xmin,
+        int* xmax,
+        int* ymin,
+        int* ymax,
+        double* p,
+        double* r,
+        double* z,
+        double* _beta)
+{
+    int x_min = *xmin;
+    int x_max = *xmax;
+    int y_min = *ymin;
+    int y_max = *ymax;
+    int j,k;
+
+    double beta = *_beta;
+
+    #pragma omp parallel for
+    for(k = y_min-1; k <=  y_max+1; k++) {
+        for(j = x_min-1; j <=  x_max+1; j++) {
+            p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = z[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] + beta*p[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)];
+        }
+    }
+}
+
+////////////////
 
 void tea_leaf_kernel_finalise_c_(
         int* xmin,
@@ -195,3 +399,4 @@ void tea_leaf_kernel_finalise_c_(
         }
     }
 }
+

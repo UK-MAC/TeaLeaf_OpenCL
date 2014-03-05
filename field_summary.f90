@@ -88,6 +88,7 @@ SUBROUTINE field_summary()
                                   chunks(c)%field%volume,                  &
                                   chunks(c)%field%density0,                &
                                   chunks(c)%field%energy0,                 &
+                                  chunks(c)%field%u,                       &
                                   chunks(c)%field%pressure,                &
                                   chunks(c)%field%xvel0,                   &
                                   chunks(c)%field%yvel0,                   &

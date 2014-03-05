@@ -687,7 +687,7 @@ void update_halo_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
       for (j=x_min-depth;j<=x_max+1+depth;j++) {
 #pragma ivdep
         for (k=1;k<=depth;k++) {
-          u[FTNREF2D(j  ,1-k,x_max+5,x_min-2,y_min-2)]=u[FTNREF2D(j  ,1+k,x_max+5,x_min-2,y_min-2)];
+          u[FTNREF2D(j  ,1-k,x_max+4,x_min-2,y_min-2)]=u[FTNREF2D(j  ,1+k,x_max+4,x_min-2,y_min-2)];
 	}
       }
     }
@@ -697,7 +697,7 @@ void update_halo_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
       for (j=x_min-depth;j<=x_max+1+depth;j++) {
 #pragma ivdep
         for (k=1;k<=depth;k++) {
-          u[FTNREF2D(j  ,y_max+1+k,x_max+5,x_min-2,y_min-2)]=u[FTNREF2D(j  ,y_max+1-k,x_max+5,x_min-2,y_min-2)];
+          u[FTNREF2D(j  ,y_max+1+k,x_max+4,x_min-2,y_min-2)]=u[FTNREF2D(j  ,y_max+1-k,x_max+4,x_min-2,y_min-2)];
 	}
       }
     }
@@ -707,7 +707,7 @@ void update_halo_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
       for (k=y_min-depth;k<=y_max+1+depth;k++) {
 #pragma ivdep
         for (j=1;j<=depth;j++) {
-          u[FTNREF2D(1-j,k,x_max+5,x_min-2,y_min-2)]=u[FTNREF2D(1+j,k,x_max+5,x_min-2,y_min-2)];
+          u[FTNREF2D(1-j,k,x_max+4,x_min-2,y_min-2)]=u[FTNREF2D(1+j,k,x_max+4,x_min-2,y_min-2)];
         }
       }
     }
@@ -717,7 +717,7 @@ void update_halo_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
       for (k=y_min-depth;k<=y_max+1+depth;k++) {
 #pragma ivdep
         for (j=1;j<=depth;j++) {
-          u[FTNREF2D(x_max+1+j,k,x_max+5,x_min-2,y_min-2)]=u[FTNREF2D(x_max+1-j,k,x_max+5,x_min-2,y_min-2)];
+          u[FTNREF2D(x_max+1+j,k,x_max+4,x_min-2,y_min-2)]=u[FTNREF2D(x_max+1-j,k,x_max+4,x_min-2,y_min-2)];
 	}
       }
     }

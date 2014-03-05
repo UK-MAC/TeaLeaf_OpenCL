@@ -21,9 +21,7 @@
 
 MODULE tea_leaf_kernel_module
 
-! clover_module used for coefficient constants
-  USE clover_module
-  USE report_module
+use clover_module
 
 CONTAINS
 
@@ -88,8 +86,6 @@ SUBROUTINE tea_leaf_kernel_init(x_min,             &
       ENDDO
     ENDDO
 !$OMP END DO
-  ELSE
-    CALL report_error('tea_leaf', 'unknown coefficient option')
   ENDIF
 
 !$OMP DO
@@ -218,10 +214,6 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
   rro = 0.0_8
   p = 0.0_8
   r = 0.0_8
-
-  IF(coef .nE. RECIP_CONDUCTIVITY .and. coef .ne. conductivity) THEN
-    CALL report_error('tea_leaf', 'unknown coefficient option')
-  endif
 
 !$OMP PARALLEL
 !$OMP DO 

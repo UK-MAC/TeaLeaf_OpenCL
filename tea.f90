@@ -43,6 +43,10 @@ SUBROUTINE tea_leaf()
   ! For CG solver
   REAL(KIND=8) :: rro, pw, rrn, alpha, beta
 
+  IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
+    CALL report_error('tea_leaf', 'unknown coefficient option')
+  endif
+
   DO c=1,number_of_chunks
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
@@ -81,29 +85,24 @@ SUBROUTINE tea_leaf()
         ELSEIF(use_ocl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
         ELSEIF(use_C_kernels) THEN
-          CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
-          ! TODO
-          !rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-          !ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
+          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
+          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
 
-          !CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
-          !    chunks(c)%field%x_max,                       &
-          !    chunks(c)%field%y_min,                       &
-          !    chunks(c)%field%y_max,                       &
-          !    chunks(c)%field%celldx,                      &
-          !    chunks(c)%field%celldy,                      &
-          !    chunks(c)%field%volume,                      &
-          !    chunks(c)%field%density1,                    &
-          !    chunks(c)%field%energy1,                     &
-          !    chunks(c)%field%work_array1,                 &
-          !    chunks(c)%field%u,                           &
-          !    chunks(c)%field%work_array2,                 &
-          !    chunks(c)%field%work_array3,                 &
-          !    chunks(c)%field%work_array4,                 &
-          !    chunks(c)%field%work_array5,                 &
-          !    chunks(c)%field%work_array6,                 &
-          !    chunks(c)%field%work_array7,                 &
-          !    coefficient)
+          CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
+              chunks(c)%field%x_max,                       &
+              chunks(c)%field%y_min,                       &
+              chunks(c)%field%y_max,                       &
+              chunks(c)%field%density1,                    &
+              chunks(c)%field%energy1,                     &
+              chunks(c)%field%u,                           &
+              chunks(c)%field%work_array1,                 &
+              chunks(c)%field%work_array2,                 &
+              chunks(c)%field%work_array3,                 &
+              chunks(c)%field%work_array4,                 &
+              chunks(c)%field%work_array5,                 &
+              chunks(c)%field%work_array6,                 &
+              chunks(c)%field%work_array7,                 &
+              rx, ry, rro, coefficient)
         ENDIF
 
         ! need to update p at this stage
@@ -180,8 +179,15 @@ SUBROUTINE tea_leaf()
           ELSEIF(use_ocl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
           ELSEIF(use_c_kernels) THEN
-            ! TODO
-            CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
+            CALL tea_leaf_kernel_solve_cg_c_calc_w(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%work_array1,                 &
+                chunks(c)%field%work_array4,                 &
+                chunks(c)%field%work_array6,                 &
+                chunks(c)%field%work_array7,                 &
+                rx, ry, pw)
           ENDIF
 
           CALL clover_allsum(pw)
@@ -202,8 +208,17 @@ SUBROUTINE tea_leaf()
           ELSEIF(use_ocl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
           ELSEIF(use_c_kernels) THEN
-            ! TODO
-            CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
+            CALL tea_leaf_kernel_solve_cg_c_calc_ur(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%u,                           &
+                chunks(c)%field%work_array1,                 &
+                chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array3,                 &
+                chunks(c)%field%work_array4,                 &
+                chunks(c)%field%work_array5,                 &
+                alpha, rrn)
           ENDIF
 
           CALL clover_allsum(rrn)
@@ -221,8 +236,14 @@ SUBROUTINE tea_leaf()
           ELSEIF(use_ocl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
           ELSEIF(use_c_kernels) THEN
-            ! TODO
-            CALL report_error('tea_leaf', "C CG SOLVER CALLED BUT NOT IMPLEMENTED")
+            CALL tea_leaf_kernel_solve_cg_c_calc_p(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%work_array1,                 &
+                chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array5,                 &
+                beta)
           ENDIF
 
           error = rrn
