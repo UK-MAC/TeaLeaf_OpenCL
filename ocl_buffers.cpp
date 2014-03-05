@@ -400,7 +400,7 @@ void CloverChunk::initArgs
          *  work_array_1 = p
          *  work_array_2 = r
          *  work_array_3 = w / d (just for initialisation)
-         *  work_array_4 = b
+         *  work_array_4 = Mi
          *
          *  work_array_5 = Kx
          *  work_array_6 = Ky
@@ -429,7 +429,7 @@ void CloverChunk::initArgs
         tea_leaf_cg_init_others_device.setArg(5, work_array_4);
         tea_leaf_cg_init_others_device.setArg(6, work_array_5);
         tea_leaf_cg_init_others_device.setArg(7, work_array_6);
-        // preconditioner
+        // used when preconditioner is used
         tea_leaf_cg_init_others_device.setArg(10, z);
 
         tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
@@ -443,7 +443,7 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_ur_device.setArg(3, work_array_1);
         tea_leaf_cg_solve_calc_ur_device.setArg(4, work_array_2);
         tea_leaf_cg_solve_calc_ur_device.setArg(5, work_array_3);
-        // preconditioner
+        // used when preconditioner is used
         tea_leaf_cg_solve_calc_ur_device.setArg(6, z);
         tea_leaf_cg_solve_calc_ur_device.setArg(7, work_array_4);
 

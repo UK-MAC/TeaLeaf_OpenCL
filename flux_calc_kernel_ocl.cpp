@@ -13,7 +13,7 @@ void CloverChunk::flux_calc_kernel
 {
     flux_calc_device.setArg(0, dbyt);
 
-    //ENQUEUE(flux_calc_device)
-    ENQUEUE_OFFSET(flux_calc_device)
+    ENQUEUE(flux_calc_device)
+    //ENQUEUE_OFFSET(flux_calc_device)
 }
 

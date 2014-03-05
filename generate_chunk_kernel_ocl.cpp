@@ -47,10 +47,9 @@ const int g_rect, const int g_circ, const int g_point)
                 number_of_states*sizeof(*state_##arr),              \
                 state_##arr);                                       \
         }                                                           \
-        catch (cl::Error e)                                     \
-        {                                                       \
-            DIE("Error in creating %s buffer %d\n", \
-                    #arr, e.err());                             \
+        catch (cl::Error e)                                         \
+        {                                                           \
+            DIE("Error in creating %s buffer %d\n", #arr, e.err()); \
         }
 
     TEMP_ALLOC(density);
@@ -72,6 +71,7 @@ const int g_rect, const int g_circ, const int g_point)
     generate_chunk_init_device.setArg(7, tmp_state_yvel);
 
     ENQUEUE(generate_chunk_init_device);
+    //ENQUEUE_OFFSET(generate_chunk_init_device);
 
     generate_chunk_device.setArg(9, tmp_state_density);
     generate_chunk_device.setArg(10, tmp_state_energy);
@@ -91,7 +91,9 @@ const int g_rect, const int g_circ, const int g_point)
     for (int state = 1; state < number_of_states; state++)
     {
         generate_chunk_device.setArg(22, state);
+
         ENQUEUE(generate_chunk_device);
+        //ENQUEUE_OFFSET(generate_chunk_device);
     }
 }
 

@@ -105,6 +105,8 @@ __kernel void generate_chunk
                 yvel0[THARR2D(1, 1, 1)] = state_yvel[state];
             }
         }
+
+        u[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)]*density0[THARR2D(0, 0, 0)];
     }
 }
 

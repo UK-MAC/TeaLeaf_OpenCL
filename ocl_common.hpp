@@ -304,6 +304,10 @@ private:
     void cloverDie
     (int line, const char* filename, const char* format, ...);
 
+    // dump sum of contents of array
+    double dumpArray
+    (cl::Buffer& buffer, int x_extra, int y_extra);
+
 public:
     // kernels
     void calc_dt_kernel(double g_small, double g_big, double dtmin,

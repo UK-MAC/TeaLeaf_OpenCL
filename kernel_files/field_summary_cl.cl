@@ -57,8 +57,8 @@ __kernel void field_summary
         vsqrd += 0.25 * (xvel0[THARR2D(1, 1, 1)] * xvel0[THARR2D(1, 1, 1)]
                         +yvel0[THARR2D(1, 1, 1)] * yvel0[THARR2D(1, 1, 1)]);
 
-        double cell_vol = volume[THARR2D(0, 0, 0)];
-        double cell_mass = cell_vol * density0[THARR2D(0, 0, 0)];
+        const double cell_vol = volume[THARR2D(0, 0, 0)];
+        const double cell_mass = cell_vol * density0[THARR2D(0, 0, 0)];
 
 #if defined(NO_KERNEL_REDUCTIONS)
         vol[gid] = cell_vol;

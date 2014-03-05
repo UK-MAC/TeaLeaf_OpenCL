@@ -213,3 +213,31 @@ CloverChunk::~CloverChunk
     }
 }
 
+#include <numeric>
+double CloverChunk::dumpArray
+(cl::Buffer& buffer, int x_extra, int y_extra)
+{
+    // number of bytes to allocate for 2d array
+    #define BUFSZ2D(x_extra, y_extra)   \
+        ( ((x_max) + 4 + x_extra)       \
+        * ((y_max) + 4 + y_extra)       \
+        * sizeof(double) )
+
+    std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));
+
+    queue.finish();
+
+    try
+    {
+        queue.enqueueReadBuffer(buffer, CL_TRUE, 0, BUFSZ2D(x_extra, y_extra), &host_buffer[0]);
+    }
+    catch (cl::Error e)
+    {
+        DIE("DF");
+    }
+
+    double sum = std::accumulate(host_buffer.begin(), host_buffer.end(), 0.0);
+    fprintf(stdout, "%.16f\n", sum);
+    return sum;
+}
+

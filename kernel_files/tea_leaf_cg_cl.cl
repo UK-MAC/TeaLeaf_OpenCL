@@ -75,7 +75,6 @@ __kernel void tea_leaf_cg_init_others
 
     // used to make ifdefs for reductions less messy
     double rro_val;
-
     if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
     && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
@@ -87,7 +86,7 @@ __kernel void tea_leaf_cg_init_others
 
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#ifdef CG_DO_PRECONDITION
+#if defined(CG_DO_PRECONDITION)
         Mi[THARR2D(0, 0, 0)] = (1.0
             + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
