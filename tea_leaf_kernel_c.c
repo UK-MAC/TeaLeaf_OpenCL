@@ -54,9 +54,9 @@ void tea_leaf_kernel_init_c_(
     int x_max = *xmax;
     int y_min = *ymin;
     int y_max = *ymax;
-    int coefficient = *coef;
-
     int j,k;
+
+    int coefficient = *coef;
 
 #pragma omp parallel
     {
@@ -114,7 +114,7 @@ void tea_leaf_kernel_solve_c_(
         double* ryp,
         double* Kx,
         double* Ky,
-        double* error,
+        double* _error,
         double* u0,
         double* u1,
         double* un)
@@ -128,7 +128,7 @@ void tea_leaf_kernel_solve_c_(
     double rx = *rxp;
     double ry = *ryp;
 
-    *error = 0.0;
+    double error = 0.0;
 
 #pragma omp parallel
     {
@@ -149,15 +149,16 @@ void tea_leaf_kernel_solve_c_(
                 + ry*(Ky[FTNREF2D(j  ,k+1,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j  ,k+1,x_max+4,x_min-2,y_min-2)]
                     + Ky[FTNREF2D(j  ,k  ,x_max+4,x_min-2,y_min-2)]*un[FTNREF2D(j  ,k-1,x_max+4,x_min-2,y_min-2)]))
                                  /(1.0
-                                    + rx*(Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)])
-                                    + ry*(Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]+Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]));
+                                    + rx*(Kx[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] + Kx[FTNREF2D(j+1,k,x_max+4,x_min-2,y_min-2)])
+                                    + ry*(Ky[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] + Ky[FTNREF2D(j,k+1,x_max+4,x_min-2,y_min-2)]));
 
-            *error = fmax(*error,
-                    fabs(u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] 
-                        - un[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
+            error = fmax(error,
+                fabs(u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] - un[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
         }
     }
     //  }
+
+    *_error = error;
 }
 
 // tea leaf
@@ -187,9 +188,9 @@ void tea_leaf_kernel_init_cg_c_(
     int y_max = *ymax;
     int j,k;
 
-    double rx = *_rx;
-    double ry = *_ry;
-    int coefficient = *_coef;
+    const double rx = *_rx;
+    const double ry = *_ry;
+    const int coefficient = *_coef;
     double rro = 0.0;
 
 #pragma omp parallel
@@ -272,8 +273,8 @@ void tea_leaf_kernel_solve_cg_c_calc_w_(
     int y_max = *ymax;
     int j,k;
 
-    double rx = *_rx;
-    double ry = *_ry;
+    const double rx = *_rx;
+    const double ry = *_ry;
     double pw = 0.0;
 
     #pragma omp parallel for reduction(+:pw)
@@ -312,7 +313,7 @@ void tea_leaf_kernel_solve_cg_c_calc_ur_(
     int y_max = *ymax;
     int j,k;
 
-    double alpha = *_alpha;
+    const double alpha = *_alpha;
     double rrn = 0.0;
 
     #pragma omp parallel for reduction(+:rrn)
@@ -345,7 +346,7 @@ void tea_leaf_kernel_solve_cg_c_calc_p_(
     int y_max = *ymax;
     int j,k;
 
-    double beta = *_beta;
+    const double beta = *_beta;
 
     #pragma omp parallel for
     for(k = y_min; k <=  y_max; k++) {
@@ -370,7 +371,6 @@ void tea_leaf_kernel_finalise_c_(
     int x_max = *xmax;
     int y_min = *ymin;
     int y_max = *ymax;
-
     int j,k;
 
 #pragma omp parallel for 

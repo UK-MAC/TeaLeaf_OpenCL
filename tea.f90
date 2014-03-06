@@ -62,11 +62,13 @@ SUBROUTINE tea_leaf()
       ! INIT
       IF(profiler_on) kernel_time=timer()
 
+      if (use_fortran_kernels .or. use_c_kernels) then
+        rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2)
+        ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2)
+      endif
+
       IF(tl_use_cg) then
         IF(use_fortran_kernels) THEN
-          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
-
           CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -85,9 +87,6 @@ SUBROUTINE tea_leaf()
         ELSEIF(use_ocl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
         ELSEIF(use_C_kernels) THEN
-          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
-
           CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -108,15 +107,13 @@ SUBROUTINE tea_leaf()
         ! need to update p at this stage
         fields=0
         fields(FIELD_U) = 1
+        fields(FIELD_P) = 1
         CALL update_halo(fields,2)
 
         ! and globally sum rro
         call clover_allsum(rro)
       ELSE
         IF (use_fortran_kernels) THEN
-          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
-
           CALL tea_leaf_kernel_init(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -138,9 +135,6 @@ SUBROUTINE tea_leaf()
         ELSEIF(use_ocl_kernels) THEN
           CALL tea_leaf_kernel_init_ocl(coefficient, dt, rx, ry)
         ELSEIF(use_C_kernels) THEN
-          rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2);
-          ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2);
-
           CALL tea_leaf_kernel_init_c(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
               chunks(c)%field%y_min,                       &
@@ -163,9 +157,14 @@ SUBROUTINE tea_leaf()
 
       ENDIF
 
+      fields=0
+      fields(FIELD_U) = 1
+
       DO n=1,max_iters
 
         IF(tl_use_cg) then
+          fields(FIELD_P) = 1
+
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
                 chunks(c)%field%x_max,                       &
@@ -280,9 +279,6 @@ SUBROUTINE tea_leaf()
           ENDIF
         ENDIF
 
-        ! CALL update_halo
-        fields=0
-        fields(FIELD_U) = 1
         CALL update_halo(fields,2)
 
         CALL clover_max(error)

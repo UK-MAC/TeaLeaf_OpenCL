@@ -79,15 +79,10 @@ void CloverChunk::packRect
     CASE_BUF(mass_flux_x); break;
     CASE_BUF(mass_flux_y); break;
     CASE_BUF(u); break;
+    CASE_BUF(work_array_1); break;
     default:
         DIE("Invalid face %d passed to left/right pack buffer\n",
                 which_field);
-    }
-
-    // exchange P instead
-    if (which_field == FIELD_u && tl_use_cg)
-    {
-        device_buf = &work_array_1;
     }
 
     switch (edge)

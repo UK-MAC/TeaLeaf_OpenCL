@@ -38,7 +38,10 @@ enum {CELL_DATA, VERTEX_DATA, X_FACE_DATA, Y_FACE_DATA};
 #define FIELD_mass_flux_x   13
 #define FIELD_mass_flux_y   14
 #define FIELD_u             15
-#define NUM_FIELDS          16
+#define FIELD_p             16
+#define NUM_FIELDS          17
+
+#define FIELD_work_array_1 FIELD_p
 
 typedef struct cell_info {
     const int x_extra;

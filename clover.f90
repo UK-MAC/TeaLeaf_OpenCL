@@ -237,34 +237,34 @@ SUBROUTINE clover_exchange(fields,depth)
   ! Assuming 1 patch per task, this will be changed
   ! Also, not packing all fields for each communication, doing one at a time
 
+  IF(fields(FIELD_P).EQ.1) THEN
+    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%work_array1,      &
+                                 chunks(parallel%task+1)%left_snd_buffer,                      &
+                                 chunks(parallel%task+1)%left_rcv_buffer,                      &
+                                 chunks(parallel%task+1)%right_snd_buffer,                     &
+                                 chunks(parallel%task+1)%right_rcv_buffer,                     &
+                                 chunks(parallel%task+1)%bottom_snd_buffer,                    &
+                                 chunks(parallel%task+1)%bottom_rcv_buffer,                    &
+                                 chunks(parallel%task+1)%top_snd_buffer,                       &
+                                 chunks(parallel%task+1)%top_rcv_buffer,                       &
+                                 depth, &
+                                 0, 0, &
+                                 FIELD_P)
+  ENDIF
+
   IF(fields(FIELD_U).EQ.1) THEN
-    IF (tl_use_cg) THEN
-      CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%work_array1,      &
-                                   chunks(parallel%task+1)%left_snd_buffer,                      &
-                                   chunks(parallel%task+1)%left_rcv_buffer,                      &
-                                   chunks(parallel%task+1)%right_snd_buffer,                     &
-                                   chunks(parallel%task+1)%right_rcv_buffer,                     &
-                                   chunks(parallel%task+1)%bottom_snd_buffer,                    &
-                                   chunks(parallel%task+1)%bottom_rcv_buffer,                    &
-                                   chunks(parallel%task+1)%top_snd_buffer,                       &
-                                   chunks(parallel%task+1)%top_rcv_buffer,                       &
-                                   depth, &
-                                   0, 0, &
-                                   FIELD_U)
-    ELSE
-      CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%u,      &
-                                   chunks(parallel%task+1)%left_snd_buffer,                      &
-                                   chunks(parallel%task+1)%left_rcv_buffer,                      &
-                                   chunks(parallel%task+1)%right_snd_buffer,                     &
-                                   chunks(parallel%task+1)%right_rcv_buffer,                     &
-                                   chunks(parallel%task+1)%bottom_snd_buffer,                    &
-                                   chunks(parallel%task+1)%bottom_rcv_buffer,                    &
-                                   chunks(parallel%task+1)%top_snd_buffer,                       &
-                                   chunks(parallel%task+1)%top_rcv_buffer,                       &
-                                   depth, &
-                                   0, 0, &
-                                   FIELD_U)
-    ENDIF
+    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%u,      &
+                                 chunks(parallel%task+1)%left_snd_buffer,                      &
+                                 chunks(parallel%task+1)%left_rcv_buffer,                      &
+                                 chunks(parallel%task+1)%right_snd_buffer,                     &
+                                 chunks(parallel%task+1)%right_rcv_buffer,                     &
+                                 chunks(parallel%task+1)%bottom_snd_buffer,                    &
+                                 chunks(parallel%task+1)%bottom_rcv_buffer,                    &
+                                 chunks(parallel%task+1)%top_snd_buffer,                       &
+                                 chunks(parallel%task+1)%top_rcv_buffer,                       &
+                                 depth, &
+                                 0, 0, &
+                                 FIELD_U)
   ENDIF
 
   IF(fields(FIELD_DENSITY0).EQ.1) THEN

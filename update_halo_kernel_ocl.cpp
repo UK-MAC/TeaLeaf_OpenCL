@@ -64,9 +64,6 @@ void CloverChunk::update_halo_kernel
 const int depth,
 const int* chunk_neighbours)
 {
-    // if using CG, we want to update 'p' instead
-    #define FIELD_work_array_1 FIELD_u
-
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
     if(fields[FIELD_ ## arr] == 1)                          \
     {                                                       \
@@ -92,12 +89,7 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(vol_flux_y, Y_FACE);
     HALO_UPDATE_RESIDENT(mass_flux_y, Y_FACE);
 
-    if (tl_use_cg && (std::accumulate(fields, fields+15, 0) == 0))
-    {
-        // update 'p' as well
-        HALO_UPDATE_RESIDENT(work_array_1, CELL);
-    }
-
     HALO_UPDATE_RESIDENT(u, CELL);
+    HALO_UPDATE_RESIDENT(work_array_1, CELL);
 }
 
