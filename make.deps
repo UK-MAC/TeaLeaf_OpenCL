@@ -1,3 +1,29 @@
+accelerate_kernel_ocl.o: accelerate_kernel_ocl.cpp ocl_common.hpp
+advec_cell_kernel_ocl.o: advec_cell_kernel_ocl.cpp ocl_common.hpp
+advec_mom_kernel_ocl.o: advec_mom_kernel_ocl.cpp ocl_common.hpp
+calc_dt_kernel_ocl.o: calc_dt_kernel_ocl.cpp ocl_common.hpp \
+ ocl_reduction.hpp
+field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
+ ocl_reduction.hpp
+flux_calc_kernel_ocl.o: flux_calc_kernel_ocl.cpp ocl_common.hpp
+generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp
+ideal_gas_kernel_ocl.o: ideal_gas_kernel_ocl.cpp ocl_common.hpp
+initialise_chunk_kernel_ocl.o: initialise_chunk_kernel_ocl.cpp \
+ ocl_common.hpp
+ocl_buffers.o: ocl_buffers.cpp ocl_common.hpp
+ocl_errors.o: ocl_errors.cpp ocl_common.hpp
+ocl_init.o: ocl_init.cpp ocl_common.hpp ocl_strings.hpp
+ocl_kernels.o: ocl_kernels.cpp ocl_common.hpp ocl_kernel_hdr.hpp
+ocl_pack.o: ocl_pack.cpp ocl_common.hpp
+ocl_reduction.o: ocl_reduction.cpp ocl_common.hpp ocl_kernel_hdr.hpp
+ocl_strings.o: ocl_strings.cpp ocl_strings.hpp ocl_common.hpp
+PdV_kernel_ocl.o: PdV_kernel_ocl.cpp ocl_common.hpp ocl_reduction.hpp
+reset_field_kernel_ocl.o: reset_field_kernel_ocl.cpp ocl_common.hpp
+revert_kernel_ocl.o: revert_kernel_ocl.cpp ocl_common.hpp
+set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp
+tea_leaf_kernel_ocl.o: tea_leaf_kernel_ocl.cpp ocl_common.hpp
+update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp
+viscosity_kernel_ocl.o: viscosity_kernel_ocl.cpp ocl_common.hpp
 accelerate_kernel_c.o: accelerate_kernel_c.c ftocmacros.h
 advec_cell_kernel_c.o: advec_cell_kernel_c.c ftocmacros.h
 advec_mom_kernel_c.o: advec_mom_kernel_c.c ftocmacros.h
@@ -11,7 +37,7 @@ pack_kernel_c.o: pack_kernel_c.c ftocmacros.h
 PdV_kernel_c.o: PdV_kernel_c.c ftocmacros.h
 reset_field_kernel_c.o: reset_field_kernel_c.c ftocmacros.h
 revert_kernel_c.o: revert_kernel_c.c ftocmacros.h
-set_field_c.o: set_field_c.c
+set_field_kernel_c.o: set_field_kernel_c.c ftocmacros.h
 tea_leaf_kernel_c.o: tea_leaf_kernel_c.c ftocmacros.h
 timer_c.o: timer_c.c
 update_halo_kernel_c.o: update_halo_kernel_c.c ftocmacros.h
@@ -83,11 +109,11 @@ set_field.o set_field_module.mod: set_field.f90 clover_module.mod \
 set_field_kernel.o set_field_kernel_module.mod: set_field_kernel.f90
 start.o: start.f90 clover_module.mod parse_module.mod \
  update_halo_module.mod ideal_gas_module.mod
-tea.o tea_leaf_module.mod: tea.f90 clover_module.mod \
+tea.o tea_leaf_module.mod: tea.f90 report_module.mod clover_module.mod \
  tea_leaf_kernel_module.mod update_halo_module.mod
 tea_leaf.o: tea_leaf.f90 clover_module.mod
 tea_leaf_kernel.o tea_leaf_kernel_module.mod: tea_leaf_kernel.f90 \
- clover_module.mod report_module.mod
+ clover_module.mod
 timer.o: timer.f90
 timestep.o timestep_module.mod: timestep.f90 clover_module.mod \
  report_module.mod update_halo_module.mod viscosity_module.mod \
@@ -101,29 +127,3 @@ viscosity.o viscosity_module.mod: viscosity.f90 clover_module.mod \
 viscosity_kernel.o viscosity_kernel_module.mod: viscosity_kernel.f90
 visit.o: visit.f90 clover_module.mod update_halo_module.mod \
  viscosity_module.mod ideal_gas_module.mod
-accelerate_kernel_ocl.o: accelerate_kernel_ocl.cpp ocl_common.hpp
-advec_cell_kernel_ocl.o: advec_cell_kernel_ocl.cpp ocl_common.hpp
-advec_mom_kernel_ocl.o: advec_mom_kernel_ocl.cpp ocl_common.hpp
-calc_dt_kernel_ocl.o: calc_dt_kernel_ocl.cpp ocl_common.hpp \
- ocl_reduction.hpp
-field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
- ocl_reduction.hpp
-flux_calc_kernel_ocl.o: flux_calc_kernel_ocl.cpp ocl_common.hpp
-generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp
-ideal_gas_kernel_ocl.o: ideal_gas_kernel_ocl.cpp ocl_common.hpp
-initialise_chunk_kernel_ocl.o: initialise_chunk_kernel_ocl.cpp \
- ocl_common.hpp
-ocl_buffers.o: ocl_buffers.cpp ocl_common.hpp
-ocl_errors.o: ocl_errors.cpp ocl_common.hpp
-ocl_init.o: ocl_init.cpp ocl_common.hpp ocl_strings.hpp
-ocl_kernels.o: ocl_kernels.cpp ocl_common.hpp ocl_kernel_hdr.hpp
-ocl_pack.o: ocl_pack.cpp ocl_common.hpp
-ocl_reduction.o: ocl_reduction.cpp ocl_common.hpp ocl_kernel_hdr.hpp
-ocl_strings.o: ocl_strings.cpp ocl_strings.hpp ocl_common.hpp
-PdV_kernel_ocl.o: PdV_kernel_ocl.cpp ocl_common.hpp ocl_reduction.hpp
-reset_field_kernel_ocl.o: reset_field_kernel_ocl.cpp ocl_common.hpp
-revert_kernel_ocl.o: revert_kernel_ocl.cpp ocl_common.hpp
-set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp
-tea_leaf_kernel_ocl.o: tea_leaf_kernel_ocl.cpp ocl_common.hpp
-update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp
-viscosity_kernel_ocl.o: viscosity_kernel_ocl.cpp ocl_common.hpp

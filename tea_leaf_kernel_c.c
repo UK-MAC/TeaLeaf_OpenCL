@@ -140,7 +140,12 @@ void tea_leaf_kernel_solve_c_(
         }
     }
 
-    // #pragma omp for reduction(max:error)
+    // gcc 4.6 and below don't support max reductions in C
+#if !defined(__GNUC__) || (__GNUC__ > 4 || __GNUC_MINOR__ > 6)
+    #pragma omp parallel for reduction(max:error)
+#else
+    #warning Jacobi solver will not run in parallel due to lack of max reduction in the current verison of gcc being used
+#endif
     for(k = y_min; k <=  y_max; k++) {
         for(j = x_min; j <=  x_max; j++) {
             u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] = (u0[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]
@@ -156,7 +161,6 @@ void tea_leaf_kernel_solve_c_(
                 fabs(u1[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)] - un[FTNREF2D(j,k,x_max+4,x_min-2,y_min-2)]));
         }
     }
-    //  }
 
     *_error = error;
 }

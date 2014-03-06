@@ -243,14 +243,14 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 
 include make.deps
 
-%.o: %.cpp Makefile
+%.o: %.cpp Makefile make.deps
 	$(CXX) $(CXXFLAGS) -c $< -o $*.o
 %.mod %_module.mod %_leaf_module.mod: %.f90 %.o
 	@true
-%.o: %.f90 Makefile
+%.o: %.f90 Makefile make.deps
 	$(MPI_COMPILER) $(CFLAGS) -c $< -o $*.o
-%.o: %.c Makefile
-	$(CC) $(CFLAGS) -c $< -o $*.o
+%.o: %.c Makefile make.deps
+	$(C_MPI_COMPILER) $(CFLAGS) -c $< -o $*.o
 
 KERNEL_HDR_FILE=ocl_kernel_hdr.hpp
 $(KERNEL_HDR_FILE): _kernel_strings.o
