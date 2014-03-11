@@ -144,7 +144,7 @@ void tea_leaf_kernel_solve_c_(
 #if !defined(__GNUC__) || (__GNUC__ > 4 || __GNUC_MINOR__ > 6)
     #pragma omp parallel for reduction(max:error)
 #else
-    #warning Jacobi solver will not run in parallel due to lack of max reduction in the current verison of gcc being used
+    #warning C version of Jacobi solver will not run in parallel due to lack of max reduction in the current verison of gcc being used
 #endif
     for(k = y_min; k <=  y_max; k++) {
         for(j = x_min; j <=  x_max; j++) {
