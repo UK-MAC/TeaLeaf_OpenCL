@@ -119,7 +119,7 @@ ifdef IEEE
 endif
 
 LDLIBS+=-lOpenCL -lstdc++
-CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS
+CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D _PWD_="\"$(shell pwd)/\""
 VPATH+=kernel_files
 
 ifdef NO_KERNEL_REDUCTIONS
@@ -264,7 +264,6 @@ _kernel_strings.cpp: Makefile $(shell ls kernel_files/*.cl)
 		knl_name=`echo $$i | sed 's/\(\.\/\)\?kernel_files\///g' | sed 's/\.cl//g'`; \
 		echo "extern const std::string src_$$knl_name;" >> $(KERNEL_HDR_FILE); \
 		echo -n "const std::string src_$$knl_name(\"" >> _kernel_strings.cpp; \
-		echo "#include <kernel_files/macros_cl.cl> \\\n\\" >> _kernel_strings.cpp;\
 		cat $$i | sed 's/\\/\\\\/g' | sed 's/\([^\\]*\)$$/\1\\n\\/g' >> _kernel_strings.cpp; \
 		echo "\");" >> _kernel_strings.cpp; \
 	done

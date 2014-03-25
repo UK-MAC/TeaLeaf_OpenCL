@@ -1,3 +1,4 @@
+#include <kernel_files/macros_cl.cl>
 
 __kernel void advec_mom_vol
 (int mom_sweep,

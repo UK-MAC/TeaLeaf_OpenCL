@@ -1,3 +1,5 @@
+#include <kernel_files/macros_cl.cl>
+
 __kernel void flux_calc_x
 (double dt,
  __global const double * __restrict const xarea,

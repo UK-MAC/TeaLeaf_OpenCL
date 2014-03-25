@@ -1,3 +1,4 @@
+#include <kernel_files/macros_cl.cl>
 
 #define _SHARED_KERNEL_ARGS_                    \
     const int swp_nmbr,                         \

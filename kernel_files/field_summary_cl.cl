@@ -1,3 +1,4 @@
+#include <kernel_files/macros_cl.cl>
 
 __kernel void field_summary
 (__global const double * __restrict const volume,
