@@ -140,14 +140,15 @@ void CloverChunk::initArgs
     accelerate_device.setArg(10, yvel1);
 
     // flux calc
-    flux_calc_device.setArg(1, xarea);
-    flux_calc_device.setArg(2, yarea);
-    flux_calc_device.setArg(3, xvel0);
-    flux_calc_device.setArg(4, yvel0);
-    flux_calc_device.setArg(5, xvel1);
-    flux_calc_device.setArg(6, yvel1);
-    flux_calc_device.setArg(7, vol_flux_x);
-    flux_calc_device.setArg(8, vol_flux_y);
+    flux_calc_x_device.setArg(1, xarea);
+    flux_calc_x_device.setArg(2, xvel0);
+    flux_calc_x_device.setArg(3, xvel1);
+    flux_calc_x_device.setArg(4, vol_flux_x);
+
+    flux_calc_y_device.setArg(1, yarea);
+    flux_calc_y_device.setArg(2, yvel0);
+    flux_calc_y_device.setArg(3, yvel1);
+    flux_calc_y_device.setArg(4, vol_flux_y);
 
     // viscosity
     viscosity_device.setArg(0, celldx);

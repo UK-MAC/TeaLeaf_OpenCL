@@ -83,7 +83,8 @@ private:
     // kernels
     cl::Kernel ideal_gas_device;
     cl::Kernel accelerate_device;
-    cl::Kernel flux_calc_device;
+    cl::Kernel flux_calc_y_device;
+    cl::Kernel flux_calc_x_device;
     cl::Kernel viscosity_device;
     cl::Kernel revert_device;
     cl::Kernel reset_field_device;
