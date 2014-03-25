@@ -111,12 +111,68 @@ void CloverChunk::initOcl
         DIE("Input file not found\n");
     }
     int desired_vendor = platformRead(input);
+
+    // special case to print out platforms instead
+    if (desired_vendor == LIST_PLAT)
+    {
+        fprintf(stdout, "Listing platforms\n\n");
+
+        for (int pp = 0; pp < platforms.size(); pp++)
+        {
+            std::string profile, version, name, vendor;
+            platforms.at(pp).getInfo(CL_PLATFORM_PROFILE, &profile);
+            platforms.at(pp).getInfo(CL_PLATFORM_VERSION, &version);
+            platforms.at(pp).getInfo(CL_PLATFORM_NAME, &name);
+            platforms.at(pp).getInfo(CL_PLATFORM_VENDOR, &vendor);
+
+            fprintf(stdout, "Platform %d: %s - %s (profile = %s, version = %s)\n",
+                pp, vendor.c_str(), name.c_str(), profile.c_str(), version.c_str());
+
+            std::vector<cl::Device> devices;
+            platforms.at(pp).getDevices(CL_DEVICE_TYPE_ALL, &devices);
+
+            for (int ii = 0; ii < devices.size(); ii++)
+            {
+                std::string devname;
+                cl_device_type dtype;
+                devices.at(ii).getInfo(CL_DEVICE_NAME, &devname);
+                devices.at(ii).getInfo(CL_DEVICE_TYPE, &dtype);
+                // trim whitespace
+                devname.erase(devname.find_last_not_of(" \n\r\t")+1);
+                devname.erase(devname.begin(), devname.begin()+devname.find_first_not_of(" \n\r\t"));
+
+                std::string dtype_str = strType(dtype);
+                fprintf(stdout, " Device %d: %s (%s)\n", ii, devname.c_str(), dtype_str.c_str());
+            }
+        }
+
+        exit(0);
+    }
+
     int preferred_device = preferredDevice(input);
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
     desired_type = typeRead(input);
 
-    tl_use_cg = cgEnabled(input);
-    fprintf(DBGOUT, "Using %s solver for tealeaf\n", (tl_use_cg ? "CG" : "Jacobi"));
+    // find out which solver to use
+    bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
+    bool tl_use_cg = paramEnabled(input, "tl_use_cg");
+
+    fprintf(stdout, "Solver to use: ");
+    if (tl_use_cg)
+    {
+        tea_solver = TEA_ENUM_CG;
+        fprintf(stdout, "Conjugate gradient\n");
+    }
+    else if (tl_use_jacobi)
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        fprintf(stdout, "Jacobi\n");
+    }
+    else
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        fprintf(stdout, "Jacobi (no solver specified in tea.in\n");
+    }
 
     fclose(input);
 

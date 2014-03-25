@@ -72,7 +72,7 @@ SUBROUTINE field_summary()
                                   vol,mass,ie,ke,press,temp                )
       ENDIF
     ENDDO
-  ELSEIF(use_ocl_kernels)THEN
+  ELSEIF(use_opencl_kernels)THEN
     DO c=1,number_of_chunks
       IF(chunks(c)%task.EQ.parallel%task) THEN
         CALL field_summary_kernel_ocl(vol,mass,ie,ke,press,temp)

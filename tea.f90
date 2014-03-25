@@ -84,7 +84,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               rx, ry, rro, coefficient)
-        ELSEIF(use_ocl_kernels) THEN
+        ELSEIF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
         ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
@@ -132,7 +132,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               coefficient)
-        ELSEIF(use_ocl_kernels) THEN
+        ELSEIF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_ocl(coefficient, dt, rx, ry)
         ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_init_c(chunks(c)%field%x_min, &
@@ -175,7 +175,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array6,                 &
                 chunks(c)%field%work_array7,                 &
                 rx, ry, pw)
-          ELSEIF(use_ocl_kernels) THEN
+          ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_w(chunks(c)%field%x_min,&
@@ -204,7 +204,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array4,                 &
                 chunks(c)%field%work_array5,                 &
                 alpha, rrn)
-          ELSEIF(use_ocl_kernels) THEN
+          ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_ur(chunks(c)%field%x_min,&
@@ -232,7 +232,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array2,                 &
                 chunks(c)%field%work_array5,                 &
                 beta)
-          ELSEIF(use_ocl_kernels) THEN
+          ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_p(chunks(c)%field%x_min,&
@@ -261,7 +261,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%u,                           &
                 chunks(c)%field%work_array2)
-          ELSEIF(use_ocl_kernels) THEN
+          ELSEIF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
           ELSEIF(use_C_kernels) THEN
               CALL tea_leaf_kernel_solve_c(chunks(c)%field%x_min,&
@@ -309,7 +309,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%energy1,                         &
               chunks(c)%field%density1,                        &
               chunks(c)%field%u)
-      ELSEIF(use_ocl_kernels) THEN
+      ELSEIF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_finalise_ocl()
       ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_finalise_c(chunks(c)%field%x_min, &

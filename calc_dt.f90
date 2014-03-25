@@ -81,7 +81,7 @@ SUBROUTINE calc_dt(chunk,local_dt,local_control,xl_pos,yl_pos,jldt,kldt)
                         kldt,                          &
                         small                          )
 
-  ELSEIF(use_ocl_kernels)THEN
+  ELSEIF(use_opencl_kernels)THEN
 
     CALL calc_dt_kernel_ocl(g_small,                       &
                             g_big,                         &

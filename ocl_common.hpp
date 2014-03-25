@@ -123,19 +123,18 @@ private:
     cl::Kernel update_halo_left_device;
     cl::Kernel update_halo_right_device;
 
+    typedef enum {TEA_ENUM_JACOBI, TEA_ENUM_CG} tea_solver_t;
+    tea_solver_t tea_solver;
+
     // tea leaf
-    bool tl_use_cg;
     cl::Kernel tea_leaf_cg_init_u_device;
     cl::Kernel tea_leaf_cg_init_directions_device;
     cl::Kernel tea_leaf_cg_init_others_device;
     cl::Kernel tea_leaf_cg_solve_calc_w_device;
     cl::Kernel tea_leaf_cg_solve_calc_ur_device;
     cl::Kernel tea_leaf_cg_solve_calc_p_device;
-
     cl::Buffer z;
 
-    // need more for the Kx/Ky arrays
-    cl::Buffer work_array_6;
     cl::Kernel tea_leaf_jacobi_init_device;
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
@@ -208,6 +207,7 @@ private:
     cl::Buffer work_array_3;
     cl::Buffer work_array_4;
     cl::Buffer work_array_5;
+    cl::Buffer work_array_6;
 
     // for reduction in PdV
     cl::Buffer PdV_reduce_buf;
@@ -429,6 +429,15 @@ public:
     (double* device_buffer, buffer_func_t buffer_func,
      int x_inc, int y_inc, int edge, int dest,
      int which_field, int depth);
+};
+
+class KernelCompileError : std::exception
+{
+private:
+    const char* _err;
+public:
+    KernelCompileError(const char* err):_err(err){}
+    const char* what() const throw() {return _err;}
 };
 
 #endif

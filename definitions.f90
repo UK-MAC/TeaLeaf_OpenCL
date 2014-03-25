@@ -71,7 +71,7 @@ MODULE definitions_module
    LOGICAL      :: use_fortran_kernels
    LOGICAL      :: use_C_kernels
    LOGICAL      :: use_OA_kernels
-   LOGICAL      :: use_ocl_kernels
+   LOGICAL      :: use_opencl_kernels
    LOGICAL      :: use_Tealeaf
    LOGICAL      :: use_Hydro
    LOGICAL      :: tl_use_cg

@@ -105,7 +105,7 @@ void CloverChunk::initProgram
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_y", advec_cell_y_device);
 
-    if (tl_use_cg)
+    if (tea_solver == TEA_ENUM_CG)
     {
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
@@ -143,9 +143,9 @@ void CloverChunk::compileKernel
         {
             program = compileProgram(source_str, options);
         }
-        catch (std::string errs)
+        catch (KernelCompileError err)
         {
-            DIE("Errors in compiling %s:\n%s\n", kernel_name, errs.c_str());
+            DIE("Errors in compiling %s:\n%s\n", kernel_name, err.what());
         }
 
         built_programs[source_name] = program;
@@ -223,7 +223,7 @@ cl::Program CloverChunk::compileProgram
 
         std::string errs(errstream.str());
         //DIE("%s\n", errs.c_str());
-        throw errs;
+        throw KernelCompileError(errs.c_str());
     }
 
     // return
@@ -385,7 +385,7 @@ void CloverChunk::initSizes
 
     FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
 
-    if (tl_use_cg)
+    if (tea_solver == TEA_ENUM_CG)
     {
         FIND_PADDING_SIZE(tea_leaf_cg_init_u, -2, 2, -2, 2); // works
         FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1); // works

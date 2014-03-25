@@ -72,7 +72,7 @@ SUBROUTINE update_halo(fields,depth)
                                 chunks(c)%field%work_array1,    &
                                 fields,                         &
                                 depth                           )
-      ELSEIF(use_ocl_kernels)THEN
+      ELSEIF(use_opencl_kernels)THEN
         CALL update_halo_kernel_ocl(chunks(c)%chunk_neighbours,     &
                                     fields,                         &
                                     depth                           )

@@ -3,24 +3,25 @@
 void CloverChunk::initBuffers
 (void)
 {
-    const std::vector<double> zeros(total_cells, 0.0);
-
-    #define BUF_ALLOC(name, size)                               \
-        try                                                     \
-        {                                                       \
-            name = cl::Buffer(context,                          \
-                              CL_MEM_READ_WRITE,                \
-                              (size));                          \
-            queue.enqueueWriteBuffer(name,\
-                                     CL_TRUE,\
-                                     0,\
-                                     (size),\
-                                     &zeros[0]);\
-        }                                                       \
-        catch (cl::Error e)                                     \
-        {                                                       \
+    #define BUF_ALLOC(name, size)                   \
+        try                                         \
+        {                                           \
+            const size_t buf_sz = size;             \
+            const std::vector<double> zeros(        \
+                (buf_sz)/sizeof(double), 0.0);      \
+            name = cl::Buffer(context,              \
+                              CL_MEM_READ_WRITE,    \
+                              (buf_sz));            \
+            queue.enqueueWriteBuffer(name,          \
+                                     CL_TRUE,       \
+                                     0,             \
+                                     (buf_sz),      \
+                                     &zeros[0]);    \
+        }                                           \
+        catch (cl::Error e)                         \
+        {                                           \
             DIE("Error in creating %s buffer %d\n", \
-                    #name, e.err());                            \
+                    #name, e.err());                \
         }
 
     #define BUF1DX_ALLOC(name, x_e)     \
@@ -75,23 +76,11 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(work_array_4, 1, 1);
     BUF2D_ALLOC(work_array_5, 1, 1);
 
-    if (tl_use_cg)
-    {
-        BUF2D_ALLOC(z, 1, 1);
-        BUF2D_ALLOC(work_array_6, 1, 1);
-    }
+    BUF2D_ALLOC(z, 1, 1);
+    BUF2D_ALLOC(work_array_6, 1, 1);
 
 #if defined(NO_KERNEL_REDUCTIONS)
     // reduction arrays
-    /*
-    BUF2D_ALLOC(reduce_buf_1, 1, 1);
-    BUF2D_ALLOC(reduce_buf_2, 1, 1);
-    BUF2D_ALLOC(reduce_buf_3, 1, 1);
-    BUF2D_ALLOC(reduce_buf_4, 1, 1);
-    BUF2D_ALLOC(reduce_buf_5, 1, 1);
-    BUF2D_ALLOC(reduce_buf_6, 1, 1);
-    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*total_cells);
-    */
     BUF_ALLOC(reduce_buf_1, sizeof(double)*total_cells);
     BUF_ALLOC(reduce_buf_2, sizeof(double)*total_cells);
     BUF_ALLOC(reduce_buf_3, sizeof(double)*total_cells);
@@ -102,13 +91,13 @@ void CloverChunk::initBuffers
 #else
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
-    BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(reduce_buf_2, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)))
-    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*(x_max+4)*(y_max+4))
+    BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(reduce_buf_2, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*total_cells)/(LOCAL_X*LOCAL_Y)));
+    BUF_ALLOC(PdV_reduce_buf, 1.5*((sizeof(int)*total_cells)/(LOCAL_X*LOCAL_Y)));
 #endif
 
     #undef BUF2D_ALLOC
@@ -394,7 +383,7 @@ void CloverChunk::initArgs
     // no parameters set for update_halo here
 
     // tealeaf
-    if (tl_use_cg)
+    if (tea_solver == TEA_ENUM_CG)
     {
         /*
          *  work_array_1 = p

@@ -203,10 +203,10 @@ CloverChunk::~CloverChunk
 {
     if (profiler_on)
     {
-		fprintf(stdout, "@@@@@ PROFILING @@@@@\n");
+        fprintf(stdout, "@@@@@ PROFILING @@@@@\n");
 
         for (std::map<std::string, double>::iterator ii = kernel_times.begin();
-			ii != kernel_times.end(); ii++)
+            ii != kernel_times.end(); ii++)
         {
             fprintf(stdout, "%30s : %.3lf\n", (*ii).first.c_str(), (*ii).second);
         }

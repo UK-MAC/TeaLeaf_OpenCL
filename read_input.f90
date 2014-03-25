@@ -69,7 +69,7 @@ SUBROUTINE read_input()
   use_fortran_kernels=.TRUE.
   use_C_kernels=.FALSE.
   use_OA_kernels=.FALSE.
-  use_ocl_kernels=.FALSE.
+  use_opencl_kernels=.FALSE.
   use_vector_loops=.FALSE.
   use_Hydro = .FALSE.
   use_Tealeaf=.TRUE.
@@ -176,22 +176,22 @@ SUBROUTINE read_input()
         use_fortran_kernels=.TRUE.
         use_C_kernels=.FALSE.
         use_OA_kernels=.FALSE.
-        use_ocl_kernels=.FALSE.
+        use_opencl_kernels=.FALSE.
       CASE('use_c_kernels')
         use_fortran_kernels=.FALSE.
         use_C_kernels=.TRUE.
         use_OA_kernels=.FALSE.
-        use_ocl_kernels=.FALSE.
-      CASE('use_ocl_kernels')
+        use_opencl_kernels=.FALSE.
+      CASE('use_opencl_kernels')
         use_fortran_kernels=.FALSE.
         use_C_kernels=.FALSE.
         use_OA_kernels=.FALSE.
-        use_ocl_kernels=.TRUE.
+        use_opencl_kernels=.TRUE.
       CASE('use_oa_kernels')
         use_fortran_kernels=.FALSE.
         use_C_kernels=.FALSE.
         use_OA_kernels=.TRUE.
-        use_ocl_kernels=.FALSE.
+        use_opencl_kernels=.FALSE.
       CASE('tl_use_jacobi')
         tl_use_cg = .false.
         tl_use_jacobi = .true.
@@ -294,7 +294,7 @@ SUBROUTINE read_input()
     WRITE(g_out,*)
     IF(use_fortran_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using Fortran Kernels'
-    ELSEIF(use_ocl_kernels) THEN
+    ELSEIF(use_opencl_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using OpenCL Kernels'
     ELSEIF(use_c_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using C Kernels'
