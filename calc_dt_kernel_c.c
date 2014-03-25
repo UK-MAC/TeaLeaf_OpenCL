@@ -136,8 +136,10 @@ void calc_dt_kernel_c_(int *xmin,int *xmax,int *ymin,int *ymax,
   }
 
 // min: is not defined for some old versions of GCC
-#ifndef __GNUC__
-#pragma omp for private(j) reduction(min:dt_min_val)
+#if !defined(__GNUC__) || (__GNUC__ >= 4 && __GNUC_MINOR__ >=7)
+    #pragma omp parallel for reduction(max:error)
+#else
+    #warning C version of calc_dt reduction will not run in parallel due to lack of max reduction in the current version of gcc being used
 #endif
   for (k=y_min;k<=y_max;k++) {
 #pragma ivdep
