@@ -171,7 +171,7 @@ void CloverChunk::initOcl
     else
     {
         tea_solver = TEA_ENUM_JACOBI;
-        fprintf(stdout, "Jacobi (no solver specified in tea.in\n");
+        fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
     fclose(input);

@@ -279,6 +279,7 @@ SUBROUTINE tea_leaf()
           ENDIF
         ENDIF
 
+        ! updates u and possibly p
         CALL update_halo(fields,2)
 
         CALL clover_max(error)

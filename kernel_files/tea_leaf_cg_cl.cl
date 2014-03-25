@@ -75,6 +75,7 @@ __kernel void tea_leaf_cg_init_others
 
     // used to make ifdefs for reductions less messy
     double rro_val;
+
     if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
     && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
@@ -176,8 +177,8 @@ __kernel void tea_leaf_cg_solve_calc_ur
     // as above
     double rrn_val;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];

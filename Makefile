@@ -135,6 +135,8 @@ CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 
+CXXFLAGS+=$(CFLAGS)
+
 C_FILES=\
 	accelerate_kernel_c.o           \
 	pack_kernel_c.o \

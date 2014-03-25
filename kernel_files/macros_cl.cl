@@ -39,6 +39,8 @@
     #define SQRT(a) sqrt(a)
 #endif
 
+#if !defined(NO_KERNEL_REDUCTIONS)
+
 // TODO probably can optimise reductions somehow
 #if defined(CL_DEVICE_TYPE_GPU)
 
@@ -182,3 +184,4 @@
 
 #endif
 
+#endif

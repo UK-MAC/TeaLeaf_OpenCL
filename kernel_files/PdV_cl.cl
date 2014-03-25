@@ -185,7 +185,6 @@ __kernel void PdV_not_predict
 
         energy1[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)] - energy_change;
         density1[THARR2D(0, 0, 0)] = density0[THARR2D(0, 0, 0)] * volume_change;
-
     }
 
 #if !defined(NO_KERNEL_REDUCTIONS)
