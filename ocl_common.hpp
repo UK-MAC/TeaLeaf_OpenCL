@@ -102,11 +102,13 @@ private:
     cl::Kernel PdV_not_predict_device;
 
     cl::Kernel advec_mom_vol_device;
-    cl::Kernel advec_mom_node_flux_post_x_device;
+    cl::Kernel advec_mom_node_flux_post_x_1_device;
+    cl::Kernel advec_mom_node_flux_post_x_2_device;
     cl::Kernel advec_mom_node_pre_x_device;
     cl::Kernel advec_mom_flux_x_device;
     cl::Kernel advec_mom_xvel_device;
-    cl::Kernel advec_mom_node_flux_post_y_device;
+    cl::Kernel advec_mom_node_flux_post_y_1_device;
+    cl::Kernel advec_mom_node_flux_post_y_2_device;
     cl::Kernel advec_mom_node_pre_y_device;
     cl::Kernel advec_mom_flux_y_device;
     cl::Kernel advec_mom_yvel_device;
