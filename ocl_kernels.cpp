@@ -363,13 +363,13 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
 
     FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2); // works
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_1, 0, 1, -2, 2);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_2, 0, 1, -1, 2);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_1, -1, 1, -2, 2);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_2, -1, 1, -1, 2);
     FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2); // works
     FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1); // works
     FIND_PADDING_SIZE(advec_mom_xvel, 0, 1, 0, 1); // works
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_1, -2, 2, 0, 1);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_2, -1, 2, 0, 1);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_1, -2, 2, -1, 1);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_2, -1, 2, -1, 1);
     FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1); // works

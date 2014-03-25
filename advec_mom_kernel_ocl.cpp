@@ -32,12 +32,6 @@ void CloverChunk::advec_mom_kernel
         advec_mom_yvel_device.setArg(3, yvel1);
     }
 
-    // FIXME something still a bit dodgy - results slightly wrong
-    #ifdef ENQUEUE_OFFSET
-    #undef ENQUEUE_OFFSET
-    #endif
-    #define ENQUEUE_OFFSET ENQUEUE
-
     if (1 == direction)
     {
         //ENQUEUE(advec_mom_node_flux_post_x_1_device);
