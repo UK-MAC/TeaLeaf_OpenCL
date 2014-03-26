@@ -131,7 +131,7 @@ void CloverChunk::initProgram
 }
 
 void CloverChunk::compileKernel
-(const std::string& options,
+(const std::string& options_orig,
  const std::string& source_name,
  const char* kernel_name,
  cl::Kernel& kernel)
@@ -139,6 +139,20 @@ void CloverChunk::compileKernel
     const std::string source_str(source_name);
     fprintf(DBGOUT, "Compiling %s...", kernel_name);
     cl::Program program;
+
+    std::stringstream plusprof("");
+
+#if defined(PHI_SOURCE_PROFILING)
+    if (desired_type == CL_DEVICE_TYPE_ACCELERATOR)
+    {
+        plusprof << " -profiling ";
+        plusprof << " -s \"" << _PWD_ << kernel_name << "_cl.cl\" ";
+    }
+    plusprof << options_orig;
+    std::string options(plusprof.str());
+#else
+    std::string options(options_orig);
+#endif
 
     if (built_programs.find(source_name) == built_programs.end())
     {

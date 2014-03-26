@@ -1,3 +1,5 @@
+#include <kernel_files/macros_cl.cl>
+
 /*
  *  Kernels used for conjugate gradient method
  */
