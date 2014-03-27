@@ -3,12 +3,11 @@
 void CloverChunk::initBuffers
 (void)
 {
-    #define BUF_ALLOC(name, size)                   \
+    const std::vector<double> zeros(total_cells, 0.0);
+
+    #define BUF_ALLOC(name, buf_sz)                 \
         try                                         \
         {                                           \
-            const size_t buf_sz = size;             \
-            const std::vector<double> zeros(        \
-                (buf_sz)/sizeof(double), 0.0);      \
             name = cl::Buffer(context,              \
                               CL_MEM_READ_WRITE,    \
                               (buf_sz));            \
@@ -43,9 +42,6 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(viscosity, 0, 0);
     BUF2D_ALLOC(volume, 0, 0);
 
-    // tealeaf
-    BUF2D_ALLOC(u, 0, 0);
-
     BUF2D_ALLOC(xvel0, 1, 1);
     BUF2D_ALLOC(xvel1, 1, 1);
     BUF2D_ALLOC(yvel0, 1, 1);
@@ -76,6 +72,8 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(work_array_4, 1, 1);
     BUF2D_ALLOC(work_array_5, 1, 1);
 
+    // tealeaf
+    BUF2D_ALLOC(u, 0, 0);
     BUF2D_ALLOC(z, 1, 1);
     BUF2D_ALLOC(work_array_6, 1, 1);
 

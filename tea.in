@@ -19,9 +19,9 @@
   end_time=1.0
   end_step=87
 
-  opencl_vendor=advanced
+  opencl_vendor=nvidia
   opencl_type=gpu
-  opencl_device=1
+  opencl_device=0
   use_opencl_kernels
 
   tl_max_iters=10000
@@ -31,5 +31,6 @@
 
   tea_leaf_off
   hydro_on
+  profiler_on
 
 *endtea
