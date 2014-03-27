@@ -2,9 +2,7 @@
 
 ## TODO
 
-* Merge c implementation of CG solver
 * Make preconditioner selectable from tea.in and not a compile time flag
-* Asynchronous memory copies after reductions to avoid waiting for each one
 
 ## Compling
 
