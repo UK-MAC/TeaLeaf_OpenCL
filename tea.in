@@ -19,9 +19,9 @@
   end_time=1.0
   end_step=87
 
-  opencl_vendor=intel
-  opencl_type=accelerator
-  opencl_device=0
+  opencl_vendor=advanced
+  opencl_type=gpu
+  opencl_device=1
   use_opencl_kernels
 
   tl_max_iters=10000

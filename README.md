@@ -1,10 +1,19 @@
 # TeaLeaf
 
+## OpenCL quirks
+
+* The C++ MPI library is called different things dpeending on platform and which
+  implementation of MPI is being used - this needs to be specified by passing in
+  the `MPICXX_LIB` option to the Makefile. Possible names include:
+  * `-lmpi_cxx`
+  * `-lmpiCC`
+  * `-lmpichcxx`
+
 ## TODO
 
 * Make preconditioner selectable from tea.in and not a compile time flag
 
-## Compling
+## Compiling
 
 - In many case just typing `make` in the required software version will work. 
 

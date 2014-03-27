@@ -118,8 +118,10 @@ ifdef IEEE
   I3E=$(I3E_$(COMPILER))
 endif
 
-LDLIBS+=-lOpenCL -lstdc++
-CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D _PWD_="\"$(shell pwd)/\""
+MPICXX_LIB=-lmpi_cxx
+
+LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
+CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D _PWD_="\"$(shell pwd)/\"" -D MPI_HDR
 VPATH+=kernel_files
 
 ifdef NO_KERNEL_REDUCTIONS

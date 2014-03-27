@@ -1,3 +1,6 @@
+#if defined(MPI_HDR)
+#include "mpi.h"
+#endif
 #include "ocl_common.hpp"
 
 #include <cstdio>

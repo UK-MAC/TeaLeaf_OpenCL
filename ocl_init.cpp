@@ -48,20 +48,16 @@ CloverChunk::CloverChunk
 
 #if defined(MPI_HDR)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    double t0 = MPI_Wtime();
 #else
     rank = 0;
+    double t0 = omp_get_wtime();
 #endif
 
     if (!rank)
     {
         fprintf(stdout, "Initialising OpenCL\n");
     }
-
-#if defined(MPI_HDR)
-    double t0 = MPI_Wtime();
-#else
-    double t0 = omp_get_wtime();
-#endif
 
     initOcl();
 
@@ -157,21 +153,24 @@ void CloverChunk::initOcl
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
 
-    fprintf(stdout, "Solver to use: ");
-    if (tl_use_cg)
+    if (!rank)
     {
-        tea_solver = TEA_ENUM_CG;
-        fprintf(stdout, "Conjugate gradient\n");
-    }
-    else if (tl_use_jacobi)
-    {
-        tea_solver = TEA_ENUM_JACOBI;
-        fprintf(stdout, "Jacobi\n");
-    }
-    else
-    {
-        tea_solver = TEA_ENUM_JACOBI;
-        fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
+        fprintf(stdout, "Solver to use: ");
+        if (tl_use_cg)
+        {
+            tea_solver = TEA_ENUM_CG;
+            fprintf(stdout, "Conjugate gradient\n");
+        }
+        else if (tl_use_jacobi)
+        {
+            tea_solver = TEA_ENUM_JACOBI;
+            fprintf(stdout, "Jacobi\n");
+        }
+        else
+        {
+            tea_solver = TEA_ENUM_JACOBI;
+            fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
+        }
     }
 
     fclose(input);
@@ -239,7 +238,7 @@ void CloverChunk::initOcl
 
 #if defined(MPI_HDR)
     // gets devices one at a time to prevent conflicts (on emerald)
-    int ranks, rank, cur_rank = 0;
+    int ranks, cur_rank = 0;
 
     MPI_Comm_size(MPI_COMM_WORLD, &ranks);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -277,11 +276,12 @@ void CloverChunk::initOcl
 
             device.getInfo(CL_DEVICE_NAME, &devname);
 
+            fprintf(stdout, "OpenCL using device %d (%s)", preferred_device+rank, devname.c_str());
 #if defined(MPI_HDR)
-            fprintf(stdout, "OpenCL using %s in rank %d\n", devname.c_str(), rank);
-#else
-            fprintf(stdout, "OpenCL using %s\n", devname.c_str());
+            fprintf(stdout, " in rank %d", rank);
 #endif
+            fprintf(stdout, "\n", devname.c_str());
+
             // choose reduction based on device type
             switch (desired_type)
             {
