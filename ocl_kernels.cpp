@@ -26,11 +26,6 @@ void CloverChunk::initProgram
     options << "-D NO_KERNEL_REDUCTIONS ";
 #endif
 
-#ifdef ONED_KERNEL_LAUNCHES
-    // launch kernels with 1d work group size
-    options << "-DONED_KERNEL_LAUNCHES ";
-#endif
-
     // use jacobi preconditioner when running CG solver
     options << "-DCG_DO_PRECONDITION ";
 
@@ -259,32 +254,29 @@ cl::Program CloverChunk::compileProgram
 void CloverChunk::initSizes
 (void)
 {
-#if defined(ONED_KERNEL_LAUNCHES)
-    size_t glob_x = x_max+5;
-    size_t glob_y = y_max+5;
-    total_cells = glob_x*glob_y;
-
-    // pad as below
-    while (total_cells % LOCAL_X)
-    {
-        total_cells++;
-    }
-
-    fprintf(DBGOUT, "Global size = %zu\n", total_cells);
-    global_size = cl::NDRange(total_cells);
-#else
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    size_t glob_x = x_max+5 +
+    const size_t glob_x = x_max+5 +
         (((x_max+5)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+5)%LOCAL_X)));
-    size_t glob_y = y_max+5 +
+    const size_t glob_y = y_max+5 +
         (((y_max+5)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+5)%LOCAL_Y)));
     total_cells = glob_x*glob_y;
 
     fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
-#endif
+
+    /*
+     *  all the reductions only operate on the inner cells, because the halo
+     *  cells aren't really part of the simulation. create a new global size
+     *  that doesn't include these halo cells for the reduction which should
+     *  speed it up a bit
+     */
+    const size_t red_x = x_max +
+        (((x_max)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max)%LOCAL_X)));
+    const size_t red_y = y_max +
+        (((y_max)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max)%LOCAL_Y)));
+    reduced_cells = red_x*red_y;
 
     /*
      *  update halo kernels need specific work group sizes - not doing a
@@ -377,13 +369,13 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
 
     FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2); // works
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_1, -1, 1, -2, 2);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_2, -1, 1, -1, 2);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_1, -1, 1, -2, 2); // works
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_2, -1, 1, -1, 2); // works
     FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2); // works
     FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1); // works
     FIND_PADDING_SIZE(advec_mom_xvel, 0, 1, 0, 1); // works
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_1, -2, 2, -1, 1);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_2, -1, 2, -1, 1);
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_1, -2, 2, -1, 1); // works
+    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_2, -1, 2, -1, 1); // works
     FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1); // works
     FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1); // works

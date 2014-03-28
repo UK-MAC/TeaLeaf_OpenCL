@@ -13,15 +13,15 @@ void CloverChunk::initReduction
      */
     fprintf(DBGOUT, "\n---- Reduction ----\n");
 
-    fprintf(DBGOUT, "Total cells = %zu\n", total_cells);
-
 #if defined(NO_KERNEL_REDUCTIONS)
     // no reduction inside kernel
-    const size_t total_to_reduce = total_cells;
+    const size_t total_to_reduce = reduced_cells;
 #else
     // each work group reduces to 1 value inside each kernel
-    const size_t total_to_reduce = ceil(float(total_cells)/(LOCAL_X*LOCAL_Y));
+    const size_t total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
 #endif
+
+    fprintf(DBGOUT, "Total cells to reduce = %zu\n", total_to_reduce);
 
     size_t reduction_global_size = total_to_reduce;
     fprintf(DBGOUT, "Reduction within work group reduces to = %zu\n", reduction_global_size);

@@ -1,20 +1,12 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
-#ifdef ONED_KERNEL_LAUNCHES
-    #define __kernel_indexes                            \
-        const size_t glob_id = get_global_id(0); \
-        const size_t row = glob_id / (x_max + 4);  \
-        const size_t column = glob_id % (x_max + 4); \
-        const size_t lid = get_local_id(0);
-#else
-    #define __kernel_indexes                            \
-        const size_t column = get_global_id(0);			\
-        const size_t row = get_global_id(1);				\
-        const size_t loc_column = get_local_id(0);			\
-        const size_t loc_row = get_local_id(1);			\
-        const size_t lid = loc_row*LOCAL_X + loc_column;	\
-        const size_t gid = row*get_global_size(0) + column;
-#endif
+#define __kernel_indexes                            \
+    const size_t column = get_global_id(0);			\
+    const size_t row = get_global_id(1);				\
+    const size_t loc_column = get_local_id(0);			\
+    const size_t loc_row = get_local_id(1);			\
+    const size_t lid = loc_row*LOCAL_X + loc_column;	\
+    const size_t gid = row*get_global_size(0) + column;
 
 #define THARR2D(x_offset, y_offset, big_row)        \
     (                                               \

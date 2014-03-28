@@ -60,7 +60,6 @@ CloverChunk::CloverChunk
     }
 
     initOcl();
-
     initProgram();
     initSizes();
     initReduction();

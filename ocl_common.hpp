@@ -227,6 +227,8 @@ private:
     cl::NDRange global_size;
     // total number of cells
     size_t total_cells;
+    // number of cells reduced
+    size_t reduced_cells;
 
     // sizes for launching update halo kernels - l/r and u/d updates
     cl::NDRange update_lr_global_size[2];
@@ -394,8 +396,7 @@ public:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL) ;
 
-    // not compatible - can't 'pad' a 1d work group
-#if defined(ONED_KERNEL_LAUNCHES)
+#if 0
     #define ENQUEUE_OFFSET(knl) ENQUEUE(knl)
 #else
     #define ENQUEUE_OFFSET(knl)                                     \
