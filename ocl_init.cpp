@@ -48,11 +48,11 @@ CloverChunk::CloverChunk
 
 #if defined(MPI_HDR)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    double t0 = MPI_Wtime();
 #else
     rank = 0;
-    double t0 = omp_get_wtime();
 #endif
+
+    double t0 = omp_get_wtime();
 
     if (!rank)
     {
@@ -68,16 +68,11 @@ CloverChunk::CloverChunk
 
 #if defined(MPI_HDR)
     MPI_Barrier(MPI_COMM_WORLD);
-    if (!rank)
-    {
-        fprintf(stdout, "Finished initialisation in %lf seconds\n", MPI_Wtime()-t0);
-    }
-#else
+#endif
     if (!rank)
     {
         fprintf(stdout, "Finished initialisation in %lf seconds\n", omp_get_wtime()-t0);
     }
-#endif
 }
 
 void CloverChunk::initOcl
@@ -260,13 +255,10 @@ void CloverChunk::initOcl
                     "No device specified, choosing device 0\n");
                 device = devices.at(0);
             }
-            else if (preferred_device+rank > devices.size())
+            else if (preferred_device+rank >= devices.size())
             {
-                // if preferred does not exist, choose 0 and warn
-                fprintf(stderr,
-                    "WARNING - device %d does not exist as there are only %zu available - choosing 0\n",
-                    preferred_device, devices.size());
-                device = devices.at(0);
+                DIE("Device %d was selected in rank %d but there are only %zu available\n",
+                    preferred_device+rank, rank, devices.size());
             }
             else
             {
@@ -275,11 +267,8 @@ void CloverChunk::initOcl
 
             device.getInfo(CL_DEVICE_NAME, &devname);
 
-            fprintf(stdout, "OpenCL using device %d (%s)", preferred_device+rank, devname.c_str());
-#if defined(MPI_HDR)
-            fprintf(stdout, " in rank %d", rank);
-#endif
-            fprintf(stdout, "\n", devname.c_str());
+            fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
+                preferred_device+rank, devname.c_str(), rank);
 
             // choose reduction based on device type
             switch (desired_type)
