@@ -109,8 +109,8 @@ void CloverChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
 
     // get initial guess in w, r, etc
-    ENQUEUE(tea_leaf_cg_init_others_device);
-    //ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
+    //ENQUEUE(tea_leaf_cg_init_others_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 }
@@ -118,8 +118,8 @@ void CloverChunk::tea_leaf_init_cg
 void CloverChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
-    ENQUEUE(tea_leaf_cg_solve_calc_w_device);
-    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
+    //ENQUEUE(tea_leaf_cg_solve_calc_w_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 }
 
@@ -128,8 +128,8 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
-    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
+    //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 }
 

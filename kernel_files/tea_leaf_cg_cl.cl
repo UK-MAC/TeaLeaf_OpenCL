@@ -18,8 +18,8 @@ __kernel void tea_leaf_cg_init_u
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if (/*row >= (y_min + 1) - 2 &&*/ row <= (y_max + 1) + 2
+    && /*column >= (x_min + 1) - 2 &&*/ column <= (x_max + 1) + 2)
     {
         p[THARR2D(0, 0, 0)] = 0.0;
         r[THARR2D(0, 0, 0)] = 0.0;
@@ -44,8 +44,8 @@ __kernel void tea_leaf_cg_init_directions
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 1)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 1)
     {
         Kx[THARR2D(0, 0, 0)] = (d[THARR2D(-1, 0, 0)] + d[THARR2D(0, 0, 0)])
             /(2.0*d[THARR2D(-1, 0, 0)]*d[THARR2D(0, 0, 0)]);
@@ -78,8 +78,8 @@ __kernel void tea_leaf_cg_init_others
     // used to make ifdefs for reductions less messy
     double rro_val;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -134,8 +134,8 @@ __kernel void tea_leaf_cg_solve_calc_w
     pw_shared[lid] = 0.0;
 #endif
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -213,8 +213,8 @@ __kernel void tea_leaf_cg_solve_calc_p
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
 #ifdef CG_DO_PRECONDITION
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
