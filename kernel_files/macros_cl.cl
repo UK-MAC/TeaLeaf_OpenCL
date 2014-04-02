@@ -35,9 +35,9 @@
 #if defined(CL_DEVICE_TYPE_GPU)
 
     // binary tree reduction
-    #define REDUCTION(in, out, operation)                    \
+    #define REDUCTION(in, out, operation)                           \
         barrier(CLK_LOCAL_MEM_FENCE);                               \
-        for (int offset = BLOCK_SZ / 2; offset > 0; offset /= 2) \
+        for (int offset = BLOCK_SZ / 2; offset > 0; offset /= 2)    \
         {                                                           \
             if (lid < offset)                                       \
             {                                                       \
@@ -54,30 +54,31 @@
 #elif defined(CL_DEVICE_TYPE_CPU)
 
     // loop in first thread
-    #define REDUCTION(in, out, operation)                    \
-        barrier(CLK_LOCAL_MEM_FENCE);                               \
-        if (0 == lid)                                               \
-        {                                                           \
-            for (int offset = 1; offset < BLOCK_SZ; offset++)    \
-            {                                                       \
-                in[0] = operation(in[0], in[offset]);               \
-            }                                                       \
+    #define REDUCTION(in, out, operation)                       \
+        barrier(CLK_LOCAL_MEM_FENCE);                           \
+        if (0 == lid)                                           \
+        {                                                       \
+            for (int offset = 1; offset < BLOCK_SZ; offset++)   \
+            {                                                   \
+                in[0] = operation(in[0], in[offset]);           \
+            }                                                   \
             out[get_group_id(1)*get_num_groups(0) + get_group_id(0)] = in[0]; \
         }
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
 
     // loop in first thread
-    #define REDUCTION(in, out, operation)                    \
-        barrier(CLK_LOCAL_MEM_FENCE);                               \
-        if (0 == lid)                                               \
-        {                                                           \
-            for (int offset = 1; offset < BLOCK_SZ; offset++)    \
-            {                                                       \
-                in[0] = operation(in[0], in[offset]);               \
-            }                                                       \
+    #define REDUCTION(in, out, operation)                       \
+        barrier(CLK_LOCAL_MEM_FENCE);                           \
+        if (0 == lid)                                           \
+        {                                                       \
+            for (int offset = 1; offset < BLOCK_SZ; offset++)   \
+            {                                                   \
+                in[0] = operation(in[0], in[offset]);           \
+            }                                                   \
             out[get_group_id(1)*get_num_groups(0) + get_group_id(0)] = in[0]; \
         }
+
 #if 0
 
     /*
