@@ -71,12 +71,8 @@ __kernel void tea_leaf_jacobi_solve
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    error[gid] = 0;
-#else
     __local double error_local[BLOCK_SZ];
     error_local[lid] = 0;
-#endif
 
     if (row >= (y_min + 1) && row <= (y_max + 1)
     && column >= (x_min + 1) && column <= (x_max + 1))
@@ -89,16 +85,10 @@ __kernel void tea_leaf_jacobi_solve
             /(1.0 + (Kx[THARR2D(0, 0, 0)] + Kx[THARR2D(1, 0, 0)])*rx
                   + (Ky[THARR2D(0, 0, 0)] + Ky[THARR2D(0, 1, 0)])*ry);
         
-#if defined(NO_KERNEL_REDUCTIONS)
-        error[gid] = u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)];
-#else
         error_local[lid] = u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)];
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(error_local, error, MAX);
-#endif
 }
 
 /*

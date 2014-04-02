@@ -18,14 +18,6 @@ __kernel void field_summary
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    vol[gid] = 0.0;
-    mass[gid] = 0.0;
-    ie[gid] = 0.0;
-    ke[gid] = 0.0;
-    press[gid] = 0.0;
-    temp[gid] = 0.0;
-#else
     __local double vol_shared[BLOCK_SZ];
     __local double mass_shared[BLOCK_SZ];
     __local double ie_shared[BLOCK_SZ];
@@ -38,7 +30,6 @@ __kernel void field_summary
     ke_shared[lid] = 0.0;
     press_shared[lid] = 0.0;
     temp_shared[lid] = 0.0;
-#endif
 
     if(row >= (y_min + 1) && row <= (y_max + 1)
     && column >= (x_min + 1) && column <= (x_max + 1))
@@ -61,30 +52,19 @@ __kernel void field_summary
         const double cell_vol = volume[THARR2D(0, 0, 0)];
         const double cell_mass = cell_vol * density0[THARR2D(0, 0, 0)];
 
-#if defined(NO_KERNEL_REDUCTIONS)
-        vol[gid] = cell_vol;
-        mass[gid] = cell_mass;
-        ie[gid] = cell_mass * energy0[THARR2D(0, 0, 0)];
-        ke[gid] = cell_mass * 0.5 * vsqrd;
-        press[gid] = cell_vol * pressure[THARR2D(0, 0, 0)];
-        temp[gid] = cell_mass*u[THARR2D(0, 0, 0)];
-#else
         vol_shared[lid] = cell_vol;
         mass_shared[lid] = cell_mass;
         ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         ke_shared[lid] = cell_mass * 0.5 * vsqrd;
         press_shared[lid] = cell_vol * pressure[THARR2D(0, 0, 0)];
         temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(vol_shared, vol, SUM)
     REDUCTION(mass_shared, mass, SUM)
     REDUCTION(ie_shared, ie, SUM)
     REDUCTION(ke_shared, ke, SUM)
     REDUCTION(press_shared, press, SUM)
     REDUCTION(temp_shared, temp, SUM)
-#endif
 }
 

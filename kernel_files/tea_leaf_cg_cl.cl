@@ -68,12 +68,8 @@ __kernel void tea_leaf_cg_init_others
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    rro[gid] = 0.0;
-#else
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
-#endif
 
     // used to make ifdefs for reductions less messy
     double rro_val;
@@ -103,16 +99,10 @@ __kernel void tea_leaf_cg_init_others
         rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 #endif
 
-#if defined(NO_KERNEL_REDUCTIONS)
-        rro[gid] = rro_val;
-#else
         rro_shared[lid] = rro_val;
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(rro_shared, rro, SUM)
-#endif
 }
 
 /* reduce rro */
@@ -127,12 +117,8 @@ __kernel void tea_leaf_cg_solve_calc_w
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    pw[gid] = 0.0;
-#else
     __local double pw_shared[BLOCK_SZ];
     pw_shared[lid] = 0.0;
-#endif
 
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
@@ -143,16 +129,10 @@ __kernel void tea_leaf_cg_solve_calc_w
             - ry*(Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
             - rx*(Kx[THARR2D(1, 0, 0)]*p[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*p[THARR2D(-1, 0, 0)]);
         
-#if defined(NO_KERNEL_REDUCTIONS)
-        pw[gid] = p[THARR2D(0, 0, 0)]*w[THARR2D(0, 0, 0)];
-#else
         pw_shared[lid] = p[THARR2D(0, 0, 0)]*w[THARR2D(0, 0, 0)];
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(pw_shared, pw, SUM);
-#endif
 }
 
 /* reduce pw */
@@ -169,12 +149,8 @@ __kernel void tea_leaf_cg_solve_calc_ur
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    rrn[gid] = 0.0;
-#else
     __local double rrn_shared[BLOCK_SZ];
     rrn_shared[lid] = 0.0;
-#endif
 
     // as above
     double rrn_val;
@@ -191,16 +167,10 @@ __kernel void tea_leaf_cg_solve_calc_ur
         rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 #endif
 
-#if defined(NO_KERNEL_REDUCTIONS)
-        rrn[gid] = rrn_val;
-#else
         rrn_shared[lid] = rrn_val;
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(rrn_shared, rrn, SUM);
-#endif
 }
 
 /* reduce rrn */

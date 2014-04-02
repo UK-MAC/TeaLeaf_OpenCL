@@ -31,8 +31,6 @@
     #define SQRT(a) sqrt(a)
 #endif
 
-#if !defined(NO_KERNEL_REDUCTIONS)
-
 // TODO probably can optimise reductions somehow
 #if defined(CL_DEVICE_TYPE_GPU)
 
@@ -68,8 +66,6 @@
         }
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
-
-    //#warning Using CPU style reduction for xeon phi - better performance may be obtained by using the NO_KERNEL_REDUCTIONS option which removes the need for the barrier
 
     // loop in first thread
     #define REDUCTION(in, out, operation)                    \
@@ -173,7 +169,5 @@
 #else
 
     #error No device type specified - don't know which reduction to use
-
-#endif
 
 #endif
