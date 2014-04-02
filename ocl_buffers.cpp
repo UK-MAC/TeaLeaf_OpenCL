@@ -77,16 +77,6 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(z, 1, 1);
     BUF2D_ALLOC(work_array_6, 1, 1);
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    // reduction arrays
-    BUF_ALLOC(reduce_buf_1, sizeof(double)*reduced_cells);
-    BUF_ALLOC(reduce_buf_2, sizeof(double)*reduced_cells);
-    BUF_ALLOC(reduce_buf_3, sizeof(double)*reduced_cells);
-    BUF_ALLOC(reduce_buf_4, sizeof(double)*reduced_cells);
-    BUF_ALLOC(reduce_buf_5, sizeof(double)*reduced_cells);
-    BUF_ALLOC(reduce_buf_6, sizeof(double)*reduced_cells);
-    BUF_ALLOC(PdV_reduce_buf, sizeof(int)*reduced_cells)
-#else
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
     BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
@@ -96,7 +86,6 @@ void CloverChunk::initBuffers
     BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
     BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
     BUF_ALLOC(PdV_reduce_buf, 1.5*((sizeof(int)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-#endif
 
     #undef BUF2D_ALLOC
     #undef BUF1DX_ALLOC

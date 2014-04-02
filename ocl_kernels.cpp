@@ -21,11 +21,6 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    // don't do any reductions inside the kernels
-    options << "-D NO_KERNEL_REDUCTIONS ";
-#endif
-
     // use jacobi preconditioner when running CG solver
     options << "-DCG_DO_PRECONDITION ";
 
