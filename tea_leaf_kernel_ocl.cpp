@@ -154,7 +154,8 @@ void CloverChunk::tea_leaf_init_jacobi
     calcrxry(dt, rx, ry);
 
     tea_leaf_jacobi_init_device.setArg(6, coefficient);
-    ENQUEUE(tea_leaf_jacobi_init_device);
+    //ENQUEUE(tea_leaf_jacobi_init_device);
+    ENQUEUE_OFFSET(tea_leaf_jacobi_init_device);
 
     tea_leaf_jacobi_solve_device.setArg(0, *rx);
     tea_leaf_jacobi_solve_device.setArg(1, *ry);
@@ -163,8 +164,10 @@ void CloverChunk::tea_leaf_init_jacobi
 void CloverChunk::tea_leaf_kernel_jacobi
 (double rx, double ry, double* error)
 {
-    ENQUEUE(tea_leaf_jacobi_copy_u_device);
-    ENQUEUE(tea_leaf_jacobi_solve_device);
+    //ENQUEUE(tea_leaf_jacobi_copy_u_device);
+    ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
+    //ENQUEUE(tea_leaf_jacobi_solve_device);
+    ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
 
     *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
 }
@@ -173,6 +176,7 @@ void CloverChunk::tea_leaf_kernel_jacobi
 void CloverChunk::tea_leaf_finalise
 (void)
 {
-    ENQUEUE(tea_leaf_finalise_device);
+    //ENQUEUE(tea_leaf_finalise_device);
+    ENQUEUE_OFFSET(tea_leaf_finalise_device);
 }
 

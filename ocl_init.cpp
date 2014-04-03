@@ -141,6 +141,7 @@ void CloverChunk::initOcl
 
     int preferred_device = preferredDevice(input);
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
+    // FIXME if this is ANY, find the type of device that is actually acquired and set the device preprocessor type
     desired_type = typeRead(input);
 
     // find out which solver to use

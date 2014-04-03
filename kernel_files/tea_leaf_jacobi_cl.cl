@@ -16,8 +16,8 @@ __kernel void tea_leaf_jacobi_init
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
+    if (/*row >= (y_min + 1) - 1 &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 1)
     {
         u0[THARR2D(0, 0, 0)] = energy1[THARR2D(0, 0, 0)]*density1[THARR2D(0, 0, 0)];
         u1[THARR2D(0, 0, 0)] = energy1[THARR2D(0, 0, 0)]*density1[THARR2D(0, 0, 0)];
@@ -53,8 +53,8 @@ __kernel void tea_leaf_jacobi_copy_u
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
+    if (/*row >= (y_min + 1) - 1 &&*/ row <= (y_max + 1) + 1
+    && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 1)
     {
         un[THARR2D(0, 0, 0)] = u1[THARR2D(0, 0, 0)];
     }
@@ -74,8 +74,8 @@ __kernel void tea_leaf_jacobi_solve
     __local double error_local[BLOCK_SZ];
     error_local[lid] = 0;
 
-    if (row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if (/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
+    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
     {
         u1[THARR2D(0, 0, 0)] = (u0[THARR2D(0, 0, 0)]
             + Kx[THARR2D(1, 0, 0)]*rx*un[THARR2D( 1,  0, 0)]
@@ -101,8 +101,8 @@ __kernel void tea_leaf_finalise
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         energy1[THARR2D(0, 0, 0)] = u1[THARR2D(0, 0, 0)]/density1[THARR2D(0, 0, 0)];
     }
