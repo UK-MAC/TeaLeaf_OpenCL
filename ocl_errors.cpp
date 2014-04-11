@@ -151,7 +151,7 @@ void CloverChunk::enqueueKernel
             errstr << global_range.dimensions() << " global dimensions, ";
             errstr << local_range.dimensions() << " local dimensions." << std::endl;
 
-            for (int ii = 0; ii < global_range.dimensions(); ii++)
+            for (unsigned int ii = 0; ii < global_range.dimensions(); ii++)
             {
                 errstr << "Launch dimension " << ii << ": ";
                 errstr << "global " << global_range[ii] << ", ";
@@ -211,7 +211,7 @@ CloverChunk::~CloverChunk
         for (std::map<std::string, double>::iterator ii = kernel_times.begin();
             ii != kernel_times.end(); ii++)
         {
-            fprintf(stdout, "%30s : %.3lf\n", (*ii).first.c_str(), (*ii).second);
+            fprintf(stdout, "%30s : %.3f\n", (*ii).first.c_str(), (*ii).second);
         }
     }
 }

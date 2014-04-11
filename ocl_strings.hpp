@@ -2,7 +2,7 @@
 #include <string>
 #include "ocl_common.hpp"
 
-enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, LIST_PLAT};
+enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
 
 /*
  *  reads file given and finds the platform vendor to be used

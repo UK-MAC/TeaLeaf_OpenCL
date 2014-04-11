@@ -71,7 +71,7 @@ CloverChunk::CloverChunk
 #endif
     if (!rank)
     {
-        fprintf(stdout, "Finished initialisation in %lf seconds\n", omp_get_wtime()-t0);
+        fprintf(stdout, "Finished initialisation in %f seconds\n", omp_get_wtime()-t0);
     }
 }
 
@@ -100,14 +100,20 @@ void CloverChunk::initOcl
         // should never happen
         DIE("Input file not found\n");
     }
+
     int desired_vendor = platformRead(input);
 
-    // special case to print out platforms instead
-    if (desired_vendor == LIST_PLAT)
+
+    if (desired_vendor == NO_PLAT)
     {
+        DIE("No platform specified in tea.in\n");
+    }
+    else if (desired_vendor == LIST_PLAT)
+    {
+        // special case to print out platforms instead
         fprintf(stdout, "Listing platforms\n\n");
 
-        for (int pp = 0; pp < platforms.size(); pp++)
+        for (size_t pp = 0; pp < platforms.size(); pp++)
         {
             std::string profile, version, name, vendor;
             platforms.at(pp).getInfo(CL_PLATFORM_PROFILE, &profile);
@@ -115,13 +121,13 @@ void CloverChunk::initOcl
             platforms.at(pp).getInfo(CL_PLATFORM_NAME, &name);
             platforms.at(pp).getInfo(CL_PLATFORM_VENDOR, &vendor);
 
-            fprintf(stdout, "Platform %d: %s - %s (profile = %s, version = %s)\n",
+            fprintf(stdout, "Platform %zu: %s - %s (profile = %s, version = %s)\n",
                 pp, vendor.c_str(), name.c_str(), profile.c_str(), version.c_str());
 
             std::vector<cl::Device> devices;
             platforms.at(pp).getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
-            for (int ii = 0; ii < devices.size(); ii++)
+            for (size_t ii = 0; ii < devices.size(); ii++)
             {
                 std::string devname;
                 cl_device_type dtype;
@@ -132,67 +138,75 @@ void CloverChunk::initOcl
                 devname.erase(devname.begin(), devname.begin()+devname.find_first_not_of(" \n\r\t"));
 
                 std::string dtype_str = strType(dtype);
-                fprintf(stdout, " Device %d: %s (%s)\n", ii, devname.c_str(), dtype_str.c_str());
+                fprintf(stdout, " Device %zu: %s (%s)\n", ii, devname.c_str(), dtype_str.c_str());
             }
         }
 
         exit(0);
     }
+    else if (desired_vendor == ANY_PLAT)
+    {
+#if defined(MPI_HDR)
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+        fprintf(stdout, "No platform specified - using platform %d in rank %d\n",
+            rank, rank);
+        platform = platforms.at(rank);
+    }
+    else
+    {
+        // go through all platforms
+        for (size_t ii = 0;;)
+        {
+            std::string plat_name;
+            platforms.at(ii).getInfo(CL_PLATFORM_VENDOR, &plat_name);
+            fprintf(DBGOUT, "Checking platform %s\n", plat_name.c_str());
+
+            // if the platform name given matches one in the LUT
+            if (platformMatch(plat_name) == desired_vendor)
+            {
+                fprintf(DBGOUT, "correct vendor platform found\n");
+                platform = platforms.at(ii);
+                break;
+            }
+
+            // if there are no platforms left to match
+            if (platforms.size() == ++ii)
+            {
+                DIE("correct vendor platform NOT found\n");
+            }
+        }
+    }
 
     int preferred_device = preferredDevice(input);
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
-    // FIXME if this is ANY, find the type of device that is actually acquired and set the device preprocessor type
     desired_type = typeRead(input);
 
     // find out which solver to use
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
 
-    if (!rank)
+    // use first device whatever happens (ignore MPI rank) for running across different platforms
+    bool usefirst = paramEnabled(input, "opencl_usefirst");
+
+    if(!rank)fprintf(stdout, "Solver to use: ");
+    if (tl_use_cg)
     {
-        fprintf(stdout, "Solver to use: ");
-        if (tl_use_cg)
-        {
-            tea_solver = TEA_ENUM_CG;
-            fprintf(stdout, "Conjugate gradient\n");
-        }
-        else if (tl_use_jacobi)
-        {
-            tea_solver = TEA_ENUM_JACOBI;
-            fprintf(stdout, "Jacobi\n");
-        }
-        else
-        {
-            tea_solver = TEA_ENUM_JACOBI;
-            fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
-        }
+        tea_solver = TEA_ENUM_CG;
+        if(!rank)fprintf(stdout, "Conjugate gradient\n");
+    }
+    else if (tl_use_jacobi)
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        if(!rank)fprintf(stdout, "Jacobi\n");
+    }
+    else
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
     fclose(input);
-
-    size_t ii = 0;
-
-    // go through all platforms
-    while(1)
-    {
-        std::string plat_name;
-        platforms.at(ii).getInfo(CL_PLATFORM_VENDOR, &plat_name);
-        fprintf(DBGOUT, "Checking platform %s\n", plat_name.c_str());
-
-        // if the platform name given matches one in the LUT
-        if (platformMatch(plat_name) == desired_vendor)
-        {
-            fprintf(DBGOUT, "correct vendor platform found\n");
-            platform = platforms.at(ii);
-            break;
-        }
-
-        // if there are no platforms left to match
-        if (platforms.size() == ++ii)
-        {
-            DIE("correct vendor platform NOT found\n");
-        }
-    }
 
     // try to create a context with the desired type
     cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,
@@ -212,7 +226,7 @@ void CloverChunk::initOcl
             std::vector<cl::Device> devices;
             platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
-            for (int ii = 0; ii < devices.size(); ii++)
+            for (size_t ii = 0; ii < devices.size(); ii++)
             {
                 std::string devname;
                 cl_device_type dtype;
@@ -243,6 +257,19 @@ void CloverChunk::initOcl
         if (rank == cur_rank)
         {
 #endif
+            // index of device to use
+            size_t actual_device;
+
+            if (usefirst)
+            {
+                // always use specified device and ignore rank
+                actual_device = preferred_device;
+            }
+            else
+            {
+                actual_device = preferred_device + rank;
+            }
+
             // get devices - just choose the first one
             std::vector<cl::Device> devices;
             context.getInfo(CL_CONTEXT_DEVICES, &devices);
@@ -252,24 +279,23 @@ void CloverChunk::initOcl
             if (preferred_device < 0)
             {
                 // if none specified or invalid choice, choose 0
-                fprintf(stdout,
-                    "No device specified, choosing device 0\n");
+                fprintf(stdout, "No device specified, choosing device 0\n");
                 device = devices.at(0);
             }
-            else if (preferred_device+rank >= devices.size())
+            else if (actual_device >= devices.size())
             {
                 DIE("Device %d was selected in rank %d but there are only %zu available\n",
-                    preferred_device+rank, rank, devices.size());
+                    actual_device, rank, devices.size());
             }
             else
             {
-                device = devices.at(preferred_device+rank);
+                device = devices.at(actual_device);
             }
 
             device.getInfo(CL_DEVICE_NAME, &devname);
 
-            fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
-                preferred_device+rank, devname.c_str(), rank);
+            fprintf(stdout, "OpenCL using device %zu (%s) in rank %d\n",
+                actual_device, devname.c_str(), rank);
 
             // choose reduction based on device type
             switch (desired_type)
@@ -284,7 +310,7 @@ void CloverChunk::initOcl
                 device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
                 break;
             default :
-                device_type_prepro = "-DNODEVICETYPE ";
+                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
                 break;
             }
 #if defined(MPI_HDR)

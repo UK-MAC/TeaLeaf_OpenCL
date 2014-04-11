@@ -10,7 +10,6 @@ std::string matchParam
 {
     std::string param_string;
     static char name_buf[101];
-    bool found = false;
     rewind(input);
     /* read in line from file */
     while (NULL != fgets(name_buf, 100, input))
@@ -18,8 +17,6 @@ std::string matchParam
         /* if it has the parameter name, its the line we want */
         if (NULL != strstr(name_buf, param_name))
         {
-            /* mark as found for params which don't have an argument */
-            found = true;
             if (NULL != strstr(name_buf, "="))
             {
                 *(strstr(name_buf, "=")) = ' ';
@@ -80,6 +77,10 @@ int platformMatch
     else if (plat_name.find("list") != std::string::npos)
     {
         return LIST_PLAT;
+    }
+    else if (plat_name.find("any") != std::string::npos)
+    {
+        return ANY_PLAT;
     }
     else
     {

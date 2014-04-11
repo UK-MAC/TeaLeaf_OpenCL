@@ -5,8 +5,8 @@
   state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0
   state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0
 
-  x_cells=960
-  y_cells=960
+  x_cells=100
+  y_cells=100
 
   xmin=0.0
   ymin=0.0
@@ -19,8 +19,9 @@
   end_time=1.0
   end_step=87
 
-  opencl_vendor=intel
-  opencl_type=accelerator
+  opencl_vendor=any
+  opencl_type=any
+  opencl_usefirst
   opencl_device=0
   use_opencl_kernels
 
@@ -28,9 +29,5 @@
   test_problem 1
   tl_eps=0.0000000000000001
   tl_use_cg
-
-  profiler_on
-  hydro_on
-  tea_leaf_off
 
 *endtea
