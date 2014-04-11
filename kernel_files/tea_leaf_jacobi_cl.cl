@@ -41,8 +41,8 @@ __kernel void tea_leaf_jacobi_init
                 dens_up = 1.0/density1[THARR2D(0, -1, 0)];
             }
 
-            Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2*dens_left*dens_centre);
-            Ky[THARR2D(0, 0, 0)] = (dens_up + dens_centre)/(2*dens_up*dens_centre);
+            Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
+            Ky[THARR2D(0, 0, 0)] = (dens_up + dens_centre)/(2.0*dens_up*dens_centre);
         }
     }
 }
