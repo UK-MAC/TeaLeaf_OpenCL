@@ -18,30 +18,42 @@ const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 #endif
 
-// halo update
-enum {CELL_DATA, VERTEX_DATA, X_FACE_DATA, Y_FACE_DATA};
-
 // used in update_halo and for copying back to host for mpi transfers
-#define FIELD_density0      0
-#define FIELD_density1      1
-#define FIELD_energy0       2
-#define FIELD_energy1       3
-#define FIELD_pressure      4
-#define FIELD_viscosity     5
-#define FIELD_soundspeed    6
-#define FIELD_xvel0         7
-#define FIELD_xvel1         8
-#define FIELD_yvel0         9
-#define FIELD_yvel1         10
-#define FIELD_vol_flux_x    11
-#define FIELD_vol_flux_y    12
-#define FIELD_mass_flux_x   13
-#define FIELD_mass_flux_y   14
-#define FIELD_u             15
-#define FIELD_p             16
+#define FIELD_density0      1
+#define FIELD_density1      2
+#define FIELD_energy0       3
+#define FIELD_energy1       4
+#define FIELD_pressure      5
+#define FIELD_viscosity     6
+#define FIELD_soundspeed    7
+#define FIELD_xvel0         8
+#define FIELD_xvel1         9
+#define FIELD_yvel0         10
+#define FIELD_yvel1         11
+#define FIELD_vol_flux_x    12
+#define FIELD_vol_flux_y    13
+#define FIELD_mass_flux_x   14
+#define FIELD_mass_flux_y   15
+#define FIELD_u             16
+#define FIELD_p             17
 #define NUM_FIELDS          17
-
 #define FIELD_work_array_1 FIELD_p
+
+// which side to pack - keep the same as in fortran file
+#define CHUNK_LEFT 1
+#define CHUNK_left 1
+#define CHUNK_RIGHT 2
+#define CHUNK_right 2
+#define CHUNK_BOTTOM 3
+#define CHUNK_bottom 3
+#define CHUNK_TOP 4
+#define CHUNK_top 4
+#define EXTERNAL_FACE       (-1)
+
+#define CELL_DATA   1
+#define VERTEX_DATA 2
+#define X_FACE_DATA 3
+#define Y_FACE_DATA 4
 
 typedef struct cell_info {
     const int x_extra;

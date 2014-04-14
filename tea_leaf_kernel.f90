@@ -21,7 +21,8 @@
 
 MODULE tea_leaf_kernel_module
 
-use clover_module
+   INTEGER         ::            CONDUCTIVITY        = 1 &
+                                ,RECIP_CONDUCTIVITY  = 2
 
 CONTAINS
 
