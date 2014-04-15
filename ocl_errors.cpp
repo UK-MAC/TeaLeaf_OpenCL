@@ -92,7 +92,7 @@ void CloverChunk::enqueueKernel
             std::string func_name;
             kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &func_name);
 
-            #if 1
+            #if 0
             fprintf(stdout, "Enqueueing kernel: %s\n", func_name.c_str());
             fprintf(stdout, "%zu global dimensions\n", global_range.dimensions());
             fprintf(stdout, "%zu local dimensions\n", local_range.dimensions());
@@ -233,13 +233,16 @@ std::vector<double> CloverChunk::dumpArray
 
     try
     {
-        queue.enqueueReadBuffer(arr_names.at(arr_name), CL_TRUE, 0, BUFSZ2D(x_extra, y_extra), &host_buffer[0]);
+        queue.enqueueReadBuffer(arr_names.at(arr_name),
+            CL_TRUE, 0, BUFSZ2D(x_extra, y_extra), &host_buffer[0]);
     }
     catch (cl::Error e)
     {
         DIE("Error '%s (%d)' reading array %s back from device",
             e.what(), e.err(), arr_name.c_str());
     }
+
+    queue.finish();
 
     return host_buffer;
 }

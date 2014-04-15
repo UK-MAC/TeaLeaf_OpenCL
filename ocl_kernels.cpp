@@ -352,7 +352,7 @@ void CloverChunk::initSizes
      *  no 'smart' way to do this?
      */
     #define FIND_PADDING_SIZE(knl, vmin, vmax, hmin, hmax)                      \
-    {                                                                            \
+    {                                                                           \
         size_t global_horz_size = (-(hmin)) + (hmax) + x_max;                   \
         while (global_horz_size % LOCAL_X) global_horz_size++;                  \
         size_t global_vert_size = (-(vmin)) + (vmax) + y_max;                   \

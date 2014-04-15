@@ -58,7 +58,7 @@ const int depth,
 const int* chunk_neighbours)
 {
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
-    if(fields[FIELD_ ## arr] == 1)                          \
+    if(fields[FIELD_ ## arr - 1] == 1)                          \
     {                                                       \
         update_array(arr, type, chunk_neighbours, depth);   \
     }
