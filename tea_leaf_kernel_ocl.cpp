@@ -312,8 +312,6 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
     }
     else
     {
-        std::pair<double, double> eigs = calcEigenvalues(cg_alphas, cg_betas);
-
         cg_alphas.push_back(alpha);
 
         tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
