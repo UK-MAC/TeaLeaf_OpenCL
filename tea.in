@@ -15,12 +15,12 @@
 
   initial_timestep=0.004
   timestep_rise=1.5
-  max_timestep=0.004
+  max_timestep=0.04
   end_time=1.0
   end_step=87
 
-  opencl_vendor=intel
-  opencl_type=cpu
+  opencl_vendor=nvidia
+  opencl_type=gpu
   opencl_device=0
   use_opencl_kernels
 
@@ -28,5 +28,8 @@
   test_problem 1
   tl_eps=0.0000000000000001
   tl_use_cg
+
+  hydro_off
+  tea_leaf_on
 
 *endtea

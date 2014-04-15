@@ -138,8 +138,10 @@ private:
     cl::Kernel update_halo_left_device;
     cl::Kernel update_halo_right_device;
 
-    typedef enum {TEA_ENUM_JACOBI, TEA_ENUM_CG, TEA_ENUM_CHEBYSHEV} tea_solver_t;
-    tea_solver_t tea_solver;
+    #define TEA_ENUM_JACOBI     1
+    #define TEA_ENUM_CG         2
+    #define TEA_ENUM_CHEBYSHEV  3
+    int tea_solver;
 
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
     cl::Kernel tea_leaf_init_diag_device;
