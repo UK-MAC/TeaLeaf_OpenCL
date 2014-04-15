@@ -21,9 +21,6 @@
 
 MODULE tea_leaf_kernel_module
 
-   INTEGER         ::            CONDUCTIVITY        = 1 &
-                                ,RECIP_CONDUCTIVITY  = 2
-
 CONTAINS
 
 SUBROUTINE tea_leaf_kernel_init(x_min,             &
@@ -46,6 +43,9 @@ SUBROUTINE tea_leaf_kernel_init(x_min,             &
                            coef)
 
   IMPLICIT NONE
+
+   INTEGER         ::            CONDUCTIVITY        = 1 &
+                                ,RECIP_CONDUCTIVITY  = 2
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2) :: celldx
@@ -211,6 +211,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
 
   REAL(kind=8) :: rro
   REAL(KIND=8) ::  rx, ry
+
+   INTEGER         ::            CONDUCTIVITY        = 1 &
+                                ,RECIP_CONDUCTIVITY  = 2
 
   rro = 0.0_8
   p = 0.0_8

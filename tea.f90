@@ -20,15 +20,15 @@
 !>  @details Invokes the user specified kernel for the heat conduction
 
 MODULE tea_leaf_module
+ 
+  USE report_module
+  USE data_module
+  USE tea_leaf_kernel_module
+  USE update_halo_module
 
 CONTAINS
 
 SUBROUTINE tea_leaf()
- 
-  USE report_module
-  USE clover_module
-  USE tea_leaf_kernel_module
-  USE update_halo_module
 
   IMPLICIT NONE
 
