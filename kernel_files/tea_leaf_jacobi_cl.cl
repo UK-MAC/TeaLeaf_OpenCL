@@ -91,20 +91,3 @@ __kernel void tea_leaf_jacobi_solve
     REDUCTION(error_local, error, MAX);
 }
 
-/*
- *  Used by both
- */
-__kernel void tea_leaf_finalise
-(__global const double * __restrict const density1,
- __global const double * __restrict const u1,
- __global       double * __restrict const energy1)
-{
-    __kernel_indexes;
-
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
-    {
-        energy1[THARR2D(0, 0, 0)] = u1[THARR2D(0, 0, 0)]/density1[THARR2D(0, 0, 0)];
-    }
-}
-

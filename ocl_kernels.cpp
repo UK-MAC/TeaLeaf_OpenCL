@@ -98,8 +98,6 @@ void CloverChunk::initProgram
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_y", advec_cell_y_device);
 
-    compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_init_diag", tea_leaf_init_diag_device);
-
     if (tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV)
     {
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
@@ -125,7 +123,8 @@ void CloverChunk::initProgram
         compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device);
     }
 
-    compileKernel(options_str, src_tea_leaf_jacobi_cl, "tea_leaf_finalise", tea_leaf_finalise_device);
+    compileKernel(options_str, src_tea_leaf_common_cl, "tea_leaf_init_diag", tea_leaf_init_diag_device);
+    compileKernel(options_str, src_tea_leaf_common_cl, "tea_leaf_finalise", tea_leaf_finalise_device);
 
     fprintf(stdout, "done.\n");
     fprintf(DBGOUT, "All kernels compiled\n");
@@ -182,8 +181,8 @@ void CloverChunk::compileKernel
     catch (cl::Error e)
     {
         fprintf(DBGOUT, "Failed\n");
-        DIE("Error in creating %s kernel %d\n",
-                kernel_name, e.err());
+        DIE("Error %d (%s) in creating %s kernel\n",
+            e.err(), e.what(), kernel_name);
     }
     cl::detail::errHandler(
         clGetKernelWorkGroupInfo(kernel(),
