@@ -359,7 +359,7 @@ void CloverChunk::initSizes
         while (global_vert_size % LOCAL_Y) global_vert_size++;                  \
         launch_specs_t cur_specs;                                               \
         cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);     \
-        cur_specs.offset = cl::NDRange(x_min + 1 + (vmin), y_min + 1 + (hmin)); \
+        cur_specs.offset = cl::NDRange((x_min + 1) + (vmin), (y_min + 1) + (hmin)); \
         launch_specs[#knl"_device"] = cur_specs;                                \
     }
 

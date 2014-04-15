@@ -92,12 +92,14 @@ void CloverChunk::enqueueKernel
             std::string func_name;
             kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &func_name);
 
-            #if 0
+            #if 1
             fprintf(stdout, "Enqueueing kernel: %s\n", func_name.c_str());
             fprintf(stdout, "%zu global dimensions\n", global_range.dimensions());
             fprintf(stdout, "%zu local dimensions\n", local_range.dimensions());
+            fprintf(stdout, "%zu offset dimensions\n", offset_range.dimensions());
             fprintf(stdout, "Global size: [%zu %zu]\n", global_range[0], global_range[1]);
             fprintf(stdout, "Local size:  [%zu %zu]\n", local_range[0], local_range[1]);
+            fprintf(stdout, "Offset size: [%zu %zu]\n", offset_range[0], offset_range[1]);
             fprintf(stdout, "\n");
             fflush(stdout);
             #endif
