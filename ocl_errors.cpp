@@ -5,6 +5,8 @@
 
 #include <cstdio>
 #include <sstream>
+#include <stdexcept>
+#include <cstdarg>
 
 std::string errToString(cl_int err)
 {
@@ -175,8 +177,6 @@ void CloverChunk::enqueueKernel
     }
 }
 
-#include <cstdarg>
-
 // called when something goes wrong
 void CloverChunk::cloverDie
 (int line, const char* filename, const char* format, ...)
@@ -240,6 +240,10 @@ std::vector<double> CloverChunk::dumpArray
     {
         DIE("Error '%s (%d)' reading array %s back from device",
             e.what(), e.err(), arr_name.c_str());
+    }
+    catch (std::out_of_range e)
+    {
+        DIE("Error - %s was not in the arr_names map\n", arr_name.c_str());
     }
 
     queue.finish();

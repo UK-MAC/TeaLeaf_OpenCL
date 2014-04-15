@@ -101,6 +101,7 @@ void CloverChunk::initBuffers
     ADD_BUFFER_DBG_MAP(viscosity);
 
     ADD_BUFFER_DBG_MAP(u);
+    arr_names["p"] = work_array_1;
 
     ADD_BUFFER_DBG_MAP(density0);
     ADD_BUFFER_DBG_MAP(density1);

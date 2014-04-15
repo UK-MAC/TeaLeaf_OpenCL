@@ -78,17 +78,17 @@ __kernel void tea_leaf_cg_init_others
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         w[THARR2D(0, 0, 0)] = (1.0
-            + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
-            - ry*(Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
-            - rx*(Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
 #if defined(CG_DO_PRECONDITION)
         Mi[THARR2D(0, 0, 0)] = (1.0
-            + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
         Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
 
         z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
@@ -124,10 +124,10 @@ __kernel void tea_leaf_cg_solve_calc_w
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         w[THARR2D(0, 0, 0)] = (1.0
-            + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*p[THARR2D(0, 0, 0)]
-            - ry*(Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
-            - rx*(Kx[THARR2D(1, 0, 0)]*p[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*p[THARR2D(-1, 0, 0)]);
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*p[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*p[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*p[THARR2D(-1, 0, 0)]);
         
         pw_shared[lid] = p[THARR2D(0, 0, 0)]*w[THARR2D(0, 0, 0)];
     }
