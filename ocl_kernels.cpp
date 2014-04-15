@@ -238,6 +238,7 @@ cl::Program CloverChunk::compileProgram
             DIE("Error in retrieving build info\n");
         }
 
+
         std::string errs(errstream.str());
         //DIE("%s\n", errs.c_str());
         throw KernelCompileError(errs.c_str());

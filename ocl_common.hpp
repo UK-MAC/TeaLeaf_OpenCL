@@ -472,10 +472,11 @@ public:
 class KernelCompileError : std::exception
 {
 private:
-    const char* _err;
+    const std::string _err;
 public:
     KernelCompileError(const char* err):_err(err){}
-    const char* what() const throw() {return _err;}
+    ~KernelCompileError() throw(){}
+    const char* what() const throw() {return this->_err.c_str();}
 };
 
 extern "C" void tqli_(double *d, double *e, int *np, double **z, int* info);
