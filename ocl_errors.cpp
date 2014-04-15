@@ -216,9 +216,8 @@ CloverChunk::~CloverChunk
     }
 }
 
-#include <numeric>
-double CloverChunk::dumpArray
-(cl::Buffer& buffer, int x_extra, int y_extra)
+std::vector<double> CloverChunk::dumpArray
+(const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
@@ -232,15 +231,14 @@ double CloverChunk::dumpArray
 
     try
     {
-        queue.enqueueReadBuffer(buffer, CL_TRUE, 0, BUFSZ2D(x_extra, y_extra), &host_buffer[0]);
+        queue.enqueueReadBuffer(arr_names.at(arr_name), CL_TRUE, 0, BUFSZ2D(x_extra, y_extra), &host_buffer[0]);
     }
     catch (cl::Error e)
     {
-        DIE("DF");
+        DIE("Error '%s (%d)' reading array %s back from device",
+            e.what(), e.err(), arr_name.c_str());
     }
 
-    double sum = std::accumulate(host_buffer.begin(), host_buffer.end(), 0.0);
-    fprintf(stdout, "%.16f\n", sum);
-    return sum;
+    return host_buffer;
 }
 

@@ -5,6 +5,7 @@
 #include "ocl_strings.hpp"
 
 #include <sstream>
+#include <iostream>
 
 CloverChunk chunk;
 
@@ -258,7 +259,7 @@ void CloverChunk::initOcl
         {
 #endif
             // index of device to use
-            size_t actual_device;
+            int actual_device = 0;
 
             if (usefirst)
             {
@@ -280,7 +281,8 @@ void CloverChunk::initOcl
             {
                 // if none specified or invalid choice, choose 0
                 fprintf(stdout, "No device specified, choosing device 0\n");
-                device = devices.at(0);
+                actual_device = 0;
+                device = devices.at(actual_device);
             }
             else if (actual_device >= devices.size())
             {
@@ -294,7 +296,7 @@ void CloverChunk::initOcl
 
             device.getInfo(CL_DEVICE_NAME, &devname);
 
-            fprintf(stdout, "OpenCL using device %zu (%s) in rank %d\n",
+            fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
                 actual_device, devname.c_str(), rank);
 
             // choose reduction based on device type

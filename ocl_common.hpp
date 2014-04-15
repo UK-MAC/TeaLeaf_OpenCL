@@ -295,6 +295,9 @@ private:
      const std::string& options);
     // keep track of built programs to avoid rebuilding them
     std::map<std::string, cl::Program> built_programs;
+    std::vector<double> dumpArray
+    (const std::string& arr_name, int x_extra, int y_extra);
+    std::map<std::string, cl::Buffer> arr_names;
 
     /*
      *  initialisation subroutines
@@ -323,10 +326,6 @@ private:
     #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
     void cloverDie
     (int line, const char* filename, const char* format, ...);
-
-    // dump sum of contents of array
-    double dumpArray
-    (cl::Buffer& buffer, int x_extra, int y_extra);
 
 public:
     // kernels
