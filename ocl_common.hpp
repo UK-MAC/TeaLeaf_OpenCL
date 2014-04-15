@@ -138,8 +138,13 @@ private:
     cl::Kernel update_halo_left_device;
     cl::Kernel update_halo_right_device;
 
-    typedef enum {TEA_ENUM_JACOBI, TEA_ENUM_CG} tea_solver_t;
+    typedef enum {TEA_ENUM_JACOBI, TEA_ENUM_CG, TEA_ENUM_CHEBYSHEV} tea_solver_t;
     tea_solver_t tea_solver;
+
+    // TODO could be used by all - precalculate diagonal + scale Kx/Ky
+    cl::Kernel tea_leaf_init_diag_device;
+    // diagonal of matrix
+    cl::Buffer diag;
 
     // tea leaf
     cl::Kernel tea_leaf_cg_init_u_device;
@@ -150,6 +155,24 @@ private:
     cl::Kernel tea_leaf_cg_solve_calc_p_device;
     cl::Buffer z;
 
+    // chebyshev solver
+    cl::Kernel tea_leaf_cheby_solve_init_p_device;
+    cl::Kernel tea_leaf_cheby_solve_calc_u_device;
+    cl::Kernel tea_leaf_cheby_solve_calc_p_device;
+    cl::Kernel tea_leaf_cheby_solve_calc_resid_device;
+    cl::Kernel tea_leaf_cheby_solve_loop_calc_u_device;
+    // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
+    cl::Buffer ch_alphas_device, ch_betas_device, u0;
+    // cg_alphas/betas used to store teh values calculated during CG operation
+    std::vector<double> cg_alphas, cg_betas;
+    // number of cg steps to do before swtching to cheby
+    int max_cheby_cg_steps, cheby_calc_steps;
+    // estimated number of steps - run this many before checking residual
+    int est_itc;
+    // tolerance specified in tea.in
+    float tolerance;
+
+    // need more for the Kx/Ky arrays
     cl::Kernel tea_leaf_jacobi_init_device;
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;

@@ -98,7 +98,9 @@ void CloverChunk::initProgram
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
     compileKernel(options_str, src_advec_cell_cl, "advec_cell_y", advec_cell_y_device);
 
-    if (tea_solver == TEA_ENUM_CG)
+    compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_init_diag", tea_leaf_init_diag_device);
+
+    if (tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV)
     {
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
@@ -106,6 +108,15 @@ void CloverChunk::initProgram
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
         compileKernel(options_str, src_tea_leaf_cg_cl, "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
+
+        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        {
+            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_init_p", tea_leaf_cheby_solve_init_p_device);
+            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device);
+            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device);
+            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_resid", tea_leaf_cheby_solve_calc_resid_device);
+            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_loop_calc_u", tea_leaf_cheby_solve_loop_calc_u_device);
+        }
     }
     else
     {
@@ -392,7 +403,7 @@ void CloverChunk::initSizes
 
     FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
 
-    if (tea_solver == TEA_ENUM_CG)
+    if (tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV)
     {
         FIND_PADDING_SIZE(tea_leaf_cg_init_u, -2, 2, -2, 2); // works
         FIND_PADDING_SIZE(tea_leaf_cg_init_directions, 0, 1, 0, 1); // works
@@ -400,6 +411,15 @@ void CloverChunk::initSizes
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0); // works
+
+        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        {
+            FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_u, 0, 0, 0, 0);
+            FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_p, 0, 0, 0, 0);
+            FIND_PADDING_SIZE(tea_leaf_cheby_solve_init_p, 0, 0, 0, 0);
+            FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_resid, 0, 0, 0, 0);
+            FIND_PADDING_SIZE(tea_leaf_cheby_solve_loop_calc_u, 0, 0, 0, 0);
+        }
     }
     else
     {
@@ -408,6 +428,7 @@ void CloverChunk::initSizes
         FIND_PADDING_SIZE(tea_leaf_jacobi_solve, 0, 0, 0, 0);
     }
 
+    FIND_PADDING_SIZE(tea_leaf_init_diag, -1, 1, -1, 1);
     FIND_PADDING_SIZE(tea_leaf_finalise, 0, 0, 0, 0);
 }
 
@@ -689,7 +710,7 @@ void CloverChunk::initArgs
     // no parameters set for update_halo here
 
     // tealeaf
-    if (tea_solver == TEA_ENUM_CG)
+    if (tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV)
     {
         /*
          *  work_array_1 = p
@@ -745,6 +766,30 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_p_device.setArg(1, work_array_1);
         tea_leaf_cg_solve_calc_p_device.setArg(2, work_array_2);
         tea_leaf_cg_solve_calc_p_device.setArg(3, z);
+
+        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        {
+            tea_leaf_cheby_solve_init_p_device.setArg(0, work_array_1);
+            tea_leaf_cheby_solve_init_p_device.setArg(1, work_array_2);
+
+            tea_leaf_cheby_solve_calc_u_device.setArg(0, u);
+            tea_leaf_cheby_solve_calc_u_device.setArg(1, work_array_1);
+
+            tea_leaf_cheby_solve_calc_p_device.setArg(0, u);
+            tea_leaf_cheby_solve_calc_p_device.setArg(1, work_array_1);
+            tea_leaf_cheby_solve_calc_p_device.setArg(2, work_array_2);
+            tea_leaf_cheby_solve_calc_p_device.setArg(3, work_array_3);
+            tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_5);
+            tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_6);
+            tea_leaf_cheby_solve_calc_p_device.setArg(6, diag);
+            tea_leaf_cheby_solve_calc_p_device.setArg(7, u0);
+
+            tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
+
+            tea_leaf_cheby_solve_loop_calc_u_device.setArg(0, u);
+            tea_leaf_cheby_solve_loop_calc_u_device.setArg(1, work_array_1);
+            tea_leaf_cheby_solve_loop_calc_u_device.setArg(2, work_array_2);
+        }
     }
     else
     {
@@ -765,6 +810,10 @@ void CloverChunk::initArgs
         tea_leaf_jacobi_solve_device.setArg(6, work_array_4);
         tea_leaf_jacobi_solve_device.setArg(7, reduce_buf_1);
     }
+
+    tea_leaf_init_diag_device.setArg(0, work_array_5);
+    tea_leaf_init_diag_device.setArg(1, work_array_6);
+    tea_leaf_init_diag_device.setArg(2, diag);
 
     // both finalise the same
     tea_leaf_finalise_device.setArg(0, density1);

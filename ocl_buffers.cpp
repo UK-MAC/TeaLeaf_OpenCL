@@ -93,5 +93,38 @@ void CloverChunk::initBuffers
     #undef BUF_ALLOC
 
     fprintf(DBGOUT, "Buffers allocated\n");
+
+ #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
+    ADD_BUFFER_DBG_MAP(volume);
+    ADD_BUFFER_DBG_MAP(soundspeed);
+    ADD_BUFFER_DBG_MAP(pressure);
+    ADD_BUFFER_DBG_MAP(viscosity);
+
+    ADD_BUFFER_DBG_MAP(u);
+
+    ADD_BUFFER_DBG_MAP(density0);
+    ADD_BUFFER_DBG_MAP(density1);
+    ADD_BUFFER_DBG_MAP(energy0);
+    ADD_BUFFER_DBG_MAP(energy1);
+    ADD_BUFFER_DBG_MAP(xvel0);
+    ADD_BUFFER_DBG_MAP(xvel1);
+    ADD_BUFFER_DBG_MAP(yvel0);
+    ADD_BUFFER_DBG_MAP(yvel1);
+    ADD_BUFFER_DBG_MAP(xarea);
+    ADD_BUFFER_DBG_MAP(yarea);
+    ADD_BUFFER_DBG_MAP(vol_flux_x);
+    ADD_BUFFER_DBG_MAP(vol_flux_y);
+    ADD_BUFFER_DBG_MAP(mass_flux_x);
+    ADD_BUFFER_DBG_MAP(mass_flux_y);
+
+    ADD_BUFFER_DBG_MAP(cellx);
+    ADD_BUFFER_DBG_MAP(celly);
+    ADD_BUFFER_DBG_MAP(celldx);
+    ADD_BUFFER_DBG_MAP(celldy);
+    ADD_BUFFER_DBG_MAP(vertexx);
+    ADD_BUFFER_DBG_MAP(vertexy);
+    ADD_BUFFER_DBG_MAP(vertexdx);
+    ADD_BUFFER_DBG_MAP(vertexdy);
+#undef ADD_BUFFER_DBG_MAP
 }
 
