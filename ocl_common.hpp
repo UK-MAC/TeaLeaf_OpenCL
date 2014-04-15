@@ -478,4 +478,6 @@ public:
     const char* what() const throw() {return _err;}
 };
 
+extern "C" void tqli_(double *d, double *e, int *np, double **z, int* info);
+
 #endif

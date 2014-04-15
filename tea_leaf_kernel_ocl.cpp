@@ -157,8 +157,6 @@ void CloverChunk::tea_leaf_kernel_cg_calc_w
 #include <limits>
 #include <algorithm>
 #include <iostream>
-extern "C" void dsterf_(int*, double*, double*, int*);
-extern "C" void tqli_fortran_(double*, double*, int*, int*, double*, int*);
 static std::pair<double, double> calcEigenvalues
 (std::vector<double> alphas,
  std::vector<double> betas)
@@ -183,12 +181,8 @@ static std::pair<double, double> calcEigenvalues
     }
 
     int info;
-#if 0
-    dsterf_(&order, &diag.front(), &offdiag.front(), &info);
-#else
-    tqli_fortran_(&diag.front(), &offdiag.front(), &order, &order, NULL, &info);
+    tqli_(&diag.front(), &offdiag.front(), &order, NULL, &info);
     std::sort(diag.begin(), diag.end());
-#endif
     /*
     for (int ii = 0; ii < order; ii++)
     {

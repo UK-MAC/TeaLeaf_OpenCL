@@ -144,6 +144,7 @@ C_FILES=\
 	accelerate_kernel_c.o           \
 	pack_kernel_c.o \
 	PdV_kernel_c.o                  \
+	tqli.o			\
 	timer_c.o                  \
 	initialise_chunk_kernel_c.o                  \
 	calc_dt_kernel_c.o                  \
@@ -208,7 +209,6 @@ FORTRAN_FILES=\
 	set_field.o			\
 	hydro.o			\
 	visit.o			\
-	tqli.o			\
 	tea_leaf.o
 
 OCL_FILES=\
