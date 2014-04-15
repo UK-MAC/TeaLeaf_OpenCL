@@ -208,6 +208,7 @@ FORTRAN_FILES=\
 	set_field.o			\
 	hydro.o			\
 	visit.o			\
+	tqli.o			\
 	tea_leaf.o
 
 OCL_FILES=\
