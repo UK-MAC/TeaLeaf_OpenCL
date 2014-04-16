@@ -24,6 +24,8 @@ MODULE tea_leaf_module
   USE report_module
   USE data_module
   USE tea_leaf_kernel_module
+  USE tea_leaf_kernel_cg_module
+  USE tea_leaf_kernel_cheby_module
   USE update_halo_module
 
   IMPLICIT NONE
@@ -84,9 +86,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%u,                           &
               chunks(c)%field%work_array1,                 &
               chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array3,                 &
               chunks(c)%field%work_array4,                 &
-              chunks(c)%field%work_array5,                 &
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               rx, ry, rro, coefficient)
@@ -165,6 +165,9 @@ SUBROUTINE tea_leaf()
 
       fields=0
       fields(FIELD_U) = 1
+
+      ! FIXME copy u to u0 array - do in opencl as well
+      IF(use_fortran_kernels) chunks(c)%field%work_array3 = chunks(c)%field%u
 
       DO n=1,max_iters
 
@@ -252,9 +255,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%u,                           &
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array3,                 &
                 chunks(c)%field%work_array4,                 &
-                chunks(c)%field%work_array5,                 &
                 alpha, rrn)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
@@ -283,7 +284,6 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%y_max,                       &
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array5,                 &
                 beta)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
