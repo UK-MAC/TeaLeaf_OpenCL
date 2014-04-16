@@ -70,11 +70,11 @@ __kernel void advec_mom_node_flux_post_x_2
     if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1) + 1
     && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 2)
     {
-            node_mass_post[THARR2D(0, 0, 1)] = 0.25
-                *(density1[THARR2D(0, -1, 0)]  * post_vol[THARR2D(0, -1, 1)]
-                + density1[THARR2D(0, 0, 0)]   * post_vol[THARR2D(0, 0, 1)]
-                + density1[THARR2D(-1, -1, 0)] * post_vol[THARR2D(-1, -1, 1)]
-                + density1[THARR2D(-1, 0, 0)]  * post_vol[THARR2D(-1, 0, 1)]);
+        node_mass_post[THARR2D(0, 0, 1)] = 0.25
+            *(density1[THARR2D(0, -1, 0)]  * post_vol[THARR2D(0, -1, 1)]
+            + density1[THARR2D(0, 0, 0)]   * post_vol[THARR2D(0, 0, 1)]
+            + density1[THARR2D(-1, -1, 0)] * post_vol[THARR2D(-1, -1, 1)]
+            + density1[THARR2D(-1, 0, 0)]  * post_vol[THARR2D(-1, 0, 1)]);
     }
 }
 
