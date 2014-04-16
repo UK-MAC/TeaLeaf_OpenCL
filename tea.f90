@@ -254,6 +254,7 @@ SUBROUTINE tea_leaf()
             write(*,*) "eigmax", eigmax
             write(*,*) "cn", cn
             write(*,*) "est itc", est_itc
+            write(*,*) "error", error
           endif
 
           ! calculate initial rrn with modified p
@@ -278,7 +279,7 @@ SUBROUTINE tea_leaf()
 
           ! after estimated number of iterations has passed, calc resid
           ! FIXME
-          if (cheby_calc_steps .ge. est_itc .or. .true.) then
+          if (cheby_calc_steps .ge. est_itc) then
             IF(use_fortran_kernels) THEN
                 call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                       &
@@ -295,12 +296,11 @@ SUBROUTINE tea_leaf()
                 ! TODO
                 !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
             ENDIF
+
           else
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
-
-          write(*,*) error
 
           cheby_calc_steps = cheby_calc_steps + 1
 
