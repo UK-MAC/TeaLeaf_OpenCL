@@ -49,7 +49,10 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
-  REAL(KIND=8) :: bb
+  REAL(KIND=8) :: bb, it_alpha, cn, gamm
+  INTEGER :: est_itc, cheby_calc_steps
+
+  cheby_calc_steps = 0
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -241,11 +244,65 @@ SUBROUTINE tea_leaf()
                 !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
             ENDIF
 
+            ! FIXME correct?
+            it_alpha = eps/(4.0_8*rrn)
+            cn = eigmax/eigmin
+            gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
+            est_itc = log(it_alpha)/(2.0_8*log(gamm))
+
             write(*,*) "eigmin", eigmin
             write(*,*) "eigmax", eigmax
-            write(*,*) "cn", eigmax/eigmin
-            call report_error('tea_leaf', 'done')
+            write(*,*) "cn", cn
+            write(*,*) "est itc", est_itc
+
+            cheby_calc_steps = 1
           endif
+
+          ! calculate initial rrn with modified p
+          IF(use_fortran_kernels) THEN
+              call tea_leaf_cheby_iterate(chunks(c)%field%x_min,&
+                  chunks(c)%field%x_max,                       &
+                  chunks(c)%field%y_min,                       &
+                  chunks(c)%field%y_max,                       &
+                  chunks(c)%field%work_array1,                 &
+                  chunks(c)%field%work_array2,                 &
+                  chunks(c)%field%work_array3,                 &
+                  chunks(c)%field%work_array4,                 &
+                  chunks(c)%field%work_array5,                 &
+                  chunks(c)%field%work_array6,                 &
+                  chunks(c)%field%work_array7,                 &
+                  ch_alphas, ch_betas, &
+                  rx, ry, cheby_calc_steps)
+          ELSEIF(use_opencl_kernels) THEN
+              ! TODO
+              !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
+          ENDIF
+
+          ! after estimated number of iterations has passed, calc resid
+          if (cheby_calc_steps .ge. est_itc) then
+            IF(use_fortran_kernels) THEN
+                call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    rx, ry, error)
+            ELSEIF(use_opencl_kernels) THEN
+                ! TODO
+                !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
+            ENDIF
+          else
+            ! dummy to make it go smaller every time but not reach tolerance
+            error = 1.0_8/(cheby_calc_steps)
+          endif
+
+          cheby_calc_steps = cheby_calc_steps + 1
+
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
           fields(FIELD_P) = 1
 
