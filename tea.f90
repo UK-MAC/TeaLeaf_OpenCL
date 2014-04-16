@@ -278,7 +278,6 @@ SUBROUTINE tea_leaf()
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          ! FIXME
           if (cheby_calc_steps .ge. est_itc) then
             IF(use_fortran_kernels) THEN
                 call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
