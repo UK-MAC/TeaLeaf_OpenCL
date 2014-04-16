@@ -52,7 +52,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: bb, it_alpha, cn, gamm
   INTEGER :: est_itc, cheby_calc_steps
 
-  cheby_calc_steps = 0
+  cheby_calc_steps = 1
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -195,18 +195,18 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta)
 
+            ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
               call calc_bb_kernel(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
+                    chunks(c)%field%work_array3,                           &
                     bb)
             ELSEIF(use_opencl_kernels) THEN
               ! TODO
               !call calc_bb_kernel_ocl(bb)
             ENDIF
-            !write(*,*) bb
 
             ! initialise 'p' array
             IF(use_fortran_kernels) THEN
@@ -217,7 +217,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%u,                           &
                     chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array3,                 &
                     chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
@@ -232,10 +232,10 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%work_array2,                 &
                     chunks(c)%field%work_array3,                 &
                     chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
                     rx, ry, rrn)
@@ -254,8 +254,6 @@ SUBROUTINE tea_leaf()
             write(*,*) "eigmax", eigmax
             write(*,*) "cn", cn
             write(*,*) "est itc", est_itc
-
-            cheby_calc_steps = 1
           endif
 
           ! calculate initial rrn with modified p
@@ -264,10 +262,10 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%x_max,                       &
                   chunks(c)%field%y_min,                       &
                   chunks(c)%field%y_max,                       &
+                  chunks(c)%field%u,                           &
                   chunks(c)%field%work_array1,                 &
                   chunks(c)%field%work_array2,                 &
                   chunks(c)%field%work_array3,                 &
-                  chunks(c)%field%work_array4,                 &
                   chunks(c)%field%work_array5,                 &
                   chunks(c)%field%work_array6,                 &
                   chunks(c)%field%work_array7,                 &
@@ -279,16 +277,17 @@ SUBROUTINE tea_leaf()
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          if (cheby_calc_steps .ge. est_itc) then
+          ! FIXME
+          if (cheby_calc_steps .ge. est_itc .or. .true.) then
             IF(use_fortran_kernels) THEN
                 call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%work_array2,                 &
                     chunks(c)%field%work_array3,                 &
                     chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
                     rx, ry, error)
@@ -300,6 +299,8 @@ SUBROUTINE tea_leaf()
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
+
+          write(*,*) error
 
           cheby_calc_steps = cheby_calc_steps + 1
 

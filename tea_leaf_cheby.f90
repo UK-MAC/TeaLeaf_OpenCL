@@ -32,10 +32,13 @@ subroutine calc_bb_kernel(x_min, &
                           b, bb)
 
   IMPLICIT NONE
+
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: b
   REAL(KIND=8) :: bb
   integer :: j, k
+
+  bb = 0.0_8
 
 !$OMP PARALLEL
 !$OMP DO REDUCTION(+:bb)
@@ -46,6 +49,7 @@ subroutine calc_bb_kernel(x_min, &
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
+
 end subroutine
 
 SUBROUTINE tea_leaf_cheby_calc_resid(x_min,             &
@@ -53,9 +57,9 @@ SUBROUTINE tea_leaf_cheby_calc_resid(x_min,             &
                            y_min,             &
                            y_max,             &
                            u,                &
+                           r, &
                            u0,                &
                            w,     &
-                           r, &
                            Kx,                &
                            Ky,  &
                            rx, &
@@ -118,7 +122,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
-  INTEGER(KIND=4) :: j,k,n
+  INTEGER(KIND=4) :: j,k
   REAL(KIND=8) ::  rx, ry, error, theta
 
   ! calculate residual - just sets 'r' to be correct to initialise p
@@ -199,7 +203,7 @@ SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
-                           u, u0)
+                           u0, u)
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
