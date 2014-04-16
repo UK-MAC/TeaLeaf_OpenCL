@@ -46,18 +46,18 @@ b, bb)
 !$OMP END PARALLEL
 end subroutine
 
-SUBROUTINE tl_calc_resid(x_min,             &
+SUBROUTINE tea_leaf_cheby_calc_resid(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
-                           rx, &
-                           ry, &
                            u,                &
                            u0,                &
                            w,     &
                            r, &
                            Kx,                &
                            Ky,  &
+                           rx, &
+                           ry, &
                            error)
   IMPLICIT NONE
 
@@ -120,8 +120,8 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   REAL(KIND=8) ::  rx, ry, error, theta
 
   ! calculate residual - just sets 'r' to be correct to initialise p
-  call tl_calc_resid(x_min, x_max, y_min, y_max, rx, ry, &
-      u, u0, w, r, Kx, Ky, error)
+  call tea_leaf_cheby_calc_resid(x_min, x_max, y_min, y_max, &
+      u, u0, w, r, Kx, Ky, rx, ry, error)
 
 !$OMP PARALLEL
 !$OMP DO
@@ -135,69 +135,85 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
 end subroutine
 
-SUBROUTINE tea_leaf_kernel_solve_cheby_fortran(x_min,             &
+SUBROUTINE tea_leaf_kernel_solve_cheby(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
                            rx, &
                            ry, &
-                           x,                &
+                           u,                &
                            p,                &
                            r,            &
                            u0,                &
                            w,     &
                            Kx,                &
                            Ky,  &
-                           rhoold, &
-                           eigmin,  &
-                           eigmax, &
-                           step, &
-                           error)
+                           ch_alphas, &
+                           ch_betas, &
+                           step)
 
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: x
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
-  INTEGER(KIND=4) :: j,k,n, step
+  INTEGER(KIND=4) :: j,k
 
     REAL(KIND=8) ::  rx, ry
 
-    real(kind=8) :: error, eigmin, eigmax, rhoold, rhonew
-
-    real(kind=8) :: alpha, beta, sigma
-    real(kind=8) :: theta, delta
-
-    error = 0.0
+    REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+    INTEGER(KIND=4) :: step
 
 !$OMP PARALLEL
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
-            x(j, k) = x(j, k) + p(j, k)
+            u(j, k) = u(j, k) + p(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
-!$OMP DO REDUCTION(+:error)
+!$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*x(j, k)             &
-                - ry*(Ky(j, k+1)*x(j, k+1) + Ky(j, k)*x(j, k-1))  &
-                - rx*(Kx(j+1, k)*x(j+1, k) + Kx(j, k)*x(j-1, k))
+                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            error = error + r(j, k)*r(j, k)
-            p(j, k) = alpha*p(j, k) + beta*r(j, k)
+            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*r(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
 
-END SUBROUTINE tea_leaf_kernel_solve_cheby_fortran
+END SUBROUTINE tea_leaf_kernel_solve_cheby
+
+SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           u, u0)
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0
+  INTEGER(KIND=4) :: j,k
+
+!$OMP PARALLEL
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            u0(j, k) = u(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+
+end subroutine
 
 end module

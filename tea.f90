@@ -166,8 +166,20 @@ SUBROUTINE tea_leaf()
       fields=0
       fields(FIELD_U) = 1
 
-      ! FIXME copy u to u0 array - do in opencl as well
-      IF(use_fortran_kernels) chunks(c)%field%work_array3 = chunks(c)%field%u
+      ! need the original value of u, which at the moment CG overwrites
+      if(tl_use_chebyshev) then
+        IF(use_fortran_kernels) then
+          call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
+            chunks(c)%field%x_max,                       &
+            chunks(c)%field%y_min,                       &
+            chunks(c)%field%y_max,                       &
+            chunks(c)%field%work_array3,                &
+            chunks(c)%field%u)
+        elseif(use_opencl_kernels) then
+          ! TODO
+          !call tea_leaf_kernel_cheby_copy_u_ocl()
+        endif
+      endif
 
       DO n=1,max_iters
 
@@ -180,17 +192,17 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta)
 
-            ! TODO calculate estimated number of iterations properly
-            !IF(use_fortran_kernels) THEN
-            !  call calc_bb_kernel(chunks(c)%field%x_min,&
-            !        chunks(c)%field%x_max,                       &
-            !        chunks(c)%field%y_min,                       &
-            !        chunks(c)%field%y_max,                       &
-            !        chunks(c)%field%u,                           &
-            !        bb)
-            !ELSEIF(use_opencl_kernels) THEN
-            !  call calc_bb_kernel_ocl(bb)
-            !ENDIF
+            IF(use_fortran_kernels) THEN
+              call calc_bb_kernel(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%u,                           &
+                    bb)
+            ELSEIF(use_opencl_kernels) THEN
+              ! TODO
+              !call calc_bb_kernel_ocl(bb)
+            ENDIF
             !write(*,*) bb
 
             ! initialise 'p' array
@@ -209,6 +221,24 @@ SUBROUTINE tea_leaf()
                     rx, ry, theta)
             ELSEIF(use_opencl_kernels) THEN
               !call calc_bb_kernel_ocl(bb)
+            ENDIF
+
+            ! calculate initial rrn with modified p
+            IF(use_fortran_kernels) THEN
+                call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    rx, ry, rrn)
+            ELSEIF(use_opencl_kernels) THEN
+                ! TODO
+                !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
             ENDIF
 
             write(*,*) "eigmin", eigmin

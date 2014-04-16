@@ -26,7 +26,7 @@
   tl_max_iters=10000
   test_problem 1
   tl_eps=0.0000000000000001
-  tl_use_cg
+  tl_use_chebyshev
 
   hydro_off
   tea_leaf_on
