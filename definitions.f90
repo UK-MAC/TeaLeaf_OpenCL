@@ -74,11 +74,13 @@ MODULE definitions_module
    LOGICAL      :: use_opencl_kernels
    LOGICAL      :: use_Tealeaf
    LOGICAL      :: use_Hydro
+   LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg
    LOGICAL      :: tl_use_jacobi
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
    INTEGER      :: coefficient
+   INTEGER      :: tl_chebyshev_steps
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 

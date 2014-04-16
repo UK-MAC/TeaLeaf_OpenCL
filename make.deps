@@ -73,7 +73,7 @@ generate_chunk.o: generate_chunk.f90 clover_module.mod \
  generate_chunk_kernel_module.mod
 generate_chunk_kernel.o generate_chunk_kernel_module.mod: \
  generate_chunk_kernel.f90
-hydro.o: hydro.f90 clover_module.mod timestep_module.mod \
+hydro.o: tea.o hydro.f90 clover_module.mod timestep_module.mod \
  viscosity_module.mod pdv_module.mod accelerate_module.mod \
  flux_calc_module.mod advection_module.mod tea_leaf_module.mod \
  reset_field_module.mod set_field_module.mod

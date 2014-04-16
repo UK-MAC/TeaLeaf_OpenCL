@@ -89,6 +89,9 @@ SUBROUTINE read_input()
   profiler%flux=0.0
   profiler%halo_exchange=0.0
 
+  ! should be enough?
+  tl_chebyshev_steps = 30
+  tl_use_chebyshev = .false.
   tl_use_cg = .false.
   tl_use_jacobi = .true.
 
@@ -172,6 +175,9 @@ SUBROUTINE read_input()
       CASE('summary_frequency')
         summary_frequency=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'summary_frequency',summary_frequency
+      CASE('tl_chebyshev_steps')
+        tl_chebyshev_steps=parse_getival(parse_getword(.TRUE.))
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_chebyshev_steps',tl_chebyshev_steps
       CASE('use_fortran_kernels')
         use_fortran_kernels=.TRUE.
         use_C_kernels=.FALSE.
@@ -193,10 +199,16 @@ SUBROUTINE read_input()
         use_OA_kernels=.TRUE.
         use_opencl_kernels=.FALSE.
       CASE('tl_use_jacobi')
+        tl_use_chebyshev = .false.
         tl_use_cg = .false.
         tl_use_jacobi = .true.
       CASE('tl_use_cg')
+        tl_use_chebyshev = .false.
         tl_use_cg = .true.
+        tl_use_jacobi = .false.
+      CASE('tl_use_chebyshev')
+        tl_use_chebyshev = .true.
+        tl_use_cg = .false.
         tl_use_jacobi = .false.
       CASE('use_vector_loops')
         use_vector_loops=.TRUE.

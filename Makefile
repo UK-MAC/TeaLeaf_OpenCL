@@ -168,6 +168,7 @@ FORTRAN_FILES=\
 	definitions.o			\
 	tea.o			\
 	tea_leaf_kernel.o			\
+	tea_leaf_cheby.o			\
 	report.o			\
 	timer.o			\
 	parse.o			\
