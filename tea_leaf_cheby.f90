@@ -25,21 +25,23 @@ IMPLICIT NONE
 
 CONTAINS
 
-subroutine calc_bb_kernel(x_min, &
+subroutine tea_leaf_calc_2norm_kernel(x_min, &
                           x_max,             &
                           y_min,             &
                           y_max,             &
-                          b, bb)
+                          b, u,              &
+                          initial, bb)
 
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: b
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: b, u
   REAL(KIND=8) :: bb
-  integer :: j, k
+  integer :: j, k, initial
 
   bb = 0.0_8
 
+  if (initial .eq. 1) then
 !$OMP PARALLEL
 !$OMP DO REDUCTION(+:bb)
     DO k=y_min,y_max
@@ -49,8 +51,19 @@ subroutine calc_bb_kernel(x_min, &
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
+  else
+!$OMP PARALLEL
+!$OMP DO REDUCTION(+:bb)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            bb = bb + u(j, k)*u(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+  endif
 
-end subroutine
+end subroutine tea_leaf_calc_2norm_kernel
 
 SUBROUTINE tea_leaf_cheby_calc_resid(x_min,             &
                            x_max,             &
@@ -141,7 +154,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
 end subroutine
 
-SUBROUTINE tea_leaf_cheby_iterate(x_min,             &
+SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
@@ -197,7 +210,7 @@ SUBROUTINE tea_leaf_cheby_iterate(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-END SUBROUTINE tea_leaf_cheby_iterate
+END SUBROUTINE tea_leaf_kernel_cheby_iterate
 
 SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
                            x_max,             &

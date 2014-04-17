@@ -186,12 +186,18 @@ void CloverChunk::initOcl
     // find out which solver to use
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
+    bool tl_use_chebyshev = paramEnabled(input, "tl_use_chebyshev");
 
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
     if(!rank)fprintf(stdout, "Solver to use: ");
-    if (tl_use_cg)
+    if (tl_use_chebyshev)
+    {
+        tea_solver = TEA_ENUM_CHEBYSHEV;
+        if(!rank)fprintf(stdout, "Chebyshev + CG\n");
+    }
+    else if (tl_use_cg)
     {
         tea_solver = TEA_ENUM_CG;
         if(!rank)fprintf(stdout, "Conjugate gradient\n");

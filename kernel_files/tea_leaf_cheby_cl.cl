@@ -1,3 +1,5 @@
+#include <kernel_files/macros_cl.cl>
+
 __kernel void tea_leaf_cheby_solve_init_p
 (__global       double * __restrict const p,
  __global const double * __restrict const r,
@@ -87,27 +89,17 @@ __kernel void tea_leaf_cheby_solve_calc_resid
 {
     __kernel_indexes;
 
-#if defined(NO_KERNEL_REDUCTIONS)
-    rro[gid] = 0.0;
-#else
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
-#endif
 
     if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
     && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
         const double rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 
-#if defined(NO_KERNEL_REDUCTIONS)
-        rro[gid] = rro_val;
-#else
         rro_shared[lid] = rro_val;
-#endif
     }
 
-#if !defined(NO_KERNEL_REDUCTIONS)
     REDUCTION(rro_shared, rro, SUM)
-#endif
 }
 

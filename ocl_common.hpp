@@ -163,16 +163,9 @@ private:
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
     cl::Kernel tea_leaf_cheby_solve_calc_resid_device;
     cl::Kernel tea_leaf_cheby_solve_loop_calc_u_device;
+
     // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
-    cl::Buffer ch_alphas_device, ch_betas_device, u0;
-    // cg_alphas/betas used to store teh values calculated during CG operation
-    std::vector<double> cg_alphas, cg_betas;
-    // number of cg steps to do before swtching to cheby
-    int max_cheby_cg_steps, cheby_calc_steps;
-    // estimated number of steps - run this many before checking residual
-    int est_itc;
-    // tolerance specified in tea.in
-    float tolerance;
+    cl::Buffer ch_alphas_device, ch_betas_device;
 
     // need more for the Kx/Ky arrays
     cl::Kernel tea_leaf_jacobi_init_device;
@@ -181,6 +174,9 @@ private:
 
     cl::Buffer u;
     cl::Kernel tea_leaf_finalise_device;
+
+    // tolerance specified in tea.in
+    float tolerance;
 
     // calculate rx/ry to pass back to fortran
     void calcrxry
@@ -408,6 +404,15 @@ public:
     void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
     void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
     void tea_leaf_kernel_cg_calc_p(double beta);
+
+    void tea_leaf_cheby_copy_u(void);
+    void tea_leaf_calc_2norm_kernel
+    (int* initial, double* norm);
+    void tea_leaf_kernel_cheby_init
+    (const double* rx, const double* ry, const double* theta);
+    void tea_leaf_kernel_cheby_iterate
+    (const double * ch_alphas, const double * ch_betas, int * n_coefs,
+     const double * rx, const double * ry, const int * cheby_calc_steps);
 
     void tea_leaf_finalise();
 

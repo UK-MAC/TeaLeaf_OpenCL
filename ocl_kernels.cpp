@@ -22,7 +22,7 @@ void CloverChunk::initProgram
 #endif
 
     // use jacobi preconditioner when running CG solver
-    options << "-DCG_DO_PRECONDITION ";
+    //options << "-DCG_DO_PRECONDITION ";
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -785,7 +785,7 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_5);
             tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_6);
             tea_leaf_cheby_solve_calc_p_device.setArg(6, diag);
-            tea_leaf_cheby_solve_calc_p_device.setArg(7, u0);
+            tea_leaf_cheby_solve_calc_p_device.setArg(7, z);
 
             tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
 

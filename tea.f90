@@ -30,12 +30,30 @@ MODULE tea_leaf_module
 
   IMPLICIT NONE
 
+  interface
+    subroutine tea_leaf_kernel_cheby_copy_u_ocl()
+    end subroutine
+    subroutine tea_leaf_calc_2norm_kernel_ocl(initial, norm)
+      integer :: initial
+      real(kind=8) :: norm
+    end subroutine
+    subroutine tea_leaf_kernel_cheby_init_ocl(rx, ry, theta)
+      real(kind=8) :: rx, ry, theta
+    end subroutine
+    subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, &
+        n_coefs, rx, ry, cheby_calc_step)
+      integer :: n_coefs, cheby_calc_step
+      real(kind=8) :: rx, ry
+      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
+    end subroutine
+  end interface
+
 CONTAINS
 
 SUBROUTINE tea_leaf()
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
-  INTEGER :: c, n, j,k
+  INTEGER :: c, n
   REAL(KIND=8) :: ry,rx, error, old_error
 
   INTEGER :: fields(NUM_FIELDS)
@@ -50,7 +68,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: bb, it_alpha, cn, gamm
-  INTEGER :: est_itc, cheby_calc_steps
+  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters
 
   cheby_calc_steps = 1
 
@@ -179,8 +197,7 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%work_array3,                &
             chunks(c)%field%u)
         elseif(use_opencl_kernels) then
-          ! TODO
-          !call tea_leaf_kernel_cheby_copy_u_ocl()
+          call tea_leaf_kernel_cheby_copy_u_ocl()
         endif
       endif
 
@@ -190,22 +207,24 @@ SUBROUTINE tea_leaf()
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           if (n .eq. tl_chebyshev_steps+1) then
+            ! maximum number of iterations in chebyshev solver
+            max_cheby_iters = max_iters - n
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax)
             ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta)
+            call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
 
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
-              call calc_bb_kernel(chunks(c)%field%x_min,&
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array3,                           &
-                    bb)
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%work_array3,                 &
+                    1, bb)
             ELSEIF(use_opencl_kernels) THEN
-              ! TODO
-              !call calc_bb_kernel_ocl(bb)
+              call tea_leaf_calc_2norm_kernel_ocl(1, bb)
             ENDIF
 
             ! initialise 'p' array
@@ -223,32 +242,27 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array7,                 &
                     rx, ry, theta)
             ELSEIF(use_opencl_kernels) THEN
-              !call calc_bb_kernel_ocl(bb)
+              call tea_leaf_kernel_cheby_init_ocl(rx, ry, theta)
             ENDIF
 
             ! calculate initial rrn with modified p
             IF(use_fortran_kernels) THEN
-                call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%u,                           &
-                    chunks(c)%field%work_array2,                 &
                     chunks(c)%field%work_array3,                 &
-                    chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    rx, ry, rrn)
+                    0, rrn)
             ELSEIF(use_opencl_kernels) THEN
-                ! TODO
-                !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
+              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
             ENDIF
 
             ! FIXME correct?
             it_alpha = eps/(4.0_8*rrn)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
-            est_itc = log(it_alpha)/(2.0_8*log(gamm))
+            est_itc = int(log(it_alpha)/(2.0_8*log(gamm)))
 
             write(*,*) "eigmin", eigmin
             write(*,*) "eigmax", eigmax
@@ -259,7 +273,7 @@ SUBROUTINE tea_leaf()
 
           ! calculate initial rrn with modified p
           IF(use_fortran_kernels) THEN
-              call tea_leaf_cheby_iterate(chunks(c)%field%x_min,&
+              call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
                   chunks(c)%field%x_max,                       &
                   chunks(c)%field%y_min,                       &
                   chunks(c)%field%y_max,                       &
@@ -273,27 +287,22 @@ SUBROUTINE tea_leaf()
                   ch_alphas, ch_betas, &
                   rx, ry, cheby_calc_steps)
           ELSEIF(use_opencl_kernels) THEN
-              ! TODO
-              !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
+              call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, &
+                max_cheby_iters, rx, ry, cheby_calc_steps)
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
           if (cheby_calc_steps .ge. est_itc) then
             IF(use_fortran_kernels) THEN
-                call tea_leaf_cheby_calc_resid(chunks(c)%field%x_min,&
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%u,                           &
-                    chunks(c)%field%work_array2,                 &
                     chunks(c)%field%work_array3,                 &
-                    chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    rx, ry, error)
+                    0, error)
             ELSEIF(use_opencl_kernels) THEN
-                ! TODO
-                !call tea_leaf_cheby_calc_resid_ocl(rx, ry, rrn)
+              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
             ENDIF
 
           else
@@ -427,7 +436,7 @@ SUBROUTINE tea_leaf()
         IF (abs(error) .LT. eps) EXIT
 
         ! if the error isn't getting any better, then exit - no point in going further
-        IF (abs(error - old_error) .LT. eps .or. error .eq. old_error) EXIT
+        IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
         old_error = error
 
       ENDDO
@@ -485,7 +494,7 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax)
   do n=1,tl_chebyshev_steps
     diag(n) = 1.0_8/cg_alphas(n)
     if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
-    if (n .lt. tl_chebyshev_steps+1) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
+    if (n .lt. tl_chebyshev_steps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
   enddo
 
   CALL tqli(diag, offdiag, tl_chebyshev_steps, z, info)
@@ -513,11 +522,11 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax)
 
 END SUBROUTINE tea_calc_eigenvalues
 
-SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta)
+SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
 
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: ch_alphas, ch_betas
+  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax
-  INTEGER :: n
+  INTEGER :: n, max_cheby_iters
 
   REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
 
@@ -527,7 +536,7 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta)
 
   rho_old = 1.0_8/sigma
 
-  do n=1,max_iters
+  do n=1,max_cheby_iters
     rho_new = 1.0_8/(2.0_8*sigma - rho_old)
     cur_alpha = rho_new*rho_old
     cur_beta = 2.0_8*rho_new/delta
