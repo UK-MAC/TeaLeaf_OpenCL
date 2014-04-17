@@ -113,7 +113,7 @@ void CloverChunk::initProgram
             compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device);
             compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device);
             compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_calc_resid", tea_leaf_cheby_solve_calc_resid_device);
-            compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_loop_calc_u", tea_leaf_cheby_solve_loop_calc_u_device);
+            //compileKernel(options_str, src_tea_leaf_cheby_cl, "tea_leaf_cheby_solve_loop_calc_u", tea_leaf_cheby_solve_loop_calc_u_device);
         }
     }
     else
@@ -421,7 +421,7 @@ void CloverChunk::initSizes
             FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_p, 0, 0, 0, 0);
             FIND_PADDING_SIZE(tea_leaf_cheby_solve_init_p, 0, 0, 0, 0);
             FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_resid, 0, 0, 0, 0);
-            FIND_PADDING_SIZE(tea_leaf_cheby_solve_loop_calc_u, 0, 0, 0, 0);
+            //FIND_PADDING_SIZE(tea_leaf_cheby_solve_loop_calc_u, 0, 0, 0, 0);
         }
     }
     else
@@ -781,17 +781,17 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(0, u);
             tea_leaf_cheby_solve_calc_p_device.setArg(1, work_array_1);
             tea_leaf_cheby_solve_calc_p_device.setArg(2, work_array_2);
-            tea_leaf_cheby_solve_calc_p_device.setArg(3, work_array_3);
+            tea_leaf_cheby_solve_calc_p_device.setArg(3, work_array_4);
             tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_5);
             tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_6);
             tea_leaf_cheby_solve_calc_p_device.setArg(6, diag);
-            tea_leaf_cheby_solve_calc_p_device.setArg(7, z);
+            tea_leaf_cheby_solve_calc_p_device.setArg(7, work_array_3);
 
             tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
 
-            tea_leaf_cheby_solve_loop_calc_u_device.setArg(0, u);
-            tea_leaf_cheby_solve_loop_calc_u_device.setArg(1, work_array_1);
-            tea_leaf_cheby_solve_loop_calc_u_device.setArg(2, work_array_2);
+            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(0, u);
+            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(1, work_array_1);
+            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(2, work_array_2);
         }
     }
     else

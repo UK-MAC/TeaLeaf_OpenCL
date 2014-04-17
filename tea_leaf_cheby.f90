@@ -29,39 +29,27 @@ subroutine tea_leaf_calc_2norm_kernel(x_min, &
                           x_max,             &
                           y_min,             &
                           y_max,             &
-                          b, u,              &
-                          initial, bb)
+                          arr,               &
+                          norm)
 
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: b, u
-  REAL(KIND=8) :: bb
-  integer :: j, k, initial
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: arr
+  REAL(KIND=8) :: norm
+  integer :: j, k
 
-  bb = 0.0_8
+  norm = 0.0_8
 
-  if (initial .eq. 1) then
 !$OMP PARALLEL
-!$OMP DO REDUCTION(+:bb)
+!$OMP DO REDUCTION(+:norm)
     DO k=y_min,y_max
         DO j=x_min,x_max
-            bb = bb + b(j, k)*b(j, k)
+            norm = norm + arr(j, k)*arr(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
-  else
-!$OMP PARALLEL
-!$OMP DO REDUCTION(+:bb)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            bb = bb + u(j, k)*u(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-  endif
 
 end subroutine tea_leaf_calc_2norm_kernel
 
@@ -125,7 +113,8 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            Ky,  &
                            rx, &
                            ry, &
-                           theta)
+                           theta, &
+                           error)
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max

@@ -409,7 +409,7 @@ public:
     void tea_leaf_calc_2norm_kernel
     (int* initial, double* norm);
     void tea_leaf_kernel_cheby_init
-    (const double* rx, const double* ry, const double* theta);
+    (const double* rx, const double* ry, const double* theta, double* error);
     void tea_leaf_kernel_cheby_iterate
     (const double * ch_alphas, const double * ch_betas, int * n_coefs,
      const double * rx, const double * ry, const int * cheby_calc_steps);

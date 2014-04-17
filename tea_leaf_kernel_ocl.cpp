@@ -14,15 +14,15 @@ extern "C" void tea_leaf_kernel_cheby_copy_u_ocl_
 }
 
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
-(int* initial, double* norm)
+(int* norm_array, double* norm)
 {
-    chunk.tea_leaf_calc_2norm_kernel(initial, norm);
+    chunk.tea_leaf_calc_2norm_kernel(norm_array, norm);
 }
 
 extern "C" void tea_leaf_kernel_cheby_init_ocl_
-(const double * rx, const double * ry, const double * theta)
+(const double * rx, const double * ry, const double * theta, double* error)
 {
-    chunk.tea_leaf_kernel_cheby_init(rx, ry, theta);
+    chunk.tea_leaf_kernel_cheby_init(rx, ry, theta, error);
 }
 
 extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
@@ -36,21 +36,32 @@ extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
 void CloverChunk::tea_leaf_cheby_copy_u
 (void)
 {
-    // copy into u0/z for later residual check
+    // copy into u0/work_array_3 for later residual check
     queue.finish();
-    queue.enqueueCopyBuffer(u, z, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
+    queue.enqueueCopyBuffer(u, work_array_3, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel
-(int* initial, double* norm)
+(int* norm_array, double* norm)
 {
-    if (*initial == 1)
+    if (*norm_array == 0)
     {
+        // norm of u0
         tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_3);
+    }
+    else if (*norm_array == 1)
+    {
+        // norm of u
+        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u);
+    }
+    else if (*norm_array == 2)
+    {
+        // norm of r
+        tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_2);
     }
     else
     {
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u);
+        DIE("Invalid value '%d' for norm_array passed, should be [1, 2, 3]", *norm_array);
     }
 
     ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
@@ -58,21 +69,25 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_init
-(const double* rx, const double* ry, const double* theta)
+(const double* rx, const double* ry, const double* theta, double* error)
 {
     tea_leaf_cheby_solve_init_p_device.setArg(2, *theta);
+
+    int zero = 0;
 
     // not used in this first step, so just set ch_* args to a random array
     tea_leaf_cheby_solve_calc_p_device.setArg(8, u);
     tea_leaf_cheby_solve_calc_p_device.setArg(9, u);
     tea_leaf_cheby_solve_calc_p_device.setArg(10, *rx);
     tea_leaf_cheby_solve_calc_p_device.setArg(11, *ry);
-    tea_leaf_cheby_solve_calc_p_device.setArg(12, 0);
+    tea_leaf_cheby_solve_calc_p_device.setArg(12, zero);
 
     // this will junk p but we don't need it anyway
     ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
     // then correct p
     ENQUEUE(tea_leaf_cheby_solve_init_p_device);
+
+    tea_leaf_calc_2norm_kernel(&zero, error);
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_iterate

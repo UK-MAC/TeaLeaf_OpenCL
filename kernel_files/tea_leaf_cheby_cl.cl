@@ -7,8 +7,8 @@ __kernel void tea_leaf_cheby_solve_init_p
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
     }
@@ -58,6 +58,7 @@ __kernel void tea_leaf_cheby_solve_calc_p
     }
 }
 
+#if 0
 /*
  *  Do both of the above kernels in one go, but instead of calcuating r as
  *  b-Ax make it x(k+1) - x(k). Reduced accuracy, higher speed
@@ -82,6 +83,7 @@ __kernel void tea_leaf_cheby_solve_loop_calc_u
                             + beta[step]*r[THARR2D(0, 0, 0)];
     }
 }
+#endif
 
 __kernel void tea_leaf_cheby_solve_calc_resid
 (__global const double * __restrict const r,
@@ -92,8 +94,8 @@ __kernel void tea_leaf_cheby_solve_calc_resid
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         const double rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 

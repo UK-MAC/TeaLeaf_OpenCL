@@ -24,7 +24,7 @@
   opencl_device=0
   use_opencl_kernels
 
-  tl_max_iters=1000
+  tl_max_iters=150
   test_problem 1
   tl_eps=0.0000000000000001
   tl_use_chebyshev

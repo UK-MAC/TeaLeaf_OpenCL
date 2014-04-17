@@ -37,8 +37,8 @@ MODULE tea_leaf_module
       integer :: initial
       real(kind=8) :: norm
     end subroutine
-    subroutine tea_leaf_kernel_cheby_init_ocl(rx, ry, theta)
-      real(kind=8) :: rx, ry, theta
+    subroutine tea_leaf_kernel_cheby_init_ocl(rx, ry, theta, error)
+      real(kind=8) :: rx, ry, theta, error
     end subroutine
     subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, &
         n_coefs, rx, ry, cheby_calc_step)
@@ -67,10 +67,8 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
-  REAL(KIND=8) :: bb, it_alpha, cn, gamm
+  REAL(KIND=8) :: it_alpha, cn, gamm
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters
-
-  cheby_calc_steps = 1
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -214,17 +212,18 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
 
+            write(*,*) "Error going in", error
+
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
                     chunks(c)%field%work_array3,                 &
-                    1, bb)
+                    error)
             ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(1, bb)
+              call tea_leaf_calc_2norm_kernel_ocl(0, error)
             ENDIF
 
             ! initialise 'p' array
@@ -240,26 +239,15 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
-                    rx, ry, theta)
+                    rx, ry, theta, error)
             ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_kernel_cheby_init_ocl(rx, ry, theta)
+              call tea_leaf_kernel_cheby_init_ocl(rx, ry, theta, error)
             ENDIF
 
-            ! calculate initial rrn with modified p
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%work_array3,                 &
-                    0, rrn)
-            ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
-            ENDIF
+            cheby_calc_steps = 1
 
             ! FIXME correct?
-            it_alpha = eps/(4.0_8*rrn)
+            it_alpha = eps/(4.0_8*error)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
             est_itc = int(log(it_alpha)/(2.0_8*log(gamm)))
@@ -271,7 +259,6 @@ SUBROUTINE tea_leaf()
             write(*,*) "error", error
           endif
 
-          ! calculate initial rrn with modified p
           IF(use_fortran_kernels) THEN
               call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
                   chunks(c)%field%x_max,                       &
@@ -292,23 +279,22 @@ SUBROUTINE tea_leaf()
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          if (cheby_calc_steps .ge. est_itc) then
+          if (cheby_calc_steps .ge. 1) then
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%work_array3,                 &
-                    0, error)
+                    chunks(c)%field%work_array2,                 &
+                    error)
             ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
+              call tea_leaf_calc_2norm_kernel_ocl(2, error)
             ENDIF
-
           else
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
+          write(*,*) error
 
           cheby_calc_steps = cheby_calc_steps + 1
 
@@ -436,7 +422,7 @@ SUBROUTINE tea_leaf()
         IF (abs(error) .LT. eps) EXIT
 
         ! if the error isn't getting any better, then exit - no point in going further
-        IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
+        !IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
         old_error = error
 
       ENDDO
