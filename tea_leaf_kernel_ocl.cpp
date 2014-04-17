@@ -38,7 +38,7 @@ void CloverChunk::tea_leaf_cheby_copy_u
 {
     // copy into u0/work_array_3 for later residual check
     queue.finish();
-    queue.enqueueCopyBuffer(u, work_array_3, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
+    queue.enqueueCopyBuffer(u, u0, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel
@@ -47,7 +47,7 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_3);
+        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u0);
     }
     else if (norm_array == 1)
     {

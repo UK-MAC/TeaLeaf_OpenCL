@@ -784,7 +784,7 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(3, work_array_4);
             tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_5);
             tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_6);
-            tea_leaf_cheby_solve_calc_p_device.setArg(6, work_array_3);
+            tea_leaf_cheby_solve_calc_p_device.setArg(6, u0);
 
             tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
 

@@ -170,7 +170,7 @@ private:
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
 
-    cl::Buffer u;
+    cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;
 
     // tolerance specified in tea.in

@@ -74,6 +74,7 @@ void CloverChunk::initBuffers
 
     // tealeaf
     BUF2D_ALLOC(u, 0, 0);
+    BUF2D_ALLOC(u0, 0, 0);
     BUF2D_ALLOC(z, 1, 1);
     BUF2D_ALLOC(work_array_6, 1, 1);
 
