@@ -96,9 +96,7 @@ __kernel void tea_leaf_cheby_solve_calc_resid
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-        const double rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-
-        rro_shared[lid] = rro_val;
+        rro_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
     }
 
     REDUCTION(rro_shared, rro, SUM)

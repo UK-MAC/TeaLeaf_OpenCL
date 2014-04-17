@@ -66,8 +66,6 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
 void CloverChunk::tea_leaf_kernel_cheby_init
 (const double* rx, const double* ry, const double* theta, double* error)
 {
-    tea_leaf_cheby_solve_init_p_device.setArg(2, *theta);
-
     // not used in this first step, so just set ch_* args to a random array
     tea_leaf_cheby_solve_calc_p_device.setArg(7, u);
     tea_leaf_cheby_solve_calc_p_device.setArg(8, u);
@@ -75,12 +73,17 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_calc_p_device.setArg(10, *ry);
     tea_leaf_cheby_solve_calc_p_device.setArg(11, 0);
 
+    int one = 1, zero = 0;
     // this will junk p but we don't need it anyway
-    ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
-    // then correct p
-    ENQUEUE(tea_leaf_cheby_solve_init_p_device);
+    //ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
+    chunk.tea_leaf_kernel_cheby_iterate(rx, ry, &one, rx, ry, &zero);
 
+    // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
+
+    // then correct p
+    tea_leaf_cheby_solve_init_p_device.setArg(2, *theta);
+    ENQUEUE(tea_leaf_cheby_solve_init_p_device);
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_iterate

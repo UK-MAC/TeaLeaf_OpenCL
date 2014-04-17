@@ -216,8 +216,6 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
 
-            write(*,*) "Error going in", error
-
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
@@ -229,6 +227,7 @@ SUBROUTINE tea_leaf()
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(0, error)
             ENDIF
+            call clover_allsum(error)
 
             ! initialise 'p' array
             IF(use_fortran_kernels) THEN
@@ -253,11 +252,13 @@ SUBROUTINE tea_leaf()
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
             est_itc = nint(log(it_alpha)/(2.0_8*log(gamm))) - n
 
-            write(*,*) "eigmin", eigmin
-            write(*,*) "eigmax", eigmax
-            write(*,*) "cn", cn
-            write(*,*) "error", error
-            write(*,*) "est itc", est_itc
+            if (parallel%boss) then
+              write(*,*) "eigmin", eigmin
+              write(*,*) "eigmax", eigmax
+              write(*,*) "cn", cn
+              write(*,*) "error", error
+              write(*,*) "est itc", est_itc
+            endif
 
             cheby_calc_steps = 1
           endif
@@ -297,6 +298,8 @@ SUBROUTINE tea_leaf()
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
+
+          call clover_allsum(error)
 
           cheby_calc_steps = cheby_calc_steps + 1
 
