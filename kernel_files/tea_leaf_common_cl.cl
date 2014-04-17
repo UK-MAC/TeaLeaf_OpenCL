@@ -3,7 +3,6 @@
 __kernel void tea_leaf_init_diag
 (__global       double * __restrict const Kx,
  __global       double * __restrict const Ky,
- __global       double * __restrict const diag,
  double rx, double ry)
 {
     __kernel_indexes;
@@ -11,11 +10,6 @@ __kernel void tea_leaf_init_diag
     if (row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
     && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
     {
-        #if 0
-        diag[THARR2D(0, 0, 0)] = (1.0
-            + ry*(Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + rx*(Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
-        #endif
         Kx[THARR2D(0, 0, 0)] *= rx;
         Ky[THARR2D(0, 0, 0)] *= ry;
     }

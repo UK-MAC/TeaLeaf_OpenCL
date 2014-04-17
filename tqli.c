@@ -31,7 +31,7 @@ absa*sqrt(1.0+(absb/absa)*(absb/absa));
 // End: function pythag(), (C) Copr. 1986-92 Numerical Recipes Software )%.
 
 
-void tqli_(double *d, double *e, int *np, double **z, int* info)
+void tqli_(double *d, double *e, int *np, double *z, int* info)
 {    
 
    const int n = *np;
@@ -88,7 +88,6 @@ void tqli_(double *d, double *e, int *np, double **z, int* info)
          } /* end if-loop for m != 1 */
       } while(m != l);
    } 
-#undef NRANSI
 /* end l-loop */
 } /* End: function tqli(), (C) Copr. 1986-92 Numerical Recipes Software )%. */
 

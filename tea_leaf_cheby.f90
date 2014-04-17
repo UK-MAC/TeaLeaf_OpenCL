@@ -53,53 +53,6 @@ subroutine tea_leaf_calc_2norm_kernel(x_min, &
 
 end subroutine tea_leaf_calc_2norm_kernel
 
-SUBROUTINE tea_leaf_cheby_calc_resid(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                &
-                           r, &
-                           u0,                &
-                           w,     &
-                           Kx,                &
-                           Ky,  &
-                           rx, &
-                           ry, &
-                           error)
-  IMPLICIT NONE
-
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-
-  INTEGER(KIND=4) :: j,k,n
-  real(kind=8) :: error
-  real(kind=8) :: rx, ry
-
-  error = 0.0
-
-!$OMP PARALLEL PRIVATE(j)
-!$OMP DO reduction(+:error)
-  DO k=y_min,y_max
-    DO j=x_min,x_max
-      w(j, k) = (1.0_8                                      &
-          + ry*(Ky(j, k+1) + Ky(j, k))                      &
-          + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-          - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-          - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-      r(j, k) = u0(j, k) - w(j, k)
-
-      error = error + r(j, k)*r(j, k)
-    ENDDO
-  ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-end subroutine
-
 SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            x_max,             &
                            y_min,             &
@@ -126,10 +79,30 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
   INTEGER(KIND=4) :: j,k
   REAL(KIND=8) ::  rx, ry, error, theta
+    REAL(KIND=8), DIMENSION(1) :: ch_alphas, ch_betas
 
-  ! calculate residual - just sets 'r' to be correct to initialise p
-  call tea_leaf_cheby_calc_resid(x_min, x_max, y_min, y_max, &
-      u, u0, w, r, Kx, Ky, rx, ry, error)
+  ! iterate once - just sets 'r' to be correct to initialise p
+  call tea_leaf_kernel_cheby_iterate(x_min,&
+      x_max,                       &
+      y_min,                       &
+      y_max,                       &
+      u,                           &
+      p,                 &
+      r,                 &
+      u0,                 &
+      w,                 &
+      Kx,                 &
+      Ky,                 &
+      ch_alphas, ch_betas, &
+      rx, ry, 1)
+
+  ! then calculate the norm
+  call tea_leaf_calc_2norm_kernel(x_min,        &
+      x_max,                       &
+      y_min,                       &
+      y_max,                       &
+      r,                 &
+      error)
 
 !$OMP PARALLEL
 !$OMP DO

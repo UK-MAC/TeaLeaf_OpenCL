@@ -16,7 +16,7 @@ extern "C" void tea_leaf_kernel_cheby_copy_u_ocl_
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 (int* norm_array, double* norm)
 {
-    chunk.tea_leaf_calc_2norm_kernel(norm_array, norm);
+    chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
 
 extern "C" void tea_leaf_kernel_cheby_init_ocl_
@@ -42,26 +42,21 @@ void CloverChunk::tea_leaf_cheby_copy_u
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel
-(int* norm_array, double* norm)
+(int norm_array, double* norm)
 {
-    if (*norm_array == 0)
+    if (norm_array == 0)
     {
         // norm of u0
         tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_3);
     }
-    else if (*norm_array == 1)
-    {
-        // norm of u
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u);
-    }
-    else if (*norm_array == 2)
+    else if (norm_array == 1)
     {
         // norm of r
         tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_2);
     }
     else
     {
-        DIE("Invalid value '%d' for norm_array passed, should be [1, 2, 3]", *norm_array);
+        DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
     ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
@@ -73,21 +68,19 @@ void CloverChunk::tea_leaf_kernel_cheby_init
 {
     tea_leaf_cheby_solve_init_p_device.setArg(2, *theta);
 
-    int zero = 0;
-
     // not used in this first step, so just set ch_* args to a random array
+    tea_leaf_cheby_solve_calc_p_device.setArg(7, u);
     tea_leaf_cheby_solve_calc_p_device.setArg(8, u);
-    tea_leaf_cheby_solve_calc_p_device.setArg(9, u);
-    tea_leaf_cheby_solve_calc_p_device.setArg(10, *rx);
-    tea_leaf_cheby_solve_calc_p_device.setArg(11, *ry);
-    tea_leaf_cheby_solve_calc_p_device.setArg(12, zero);
+    tea_leaf_cheby_solve_calc_p_device.setArg(9, *rx);
+    tea_leaf_cheby_solve_calc_p_device.setArg(10, *ry);
+    tea_leaf_cheby_solve_calc_p_device.setArg(11, 0);
 
     // this will junk p but we don't need it anyway
     ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
     // then correct p
     ENQUEUE(tea_leaf_cheby_solve_init_p_device);
 
-    tea_leaf_calc_2norm_kernel(&zero, error);
+    tea_leaf_calc_2norm_kernel(1, error);
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_iterate
@@ -103,11 +96,11 @@ void CloverChunk::tea_leaf_kernel_cheby_iterate
         queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
         ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
         queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
-        tea_leaf_cheby_solve_calc_p_device.setArg(8, ch_alphas_device);
-        tea_leaf_cheby_solve_calc_p_device.setArg(9, ch_betas_device);
+        tea_leaf_cheby_solve_calc_p_device.setArg(7, ch_alphas_device);
+        tea_leaf_cheby_solve_calc_p_device.setArg(8, ch_betas_device);
     }
 
-    tea_leaf_cheby_solve_calc_p_device.setArg(12, *cheby_calc_step);
+    tea_leaf_cheby_solve_calc_p_device.setArg(11, *cheby_calc_step);
 
     //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
@@ -193,8 +186,8 @@ void CloverChunk::tea_leaf_init_cg
     tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
     tea_leaf_cg_init_others_device.setArg(8, *rx);
     tea_leaf_cg_init_others_device.setArg(9, *ry);
-    tea_leaf_init_diag_device.setArg(3, *rx);
-    tea_leaf_init_diag_device.setArg(4, *ry);
+    tea_leaf_init_diag_device.setArg(2, *rx);
+    tea_leaf_init_diag_device.setArg(3, *ry);
 
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);

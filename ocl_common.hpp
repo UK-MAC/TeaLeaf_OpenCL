@@ -145,8 +145,6 @@ private:
 
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
     cl::Kernel tea_leaf_init_diag_device;
-    // diagonal of matrix
-    cl::Buffer diag;
 
     // tea leaf
     cl::Kernel tea_leaf_cg_init_u_device;
@@ -407,7 +405,7 @@ public:
 
     void tea_leaf_cheby_copy_u(void);
     void tea_leaf_calc_2norm_kernel
-    (int* initial, double* norm);
+    (int norm_array, double* norm);
     void tea_leaf_kernel_cheby_init
     (const double* rx, const double* ry, const double* theta, double* error);
     void tea_leaf_kernel_cheby_iterate
