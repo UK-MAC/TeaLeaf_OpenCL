@@ -37,14 +37,15 @@ MODULE tea_leaf_module
       integer :: initial
       real(kind=8) :: norm
     end subroutine
-    subroutine tea_leaf_kernel_cheby_init_ocl(rx, ry, theta, error)
+    subroutine tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, n_coefs, &
+        rx, ry, theta, error)
       real(kind=8) :: rx, ry, theta, error
-    end subroutine
-    subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, &
-        n_coefs, rx, ry, cheby_calc_step)
-      integer :: n_coefs, cheby_calc_step
-      real(kind=8) :: rx, ry
+      integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
+    end subroutine
+    subroutine tea_leaf_kernel_cheby_iterate_ocl(rx, ry, cheby_calc_step)
+      real(kind=8) :: rx, ry
+      integer :: cheby_calc_step
     end subroutine
     subroutine tqli(d, e, np, z, info)
       real(kind=8),dimension(np) :: d, e, z
@@ -244,9 +245,11 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
+                    ch_alphas, ch_betas, &
                     rx, ry, theta, error)
             ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_kernel_cheby_init_ocl(rx, ry, theta, error)
+              call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
+                max_cheby_iters, rx, ry, theta, error)
             ENDIF
             call clover_allsum(error)
 
@@ -264,7 +267,7 @@ SUBROUTINE tea_leaf()
               write(*,*) "est itc", est_itc
             endif
 
-            cheby_calc_steps = 1
+            cheby_calc_steps = 2
           endif
 
           IF(use_fortran_kernels) THEN
@@ -282,8 +285,7 @@ SUBROUTINE tea_leaf()
                   ch_alphas, ch_betas, &
                   rx, ry, cheby_calc_steps)
           ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, &
-                max_cheby_iters, rx, ry, cheby_calc_steps)
+              call tea_leaf_kernel_cheby_iterate_ocl(rx, ry, cheby_calc_steps)
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid

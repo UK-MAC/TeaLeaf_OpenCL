@@ -20,17 +20,17 @@ extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 }
 
 extern "C" void tea_leaf_kernel_cheby_init_ocl_
-(const double * rx, const double * ry, const double * theta, double* error)
+(const double * ch_alphas, const double * ch_betas, int* n_coefs,
+ const double * rx, const double * ry, const double * theta, double* error)
 {
-    chunk.tea_leaf_kernel_cheby_init(*rx, *ry, *theta, error);
+    chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
+        *rx, *ry, *theta, error);
 }
 
 extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
-(const double * ch_alphas, const double * ch_betas, int* n_coefs,
- const double * rx, const double * ry, const int * cheby_calc_step)
+(const double * rx, const double * ry, const int * cheby_calc_step)
 {
-    chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas,
-        *n_coefs, *rx, *ry, *cheby_calc_step);
+    chunk.tea_leaf_kernel_cheby_iterate(*rx, *ry, *cheby_calc_step);
 }
 
 void CloverChunk::tea_leaf_cheby_copy_u
@@ -64,43 +64,36 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_init
-(const double rx, const double ry, const double theta, double* error)
+(const double * ch_alphas, const double * ch_betas, int n_coefs,
+ const double rx, const double ry, const double theta, double* error)
 {
-    // not used in this first step, so just set ch_* args to a random array
-    tea_leaf_cheby_solve_calc_p_device.setArg(7, u);
-    tea_leaf_cheby_solve_calc_p_device.setArg(8, u);
+    size_t ch_buf_sz = n_coefs*sizeof(double);
+
+    // upload to device
+    ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
+    queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
+    ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
+    queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
+    tea_leaf_cheby_solve_calc_p_device.setArg(7, ch_alphas_device);
+    tea_leaf_cheby_solve_calc_p_device.setArg(8, ch_betas_device);
     tea_leaf_cheby_solve_calc_p_device.setArg(9, rx);
     tea_leaf_cheby_solve_calc_p_device.setArg(10, ry);
-    tea_leaf_cheby_solve_calc_p_device.setArg(11, 0);
+
+    tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
 
     // this will junk p but we don't need it anyway
-    chunk.tea_leaf_kernel_cheby_iterate(&rx, &ry, 1, rx, ry, 1);
+    chunk.tea_leaf_kernel_cheby_iterate(rx, ry, 1);
 
     // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
 
     // then correct p
-    tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
     ENQUEUE(tea_leaf_cheby_solve_init_p_device);
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_iterate
-(const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const int cheby_calc_step)
+(const double rx, const double ry, const int cheby_calc_step)
 {
-    if (cheby_calc_step == 1)
-    {
-        size_t ch_buf_sz = n_coefs*sizeof(double);
-
-        // upload to device
-        ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
-        queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
-        ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
-        queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
-        tea_leaf_cheby_solve_calc_p_device.setArg(7, ch_alphas_device);
-        tea_leaf_cheby_solve_calc_p_device.setArg(8, ch_betas_device);
-    }
-
     tea_leaf_cheby_solve_calc_p_device.setArg(11, cheby_calc_step-1);
 
     //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);

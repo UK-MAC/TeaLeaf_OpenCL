@@ -22,7 +22,7 @@ void CloverChunk::initProgram
 #endif
 
     // use jacobi preconditioner when running CG solver
-    //options << "-DCG_DO_PRECONDITION ";
+    options << "-DCG_DO_PRECONDITION ";
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";

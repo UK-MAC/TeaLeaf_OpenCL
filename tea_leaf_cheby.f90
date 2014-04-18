@@ -64,6 +64,8 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            w,     &
                            Kx,                &
                            Ky,  &
+                           ch_alphas, &
+                           ch_betas, &
                            rx, &
                            ry, &
                            theta, &
@@ -79,7 +81,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
   INTEGER(KIND=4) :: j,k
   REAL(KIND=8) ::  rx, ry, error, theta
-    REAL(KIND=8), DIMENSION(1) :: ch_alphas, ch_betas
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
   ! iterate once - just sets 'r' to be correct to initialise p
   call tea_leaf_kernel_cheby_iterate(x_min,&
