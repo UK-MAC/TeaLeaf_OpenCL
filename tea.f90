@@ -71,7 +71,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
-  REAL(KIND=8) :: it_alpha, cn, gamm
+  REAL(KIND=8) :: it_alpha, cn, gamm, bb
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
@@ -225,11 +225,11 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%u0,                 &
-                    error)
+                    bb)
             ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(0, error)
+              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
             ENDIF
-            call clover_allsum(error)
+            call clover_allsum(bb)
 
             ! initialise 'p' array
             IF(use_fortran_kernels) THEN
@@ -248,8 +248,10 @@ SUBROUTINE tea_leaf()
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_kernel_cheby_init_ocl(rx, ry, theta, error)
             ENDIF
+            call clover_allsum(error)
 
-            it_alpha = eps/(4.0_8*error)
+            ! FIXME not giving correct estimate
+            it_alpha = eps*bb/(4.0_8*error)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
             est_itc = nint(log(it_alpha)/(2.0_8*log(gamm))) - n
@@ -262,7 +264,7 @@ SUBROUTINE tea_leaf()
               write(*,*) "est itc", est_itc
             endif
 
-            cheby_calc_steps = 2
+            cheby_calc_steps = 1
           endif
 
           IF(use_fortran_kernels) THEN
