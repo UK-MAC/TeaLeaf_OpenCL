@@ -34,7 +34,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
                            u,                 &
                            p,           & ! 1
                            r,           & ! 2
+                           Mi,          & ! 3
                            w,           & ! 4
+                           z,           & ! 5
                            Kx,          & ! 6
                            Ky,          & ! 7
                            rx,          &
@@ -50,7 +52,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
@@ -114,9 +118,17 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
 
             r(j, k) = u(j, k) - w(j, k)
-            p(j, k) = r(j, k)
 
-            rro = rro + r(j, k)*r(j, k);
+            ! inverse diagonal used as preconditioner
+            Mi(j, k) = (1.0_8                                     &
+                + ry*(Ky(j, k+1) + Ky(j, k))                      &
+                + rx*(Kx(j+1, k) + Kx(j, k)))
+            Mi(j, k) = 1.0_8/Mi(j, k)
+
+            z(j, k) = Mi(j, k)*r(j, k)
+            p(j, k) = z(j, k)
+
+            rro = rro + r(j, k)*z(j, k);
         ENDDO
     ENDDO
 !$OMP END DO
@@ -176,7 +188,9 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
                            u,                &
                            p,            &
                            r,            &
+                           Mi,                &
                            w,     &
+                           z,     &
                            alpha, &
                            rrn)
 
@@ -186,7 +200,9 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: alpha, rrn
@@ -199,8 +215,9 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
         DO j=x_min,x_max
             u(j, k) = u(j, k) + alpha*p(j, k)
             r(j, k) = r(j, k) - alpha*w(j, k)
+            z(j, k) = Mi(j, k)*r(j, k)
 
-            rrn = rrn + r(j, k)*r(j, k)
+            rrn = rrn + r(j, k)*z(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
@@ -214,6 +231,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
                            y_max,             &
                            p,            &
                            r,            &
+                           z,     &
                            beta)
 
   IMPLICIT NONE
@@ -221,6 +239,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
     REAL(kind=8) :: error
 
@@ -231,7 +250,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
-            p(j, k) = r(j, k) + beta*p(j, k)
+            p(j, k) = z(j, k) + beta*p(j, k)
         ENDDO
     ENDDO
 !$OMP END DO

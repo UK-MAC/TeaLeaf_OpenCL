@@ -109,7 +109,9 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%u,                           &
               chunks(c)%field%work_array1,                 &
               chunks(c)%field%work_array2,                 &
+              chunks(c)%field%work_array3,                 &
               chunks(c)%field%work_array4,                 &
+              chunks(c)%field%work_array5,                 &
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               rx, ry, rro, coefficient)
@@ -189,14 +191,14 @@ SUBROUTINE tea_leaf()
       fields=0
       fields(FIELD_U) = 1
 
-      ! need the original value of u, which at the moment CG overwrites
+      ! need the original value of u
       if(tl_use_chebyshev) then
         IF(use_fortran_kernels) then
           call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
             chunks(c)%field%x_max,                       &
             chunks(c)%field%y_min,                       &
             chunks(c)%field%y_max,                       &
-            chunks(c)%field%work_array3,                &
+            chunks(c)%field%u0,                &
             chunks(c)%field%u)
         elseif(use_opencl_kernels) then
           call tea_leaf_kernel_cheby_copy_u_ocl()
@@ -222,7 +224,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%u0,                 &
                     error)
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(0, error)
@@ -238,7 +240,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%u,                           &
                     chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%u0,                 &
                     chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
@@ -260,7 +262,7 @@ SUBROUTINE tea_leaf()
               write(*,*) "est itc", est_itc
             endif
 
-            cheby_calc_steps = 1
+            cheby_calc_steps = 2
           endif
 
           IF(use_fortran_kernels) THEN
@@ -271,7 +273,7 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%u,                           &
                   chunks(c)%field%work_array1,                 &
                   chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%work_array3,                 &
+                  chunks(c)%field%u0,                 &
                   chunks(c)%field%work_array5,                 &
                   chunks(c)%field%work_array6,                 &
                   chunks(c)%field%work_array7,                 &
@@ -298,6 +300,7 @@ SUBROUTINE tea_leaf()
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
+          write(*,*) error
 
           call clover_allsum(error)
 
@@ -342,7 +345,9 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%u,                           &
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array3,                 &
                 chunks(c)%field%work_array4,                 &
+                chunks(c)%field%work_array5,                 &
                 alpha, rrn)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
@@ -371,6 +376,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%y_max,                       &
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array5,                 &
                 beta)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
