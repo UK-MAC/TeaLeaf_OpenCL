@@ -201,6 +201,25 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%y_max,                       &
             chunks(c)%field%u0,                &
             chunks(c)%field%u)
+
+          ! TODO find a smarter way to do this
+          !
+          ! If a preconditioner is used with the CG solver before launching
+          ! into the chebyshev routine then the eigenvalues calculated are
+          ! that of the preconditioned system and not the original one.
+          ! Preconditioner is easily disabled in OpenCL, but here it's either
+          ! do something like this or copy the functions but remove the Mi
+          ! and z arrays (messy). This does mean extra memory bandwidth will
+          ! be used, but it's not too much of an issue
+          call tea_leaf_kernel_cheby_reset_Mi(chunks(c)%field%x_min,&
+            chunks(c)%field%x_max,                       &
+            chunks(c)%field%y_min,                       &
+            chunks(c)%field%y_max,                       &
+            chunks(c)%field%work_array1,                &
+            chunks(c)%field%work_array2,                &
+            chunks(c)%field%work_array3,                &
+            chunks(c)%field%work_array5,                &
+            rro)
         elseif(use_opencl_kernels) then
           call tea_leaf_kernel_cheby_copy_u_ocl()
         endif
@@ -304,7 +323,6 @@ SUBROUTINE tea_leaf()
             ! dummy to make it go smaller every time but not reach tolerance
             error = 1.0_8/(cheby_calc_steps)
           endif
-          write(*,*) error
 
           call clover_allsum(error)
 

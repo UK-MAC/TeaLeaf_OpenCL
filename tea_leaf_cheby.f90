@@ -149,7 +149,7 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
     REAL(KIND=8) ::  rx, ry
 
     REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
-    INTEGER(KIND=4) :: step
+    INTEGER :: step
 
 !$OMP PARALLEL
 !$OMP DO
@@ -192,6 +192,45 @@ SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
     DO k=y_min,y_max
         DO j=x_min,x_max
             u0(j, k) = u(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+
+end subroutine
+
+SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           p,           & ! 1
+                           r,           & ! 2
+                           Mi,          & ! 3
+                           z,           & ! 5
+                           rro)
+
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+
+  INTEGER(KIND=4) :: j,k
+
+  REAL(kind=8) :: rro
+
+!$OMP PARALLEL
+!$OMP DO REDUCTION(+:rro)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            Mi(j, k) = 1.0_8
+
+            z(j, k) = r(j, k)
+            p(j, k) = r(j, k)
+
+            rro = rro + r(j, k)*r(j, k);
         ENDDO
     ENDDO
 !$OMP END DO
