@@ -137,6 +137,7 @@ FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
+CXX_MPI_COMPILER=mpiCC
 
 CXXFLAGS+=$(CFLAGS)
 
@@ -252,7 +253,7 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 include make.deps
 
 %.o: %.cpp Makefile make.deps
-	$(CXX) $(CXXFLAGS) -c $< -o $*.o
+	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $*.o
 %.mod %_module.mod %_leaf_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile make.deps
