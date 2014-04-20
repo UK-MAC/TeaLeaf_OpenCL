@@ -2,12 +2,49 @@
 
 ## OpenCL quirks
 
-* The C++ MPI library is called different things dpeending on platform and which
+* The C++ MPI library is called different things depending on platform and which
   implementation of MPI is being used - this needs to be specified by passing in
   the `MPICXX_LIB` option to the Makefile. Possible names include:
   * `-lmpi_cxx`
   * `-lmpiCC`
   * `-lmpichcxx`
+
+* Device selection is done by choosing the devices starting at the index given
+  by `opencl_device` in tea.in. For example, if there are 2 devices on a system and
+  `opencl_device` is 0, rank 0 will take device 0 and rank 1 will take device 1.
+
+# Extra tea.in flags
+
+Turn on opencl kernel use by putting `use_opencl_kernels` in tea.in.
+
+## Solver flags
+
+* `tl_max_iters` specifies the number of iterations to do before stopping
+* `tl_eps` specifies the acceptable error level to stop at
+* `hydro_on`/`hydro_off` will turn the hydrodynamics on or off
+* `tea_leaf_on`/`tea_leaf_off` will turn the linear solver on or off
+
+Enabling these flags will turn on the relevant solver:
+
+* `tl_use_jacobi` - use a simple jacobi iteration
+* `tl_use_cg` - use the conjugate gradient method with a diagonal jacobi
+  preconditioner
+* `tl_use_chebyshev` - use chebyshev solver after running a few iterations of
+  the conjugate gradient solver (not preconditioned) to approximate eigenvalues.
+  The number of iterations of CG to run before switching to the chebyshev solver
+  can be specified with the `tl_chebyshev_steps` flag (eg,
+  `tl_chebyshev_steps=20`)
+
+## OpenCL
+
+* `opencl_vendor` chooses the vendor - typically `nvidia`, `advanced`(AMD), or
+  `intel`, but `any` will choose the first available platform
+* `opencl_type` chooses device type - typically `gpu`, `cpu`, or `accelerator`
+  but `all` will just choose the first device from the specified platform.
+  Setting this to `list` will list all platforms and devices.
+* `opencl_device` specifies the index of the device to use (0 indexed)
+* `opencl_usefirst` makes device selection ignore MPI ranks and make every
+  process try to use device 0 in whatever platform it has.
 
 ## TODO
 
