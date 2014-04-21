@@ -183,8 +183,9 @@ void CloverChunk::cloverDie
 {
     fprintf(stderr, "@@@@@\n");
     fprintf(stderr, "\x1b[31m");
-    fprintf(stderr, "Fatal error at line %d in %s:\n", line, filename);
+    fprintf(stderr, "Fatal error at line %d in %s:", line, filename);
     fprintf(stderr, "\x1b[0m");
+    fprintf(stderr, "\n");
 
     va_list arglist;
     va_start(arglist, format);

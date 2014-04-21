@@ -225,9 +225,12 @@ void CloverChunk::initOcl
     }
     catch (cl::Error e)
     {
+        if (e.err() == CL_DEVICE_NOT_AVAILABLE)
+        {
+            DIE("Devices found but are not available (CL_DEVICE_NOT_AVAILABLE)\n");
+        }
         // if there's no device of the desired type in this context
-        if (e.err() == CL_DEVICE_NOT_FOUND
-        || e.err() == CL_DEVICE_NOT_AVAILABLE)
+        else if (e.err() == CL_DEVICE_NOT_FOUND)
         {
             fprintf(stderr, "No devices of specified type found:\n");
             std::vector<cl::Device> devices;
@@ -248,7 +251,7 @@ void CloverChunk::initOcl
         }
         else
         {
-            DIE("Error in creating context %d\n", e.err());
+            DIE("Error %d (%s) in creating context\n", e.err(), e.what());
         }
     }
 
@@ -267,6 +270,10 @@ void CloverChunk::initOcl
             // index of device to use
             int actual_device = 0;
 
+            // get devices - just choose the first one
+            std::vector<cl::Device> devices;
+            context.getInfo(CL_CONTEXT_DEVICES, &devices);
+
             if (usefirst)
             {
                 // always use specified device and ignore rank
@@ -274,12 +281,8 @@ void CloverChunk::initOcl
             }
             else
             {
-                actual_device = preferred_device + rank;
+                actual_device = preferred_device + (rank % devices.size());
             }
-
-            // get devices - just choose the first one
-            std::vector<cl::Device> devices;
-            context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
             std::string devname;
 
@@ -325,6 +328,8 @@ void CloverChunk::initOcl
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // initialise command queue
