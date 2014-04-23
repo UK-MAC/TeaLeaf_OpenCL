@@ -23,6 +23,24 @@ MODULE tea_leaf_kernel_cg_module
 
 IMPLICIT NONE
 
+  !BLAS interfaces
+  interface
+    DOUBLE PRECISION function ddot  (   N, &
+          DX, &
+          INCX, &
+          DY, &
+          INCY )   
+           INTEGER INCX,INCY,N
+           DOUBLE PRECISION DX(N),DY(N)
+    end function
+
+    SUBROUTINE DAXPY(N,DA,DX,INCX,DY,INCY)
+      DOUBLE PRECISION DA
+      INTEGER INCX,INCY,N
+      DOUBLE PRECISION DX(N),DY(N)
+    end subroutine
+  end interface
+
 CONTAINS
 
 SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
@@ -50,11 +68,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: density
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: energy
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p , r , Mi , w , z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
@@ -151,8 +165,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p , w
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
@@ -179,6 +192,8 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+    !pw = ddot(x_max*y_max, p, 1, w, 1)
+
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
@@ -198,11 +213,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p , r , Mi , w , z
 
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: alpha, rrn
@@ -223,6 +234,8 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+  !call daxpy(x_max*y_max, alpha, p, 1, u(x_min-2:x_max+2,y_min-2:y_max+2), 1)
+
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
@@ -237,9 +250,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
   IMPLICIT NONE
 
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p , r , z
 
     REAL(kind=8) :: error
 

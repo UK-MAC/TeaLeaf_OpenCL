@@ -22,12 +22,11 @@
   opencl_vendor=nvidia
   opencl_type=gpu
   opencl_device=0
-  use_opencl_kernels
 
   tl_max_iters=1500
   test_problem 1
   tl_eps=0.00000000000001
-  tl_use_chebyshev
+  tl_use_cg
   tl_chebyshev_steps=20
 
   hydro_off
