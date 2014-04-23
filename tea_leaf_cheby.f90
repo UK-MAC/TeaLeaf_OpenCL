@@ -66,6 +66,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            Ky,  &
                            ch_alphas, &
                            ch_betas, &
+                           max_cheby_iters, &
                            rx, &
                            ry, &
                            theta, &
@@ -79,9 +80,31 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
-  INTEGER(KIND=4) :: j,k
+  INTEGER :: j,k, max_cheby_iters
   REAL(KIND=8) ::  rx, ry, error, theta
-  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
+
+!$OMP PARALLEL
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            w(j, k) = (1.0_8                                      &
+                + ry*(Ky(j, k+1) + Ky(j, k))                      &
+                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
+            r(j, k) = u0(j, k) - w(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP DO
+  DO k=y_min,y_max
+      DO j=x_min,x_max
+          p(j, k) = r(j, k)/theta
+      ENDDO
+  ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
 
   ! iterate once - just sets 'r' to be correct to initialise p
   call tea_leaf_kernel_cheby_iterate(x_min,&
@@ -95,7 +118,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
       w,                 &
       Kx,                 &
       Ky,                 &
-      ch_alphas, ch_betas, &
+      ch_alphas, ch_betas, max_cheby_iters, &
       rx, ry, 1)
 
   ! then calculate the norm
@@ -105,16 +128,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
       y_max,                       &
       r,                 &
       error)
-
-!$OMP PARALLEL
-!$OMP DO
-  DO k=y_min,y_max
-      DO j=x_min,x_max
-          p(j, k) = r(j, k)/theta
-      ENDDO
-  ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
 
 end subroutine
 
@@ -131,6 +144,7 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                            Ky,  &
                            ch_alphas, &
                            ch_betas, &
+                           max_cheby_iters, &
                            rx, &
                            ry, &
                            step)
@@ -144,12 +158,12 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
-  INTEGER(KIND=4) :: j,k
+  INTEGER :: j,k
 
     REAL(KIND=8) ::  rx, ry
 
-    REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
-    INTEGER :: step
+    INTEGER :: step, max_cheby_iters
+    REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
 
 !$OMP PARALLEL
 !$OMP DO
@@ -237,5 +251,74 @@ SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
 !$OMP END PARALLEL
 
 end subroutine
+
+SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+    max_iters, tl_ch_cg_presteps, info)
+
+  INTEGER :: tl_ch_cg_presteps, max_iters
+  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
+  REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag, z
+  ! z not used for this
+  REAL(KIND=8) :: eigmin, eigmax, tmp
+  INTEGER :: n, info
+  LOGICAL :: swapped
+
+  diag = 0
+  offdiag = 0
+
+  do n=1,tl_ch_cg_presteps
+    diag(n) = 1.0_8/cg_alphas(n)
+    if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
+    if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
+  enddo
+
+  CALL tqli(diag, offdiag, tl_ch_cg_presteps, z, info)
+
+  ! bubble sort eigenvalues
+  do
+    do n=1,tl_ch_cg_presteps-1
+      if (diag(n) .ge. diag(n+1)) then
+        tmp = diag(n)
+        diag(n) = diag(n+1)
+        diag(n+1) = tmp
+        swapped = .true.
+      endif
+    enddo
+    if (.not. swapped) exit
+    swapped = .false.
+  enddo
+
+  eigmin = diag(1)
+  eigmax = diag(tl_ch_cg_presteps)
+
+END SUBROUTINE tea_calc_eigenvalues
+
+SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+    theta, max_cheby_iters)
+
+  INTEGER :: n, max_cheby_iters
+  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
+  REAL(KIND=8) :: eigmin, eigmax
+
+  REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
+
+  theta = (eigmax + eigmin)/2
+  delta = (eigmax - eigmin)/2
+  sigma = theta/delta
+
+  rho_old = 1.0_8/sigma
+
+  do n=1,max_cheby_iters
+    rho_new = 1.0_8/(2.0_8*sigma - rho_old)
+    cur_alpha = rho_new*rho_old
+    cur_beta = 2.0_8*rho_new/delta
+
+    ch_alphas(n) = cur_alpha
+    ch_betas(n) = cur_beta
+
+    rho_old = rho_new
+  enddo
+
+END SUBROUTINE tea_calc_ch_coefs
 
 end module

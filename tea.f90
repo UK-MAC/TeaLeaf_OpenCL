@@ -69,15 +69,19 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: rro, pw, rrn, alpha, beta
 
   ! For chebyshev solver
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
+  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
-  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters
+  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
+  LOGICAL :: ch_switch_check
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
   endif
+
+  error = 1e10
+  cheby_calc_steps = 0
 
   DO c=1,number_of_chunks
 
@@ -226,17 +230,30 @@ SUBROUTINE tea_leaf()
       endif
 
       DO n=1,max_iters
+        
+        IF (tl_ch_cg_errswitch) then
+            ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
+        ELSE
+            ch_switch_check = n .ge. tl_ch_cg_presteps
+        ENDIF
 
-        IF(tl_use_chebyshev .and. (n .gt. tl_chebyshev_steps)) then
+        IF (tl_use_chebyshev .and. ch_switch_check) then
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
-          IF (n .eq. tl_chebyshev_steps+1) then
+          IF (cheby_calc_steps .eq. 0) then
             ! maximum number of iterations in chebyshev solver
-            max_cheby_iters = max_iters - n
+            max_cheby_iters = max_iters - n + 2
             ! calculate eigenvalues
-            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax)
+            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+                max_iters, n-1, info)
+
+            if (info .ne. 0) then
+              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+            endif
+
             ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
+            call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                theta, max_cheby_iters)
 
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
@@ -249,6 +266,7 @@ SUBROUTINE tea_leaf()
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(0, bb)
             ENDIF
+
             call clover_allsum(bb)
 
             ! initialise 'p' array
@@ -261,15 +279,16 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
                     chunks(c)%field%u0,                 &
-                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array4,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
-                    ch_alphas, ch_betas, &
+                    ch_alphas, ch_betas, max_cheby_iters, &
                     rx, ry, theta, error)
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
+
             call clover_allsum(error)
 
             ! FIXME not giving correct estimate
@@ -287,6 +306,7 @@ SUBROUTINE tea_leaf()
             endif
 
             cheby_calc_steps = 2
+write(*,*) error
           endif
 
           IF(use_fortran_kernels) THEN
@@ -301,14 +321,14 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%work_array5,                 &
                   chunks(c)%field%work_array6,                 &
                   chunks(c)%field%work_array7,                 &
-                  ch_alphas, ch_betas, &
+                  ch_alphas, ch_betas, max_cheby_iters, &
                   rx, ry, cheby_calc_steps)
           ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_kernel_cheby_iterate_ocl(rx, ry, cheby_calc_steps)
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          if (cheby_calc_steps .ge. est_itc) then
+          if (cheby_calc_steps .ge. 1) then
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
@@ -324,10 +344,9 @@ SUBROUTINE tea_leaf()
             error = 1.0_8/(cheby_calc_steps)
           endif
 
-          call clover_allsum(error)
-
           cheby_calc_steps = cheby_calc_steps + 1
 
+          call clover_allsum(error)
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
           fields(FIELD_P) = 1
 
@@ -415,6 +434,8 @@ SUBROUTINE tea_leaf()
 
           error = rrn
           rro = rrn
+
+          CALL clover_allsum(error)
         ELSE
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve(chunks(c)%field%x_min,&
@@ -445,12 +466,13 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%u,                           &
                   chunks(c)%field%work_array2)
           ENDIF
+
+          CALL clover_max(error)
         ENDIF
 
+        write(*,*) error
         ! updates u and possibly p
         CALL update_halo(fields,2)
-
-        CALL clover_max(error)
 
         IF (abs(error) .LT. eps) EXIT
 
@@ -500,75 +522,5 @@ SUBROUTINE tea_leaf()
   IF(profiler_on) profiler%PdV=profiler%tea+(timer()-kernel_time)
 
 END SUBROUTINE tea_leaf
-
-SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax)
-
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: diag, offdiag, z
-  ! z not used for this
-  REAL(KIND=8) :: eigmin, eigmax, tmp
-  INTEGER :: n, info
-  LOGICAL :: swapped
-
-  diag = 0
-  offdiag = 0
-
-  do n=1,tl_chebyshev_steps
-    diag(n) = 1.0_8/cg_alphas(n)
-    if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
-    if (n .lt. tl_chebyshev_steps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
-  enddo
-
-  CALL tqli(diag, offdiag, tl_chebyshev_steps, z, info)
-
-  if (info .ne. 0) then
-    CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
-  endif
-
-  ! bubble sort eigenvalues
-  do
-    do n=1,tl_chebyshev_steps-1
-      if (diag(n) .ge. diag(n+1)) then
-        tmp = diag(n)
-        diag(n) = diag(n+1)
-        diag(n+1) = tmp
-        swapped = .true.
-      endif
-    enddo
-    if (.not. swapped) exit
-    swapped = .false.
-  enddo
-
-  eigmin = diag(1)
-  eigmax = diag(tl_chebyshev_steps)
-
-END SUBROUTINE tea_calc_eigenvalues
-
-SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, theta, max_cheby_iters)
-
-  REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
-  REAL(KIND=8) :: eigmin, eigmax
-  INTEGER :: n, max_cheby_iters
-
-  REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
-
-  theta = (eigmax + eigmin)/2
-  delta = (eigmax - eigmin)/2
-  sigma = theta/delta
-
-  rho_old = 1.0_8/sigma
-
-  do n=1,max_cheby_iters
-    rho_new = 1.0_8/(2.0_8*sigma - rho_old)
-    cur_alpha = rho_new*rho_old
-    cur_beta = 2.0_8*rho_new/delta
-
-    ch_alphas(n) = cur_alpha
-    ch_betas(n) = cur_beta
-
-    rho_old = rho_new
-  enddo
-
-END SUBROUTINE tea_calc_ch_coefs
 
 END MODULE tea_leaf_module
