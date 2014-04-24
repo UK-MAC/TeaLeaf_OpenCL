@@ -221,7 +221,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
-            u(j, k) = u(j, k) + alpha*p(j, k)
+!            u(j, k) = u(j, k) + alpha*p(j, k)
 !            r(j, k) = r(j, k) - alpha*w(j, k)
 !            z(j, k) = Mi(j, k)*r(j, k)
 !            rrn = rrn + r(j, k)*z(j, k)
@@ -230,9 +230,8 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-  ! p and u are wrong size
   ! u = alpha*p + u
-  !call daxpy(x_max*y_max, alpha, p, 1, u, 1)
+  call daxpy((x_max+4)*(y_max+4), alpha, p, 1, u, 1)
   ! r = -alpha*w + r
   call daxpy(x_max*y_max, -alpha, w, 1, r, 1)
   ! z = Mi*r
