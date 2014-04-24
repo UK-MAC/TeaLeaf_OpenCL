@@ -57,6 +57,8 @@ CONTAINS
 
 SUBROUTINE tea_leaf()
 
+  IMPLICIT NONE
+
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
   REAL(KIND=8) :: ry,rx, error, old_error
@@ -76,12 +78,15 @@ SUBROUTINE tea_leaf()
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
   LOGICAL :: ch_switch_check
 
+write(*,*) info
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
   endif
 
   error = 1e10
   cheby_calc_steps = 0
+  cg_alphas = 0
+  cg_betas = 0
 
   DO c=1,number_of_chunks
 
@@ -242,10 +247,12 @@ SUBROUTINE tea_leaf()
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
             ! maximum number of iterations in chebyshev solver
+            ! max_iters, minus the number already done, +2 because 2 iterations are done immediately
             max_cheby_iters = max_iters - n + 2
+
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-                max_iters, n-1, info)
+                size(cg_alphas), n-1, info)
 
             if (info .ne. 0) then
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
@@ -253,7 +260,7 @@ SUBROUTINE tea_leaf()
 
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                theta, max_cheby_iters)
+                theta, size(ch_alphas))
 
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
@@ -306,7 +313,6 @@ SUBROUTINE tea_leaf()
             endif
 
             cheby_calc_steps = 2
-write(*,*) error
           endif
 
           IF(use_fortran_kernels) THEN
