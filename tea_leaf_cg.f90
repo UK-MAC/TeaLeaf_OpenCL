@@ -133,6 +133,16 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+  ! p and u are wrong size
+  ! r = u - w
+  !call vdsub(x_max*y_max, u, w, r)
+  ! z = Mi * r
+  !call vdmul(x_max*y_max, Mi, r, z)
+  ! p = z
+  !call dcopy(x_max*y_max, z, 1, p, 1)
+  ! rro = |r*z|
+  !rro = ddot(x_max*y_max, r, 1, z, 1)
+
 END SUBROUTINE tea_leaf_kernel_init_cg_fortran
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
@@ -178,6 +188,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+    ! p is wrong size
     !pw = ddot(x_max*y_max, p, 1, w, 1)
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
@@ -219,6 +230,9 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+  ! p and u are wrong size
+  ! u = alpha*p + u
+  !call daxpy(x_max*y_max, alpha, p, 1, u, 1)
   ! r = -alpha*w + r
   call daxpy(x_max*y_max, -alpha, w, 1, r, 1)
   ! z = Mi*r
@@ -258,10 +272,11 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+  ! p is wrong size
   ! z = beta*p + z
   !call daxpy(x_max*y_max, beta, p, 1, z, 1)
   ! p = z
-  !call dcopy(x_max*y_max, z, 1, p, 1)
+  !call dswap(x_max*y_max, z, 1, p, 1)
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
 
