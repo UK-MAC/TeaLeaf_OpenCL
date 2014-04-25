@@ -31,7 +31,8 @@ MODULE tea_leaf_module
   IMPLICIT NONE
 
   interface
-    subroutine tea_leaf_kernel_cheby_copy_u_ocl()
+    subroutine tea_leaf_kernel_cheby_copy_u_ocl(rro)
+      real(kind=8) :: rro
     end subroutine
     subroutine tea_leaf_calc_2norm_kernel_ocl(initial, norm)
       integer :: initial
@@ -221,8 +222,12 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%work_array5,                &
             rro)
         elseif(use_opencl_kernels) then
-          call tea_leaf_kernel_cheby_copy_u_ocl()
+          write(*,*) rro
+          call tea_leaf_kernel_cheby_copy_u_ocl(rro)
+          write(*,*) rro
         endif
+
+        call clover_allsum(rro)
       endif
 
       DO n=1,max_iters

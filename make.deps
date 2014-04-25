@@ -98,7 +98,7 @@ tea.o tea_leaf_module.mod: tea.f90 report_module.mod data_module.mod \
 tea_leaf_cg.o tea_leaf_kernel_cg_module.mod: tea_leaf_cg.f90
 tea_leaf_cheby.o tea_leaf_kernel_cheby_module.mod: tea_leaf_cheby.f90
 tea_leaf.o: tea_leaf.f90 clover_module.mod
-tea_leaf_kernel.o tea_leaf_kernel_module.mod: tea_leaf_kernel.f90
+tea_leaf_jacobi.o tea_leaf_kernel_module.mod: tea_leaf_jacobi.f90
 timer.o: timer.f90
 timestep.o timestep_module.mod: timestep.f90 clover_module.mod \
  report_module.mod update_halo_module.mod viscosity_module.mod \

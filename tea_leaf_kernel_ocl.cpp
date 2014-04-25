@@ -8,9 +8,9 @@ extern CloverChunk chunk;
 
 // Chebyshev solver
 extern "C" void tea_leaf_kernel_cheby_copy_u_ocl_
-(void)
+(double* rro)
 {
-    chunk.tea_leaf_cheby_copy_u();
+    chunk.tea_leaf_cheby_copy_u(rro);
 }
 
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
@@ -34,11 +34,12 @@ extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
 }
 
 void CloverChunk::tea_leaf_cheby_copy_u
-(void)
+(double* rro)
 {
     // copy into u0/work_array_3 for later residual check
     queue.finish();
     queue.enqueueCopyBuffer(u, u0, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
+    queue.enqueueReadBuffer(reduce_buf_2, CL_TRUE, 0, sizeof(double), rro);
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel

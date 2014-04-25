@@ -168,7 +168,7 @@ FORTRAN_FILES=\
 	data.o			\
 	definitions.o			\
 	tea.o			\
-	tea_leaf_kernel.o			\
+	tea_leaf_jacobi.o			\
 	tea_leaf_cg.o			\
 	tea_leaf_cheby.o			\
 	report.o			\

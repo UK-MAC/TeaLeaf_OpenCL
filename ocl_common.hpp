@@ -403,7 +403,8 @@ public:
     void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
     void tea_leaf_kernel_cg_calc_p(double beta);
 
-    void tea_leaf_cheby_copy_u(void);
+    void tea_leaf_cheby_copy_u
+    (double* rro);
     void tea_leaf_calc_2norm_kernel
     (int norm_array, double* norm);
     void tea_leaf_kernel_cheby_init
