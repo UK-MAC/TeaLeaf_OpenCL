@@ -25,7 +25,7 @@ IMPLICIT NONE
 
 CONTAINS
 
-subroutine tea_leaf_calc_2norm_kernel(x_min, &
+SUBROUTINE tea_leaf_calc_2norm_kernel(x_min, &
                           x_max,             &
                           y_min,             &
                           y_max,             &
@@ -51,7 +51,7 @@ subroutine tea_leaf_calc_2norm_kernel(x_min, &
 !$OMP END DO
 !$OMP END PARALLEL
 
-end subroutine tea_leaf_calc_2norm_kernel
+end SUBROUTINE tea_leaf_calc_2norm_kernel
 
 SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            x_max,             &
@@ -131,7 +131,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
       r,                 &
       error)
 
-end subroutine
+end SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                            x_max,             &
@@ -213,7 +213,7 @@ SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-end subroutine
+end SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
                            x_max,             &
@@ -252,7 +252,7 @@ SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-end subroutine
+end SUBROUTINE
 
 SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
     max_iters, steps_done, info)

@@ -411,7 +411,8 @@ public:
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const double theta, double* error);
     void tea_leaf_kernel_cheby_iterate
-    (const double rx, const double ry, const int cheby_calc_steps);
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const int cheby_calc_steps);
 
     void tea_leaf_finalise();
 

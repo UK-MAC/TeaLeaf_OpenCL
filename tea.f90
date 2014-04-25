@@ -44,9 +44,12 @@ MODULE tea_leaf_module
       integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
-    subroutine tea_leaf_kernel_cheby_iterate_ocl(rx, ry, cheby_calc_step)
+    subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, n_coefs, &
+        rx, ry, cheby_calc_step)
       real(kind=8) :: rx, ry
       integer :: cheby_calc_step
+      integer :: n_coefs
+      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
     subroutine tqli(d, e, np, z, info)
       real(kind=8),dimension(np) :: d, e, z
@@ -318,7 +321,8 @@ SUBROUTINE tea_leaf()
                   ch_alphas, ch_betas, max_cheby_iters, &
                   rx, ry, cheby_calc_steps)
           ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_kernel_cheby_iterate_ocl(rx, ry, cheby_calc_steps)
+              call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+                rx, ry, cheby_calc_steps)
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid

@@ -28,9 +28,11 @@ extern "C" void tea_leaf_kernel_cheby_init_ocl_
 }
 
 extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
-(const double * rx, const double * ry, const int * cheby_calc_step)
+(const double * ch_alphas, const double * ch_betas, int *n_coefs,
+ const double * rx, const double * ry, const int * cheby_calc_step)
 {
-    chunk.tea_leaf_kernel_cheby_iterate(*rx, *ry, *cheby_calc_step);
+    chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
+        *rx, *ry, *cheby_calc_step);
 }
 
 void CloverChunk::tea_leaf_cheby_copy_u
@@ -83,7 +85,7 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
 
     // this will junk p but we don't need it anyway
-    chunk.tea_leaf_kernel_cheby_iterate(rx, ry, 1);
+    chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
 
     // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
@@ -93,7 +95,8 @@ void CloverChunk::tea_leaf_kernel_cheby_init
 }
 
 void CloverChunk::tea_leaf_kernel_cheby_iterate
-(const double rx, const double ry, const int cheby_calc_step)
+(const double * ch_alphas, const double * ch_betas, int n_coefs,
+ const double rx, const double ry, const int cheby_calc_step)
 {
     tea_leaf_cheby_solve_calc_p_device.setArg(11, cheby_calc_step-1);
 
