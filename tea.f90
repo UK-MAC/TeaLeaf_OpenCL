@@ -115,6 +115,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array5,                 &
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
+              chunks(c)%field%work_array8,                 &
               rx, ry, rro, coefficient)
         ELSEIF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
@@ -340,6 +341,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array4,                 &
                 chunks(c)%field%work_array6,                 &
                 chunks(c)%field%work_array7,                 &
+                chunks(c)%field%work_array8,                 &
                 rx, ry, pw)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
