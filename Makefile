@@ -63,6 +63,12 @@ ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
 
+BLAS=
+BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_intel_lp64.so
+#BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_sequential.so
+BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_intel_thread.so
+BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_core.so
+
 OMP_INTEL     = -openmp
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp
@@ -72,7 +78,7 @@ OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
 OMP=$(OMP_$(COMPILER))
 
-FLAGS_INTEL     = -O3  -no-prec-div
+FLAGS_INTEL     = -O3  -no-prec-div -xhost -g
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
