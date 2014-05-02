@@ -236,18 +236,18 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 
     rrn = 0.0_08
 
-!$OMP PARALLEL
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-!            u(j, k) = u(j, k) + alpha*p(j, k)
-!            r(j, k) = r(j, k) - alpha*w(j, k)
-!            z(j, k) = Mi(j, k)*r(j, k)
-!            rrn = rrn + r(j, k)*z(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
+!!$OMP PARALLEL
+!!$OMP DO
+!    DO k=y_min,y_max
+!        DO j=x_min,x_max
+!!            u(j, k) = u(j, k) + alpha*p(j, k)
+!!            r(j, k) = r(j, k) - alpha*w(j, k)
+!!            z(j, k) = Mi(j, k)*r(j, k)
+!!            rrn = rrn + r(j, k)*z(j, k)
+!        ENDDO
+!    ENDDO
+!!$OMP END DO
+!!$OMP END PARALLEL
 
   ! u = alpha*p + u
   call daxpy((x_max+4)*(y_max+4), alpha, p, 1, u, 1)
@@ -280,15 +280,15 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: beta
 
-!$OMP PARALLEL
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            !p(j, k) = z(j, k) + beta*p(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
+!!$OMP PARALLEL
+!!$OMP DO
+!    DO k=y_min,y_max
+!        DO j=x_min,x_max
+!            !p(j, k) = z(j, k) + beta*p(j, k)
+!        ENDDO
+!    ENDDO
+!!$OMP END DO
+!!$OMP END PARALLEL
 
   ! z = beta*p + z
   call daxpy(x_max*(y_max+4), beta, p(x_min:x_max,:), 1, z, 1)
