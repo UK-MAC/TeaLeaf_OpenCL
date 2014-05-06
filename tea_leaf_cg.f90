@@ -143,25 +143,26 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
         ENDDO
     ENDDO
 !$OMP END DO
+
+!$OMP DO REDUCTION(+:rro)
+    DO k=y_min,y_max
+      ! inverse diagonal
+      call vdinv(x_max, diag(x_min:,k), Mi(x_min:,k))
+
+      ! r = u - w
+      call vdsub(x_max, u(x_min:,k), w(x_min:,k), r(x_min:,k))
+
+      ! z = Mi * r
+      call vdmul(x_max, Mi(x_min:,k), r(x_min:,k), z(x_min:,k))
+
+      ! p = z
+      call dcopy(x_max, z(x_min:,k), 1, p(x_min:,k), 1)
+
+      ! rro = |r*z|
+      rro = rro + ddot(x_max, r(x_min:,k), 1, z(x_min:,k), 1)
+    ENDDO
+!$OMP END DO
 !$OMP END PARALLEL
-
-  ! inverse diagonal
-  call vdinv(x_max*(y_max+4), diag, Mi)
-  ! need to set boundaries to 0
-  Mi(:,:y_min) = 0.0_8
-  Mi(:,y_max:) = 0.0_8
-
-  ! r = u - w
-  call vdsub(x_max*(y_max+4), u(x_min:x_max,:), w, r)
-
-  ! z = Mi * r
-  call vdmul(x_max*(y_max+4), Mi, r, z)
-
-  ! p = z
-  call dcopy(x_max*(y_max+4), z, 1, p(x_min:x_max,:), 1)
-
-  ! rro = |r*z|
-  rro = ddot(x_max*(y_max+4), r, 1, z, 1)
 
 END SUBROUTINE tea_leaf_kernel_init_cg_fortran
 
@@ -200,15 +201,16 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
             w(j, k) = diag(j, k)*p(j, k)             &
                 - (Ky(j, k+1)*p(j, k+1) + Ky(j, k)*p(j, k-1))  &
                 - (Kx(j+1, k)*p(j+1, k) + Kx(j, k)*p(j-1, k))
-
-            !pw = pw + w(j, k)*p(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
-!$OMP END PARALLEL
 
-    ! p is wrong size
-    pw = ddot(x_max*(y_max+4), p(x_min:x_max,:), 1, w, 1)
+!$OMP DO REDUCTION(+:pw)
+    DO k=y_min,y_max
+        pw = pw + ddot(x_max+4, p(x_min:,k), 1, w(x_min:,k), 1)
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
 
@@ -236,27 +238,20 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
 
     rrn = 0.0_08
 
-!!$OMP PARALLEL
-!!$OMP DO
-!    DO k=y_min,y_max
-!        DO j=x_min,x_max
-!!            u(j, k) = u(j, k) + alpha*p(j, k)
-!!            r(j, k) = r(j, k) - alpha*w(j, k)
-!!            z(j, k) = Mi(j, k)*r(j, k)
-!!            rrn = rrn + r(j, k)*z(j, k)
-!        ENDDO
-!    ENDDO
-!!$OMP END DO
-!!$OMP END PARALLEL
-
-  ! u = alpha*p + u
-  call daxpy((x_max+4)*(y_max+4), alpha, p, 1, u, 1)
-  ! r = -alpha*w + r
-  call daxpy(x_max*(y_max+4), -alpha, w, 1, r, 1)
-  ! z = Mi*r
-  call vdmul(x_max*(y_max+4), Mi, r, z)
-  ! rrn = |r*z|
-  rrn = ddot(x_max*(y_max+4), r, 1, z, 1)
+!$OMP PARALLEL
+!$OMP DO REDUCTION(+:rrn)
+    DO k=y_min,y_max
+      ! u = alpha*p + u
+      call daxpy(x_max, alpha, p(x_min:,k), 1, u(x_min:,k), 1)
+      ! r = -alpha*w + r
+      call daxpy(x_max, -alpha, w(x_min:,k), 1, r(x_min:,k), 1)
+      ! z = Mi*r
+      call vdmul(x_max, Mi(x_min:,k), r(x_min:,k), z(x_min:,k))
+      ! rrn = |r*z|
+      rrn = rrn + ddot(x_max, r(x_min:,k), 1, z(x_min:,k), 1)
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur
 
@@ -280,20 +275,16 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: beta
 
-!!$OMP PARALLEL
-!!$OMP DO
-!    DO k=y_min,y_max
-!        DO j=x_min,x_max
-!            !p(j, k) = z(j, k) + beta*p(j, k)
-!        ENDDO
-!    ENDDO
-!!$OMP END DO
-!!$OMP END PARALLEL
-
-  ! z = beta*p + z
-  call daxpy(x_max*(y_max+4), beta, p(x_min:x_max,:), 1, z, 1)
-  ! p = z
-  call dswap(x_max*(y_max+4), z, 1, p(x_min:x_max,:), 1)
+!$OMP PARALLEL
+!$OMP DO
+    DO k=y_min,y_max
+      ! z = beta*p + z
+      call daxpy(x_max, beta, p(x_min:,k), 1, z(x_min:,k), 1)
+      ! p = z
+      call dswap(x_max, z(x_min:,k), 1, p(x_min:,k), 1)
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
 

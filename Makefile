@@ -65,8 +65,8 @@ endif
 
 BLAS=
 BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_intel_lp64.so
-#BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_sequential.so
-BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_intel_thread.so
+BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_sequential.so
+#BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_intel_thread.so
 BLAS+=/opt/intel/composer_xe_2015.0.024/mkl/lib/intel64/libmkl_core.so
 
 OMP_INTEL     = -openmp
