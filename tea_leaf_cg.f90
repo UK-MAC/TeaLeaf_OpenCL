@@ -124,22 +124,6 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
             w(j, k) = diag(j, k)*u(j, k)             &
                 - (Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - (Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-
-            !r(j, k) = u(j, k) - w(j, k)
-
-            ! inverse diagonal used as preconditioner
-            !Mi(j, k) = (1.0_8                                     &
-            !    + (Ky(j, k+1) + Ky(j, k))                      &
-            !    + (Kx(j+1, k) + Kx(j, k)))
-            !Mi(j, k) = 1.0_8/Mi(j, k)
-
-            ! or...
-            !Mi(j, k) = 1.0_8/diag(j,k)
-
-            !z(j, k) = Mi(j, k)*r(j, k)
-            !p(j, k) = z(j, k)
-
-            !rro = rro + r(j, k)*z(j, k);
         ENDDO
     ENDDO
 !$OMP END DO
