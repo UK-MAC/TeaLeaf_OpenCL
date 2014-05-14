@@ -104,7 +104,6 @@ void CloverChunk::initOcl
 
     int desired_vendor = platformRead(input);
 
-
     if (desired_vendor == NO_PLAT)
     {
         DIE("No platform specified in tea.in\n");
