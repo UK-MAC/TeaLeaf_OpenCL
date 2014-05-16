@@ -225,9 +225,7 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%work_array5,                &
             rro)
         elseif(use_opencl_kernels) then
-          write(*,*) rro
           call tea_leaf_kernel_cheby_copy_u_ocl(rro)
-          write(*,*) rro
         endif
 
         call clover_allsum(rro)
