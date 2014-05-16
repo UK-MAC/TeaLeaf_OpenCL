@@ -47,17 +47,11 @@ MODULE tea_leaf_module
       real(kind=8) :: rx, ry
       integer :: cheby_calc_step
     end subroutine
-    subroutine tqli(d, e, np, z, info)
-      real(kind=8),dimension(np) :: d, e, z
-      integer :: np, info
-    end subroutine
   end interface
 
 CONTAINS
 
 SUBROUTINE tea_leaf()
-
-  IMPLICIT NONE
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
@@ -78,15 +72,12 @@ SUBROUTINE tea_leaf()
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
   LOGICAL :: ch_switch_check
 
-write(*,*) info
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
   endif
 
   error = 1e10
   cheby_calc_steps = 0
-  cg_alphas = 0
-  cg_betas = 0
 
   DO c=1,number_of_chunks
 
@@ -246,13 +237,13 @@ write(*,*) info
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
+            write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",error
             ! maximum number of iterations in chebyshev solver
-            ! max_iters, minus the number already done, +2 because 2 iterations are done immediately
             max_cheby_iters = max_iters - n + 2
 
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-                size(cg_alphas), n-1, info)
+                max_iters, n-1, info)
 
             if (info .ne. 0) then
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
@@ -260,7 +251,7 @@ write(*,*) info
 
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                theta, size(ch_alphas))
+                theta, max_cheby_iters)
 
             ! calculate 2 norm of u0
             IF(use_fortran_kernels) THEN
@@ -302,7 +293,9 @@ write(*,*) info
             it_alpha = eps*bb/(4.0_8*error)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
-            est_itc = nint(log(it_alpha)/(2.0_8*log(gamm))) - n
+            est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
+            ! XXX
+            est_itc = est_itc * 3
 
             if (parallel%boss) then
               write(*,*) "eigmin", eigmin
@@ -334,7 +327,7 @@ write(*,*) info
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          if (cheby_calc_steps .ge. 1) then
+          if (n .ge. est_itc) then
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
@@ -476,7 +469,6 @@ write(*,*) info
           CALL clover_max(error)
         ENDIF
 
-        write(*,*) error
         ! updates u and possibly p
         CALL update_halo(fields,2)
 

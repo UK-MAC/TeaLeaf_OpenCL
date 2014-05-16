@@ -90,7 +90,7 @@ CFLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qlistopt -qattr=fu
 CFLAGS_          = -O3
 
 ifdef DEBUG
-  FLAGS_INTEL     = -O0 -g -debug all -check all -traceback -gen-interfaces -warn interfaces
+  FLAGS_INTEL     = -O0 -g -debug all -check all -traceback -check noarg_temp_created
   FLAGS_SUN       = -g -xopenmp=noopt -stackvar -u -fpover=yes -C -ftrap=common
   FLAGS_GNU       = -O0 -g -O -Wall -Wextra -fbounds-check
   FLAGS_CRAY      = -O0 -g -em -eD
@@ -145,7 +145,6 @@ C_FILES=\
 	accelerate_kernel_c.o           \
 	pack_kernel_c.o \
 	PdV_kernel_c.o                  \
-	tqli.o			\
 	timer_c.o                  \
 	initialise_chunk_kernel_c.o                  \
 	calc_dt_kernel_c.o                  \
