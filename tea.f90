@@ -245,6 +245,7 @@ SUBROUTINE tea_leaf()
           IF (cheby_calc_steps .eq. 0) then
             ! maximum number of iterations in chebyshev solver
             max_cheby_iters = max_iters - n + 2
+            rro = error
 
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
@@ -303,7 +304,7 @@ SUBROUTINE tea_leaf()
             est_itc = est_itc * 3
 
             if (parallel%boss) then
-              write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",error
+              write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
               write(*,'(4f11.4,11i)')eigmin, eigmax, cn, error, est_itc
             endif
