@@ -85,7 +85,7 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
 
     // this will junk p but we don't need it anyway
-    chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
+    tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
 
     // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
