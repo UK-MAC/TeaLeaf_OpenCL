@@ -411,6 +411,8 @@ SUBROUTINE tea_leaf()
             endif
           endif
 
+          call clover_allsum(error)
+
           cheby_calc_steps = cheby_calc_steps + 1
 
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
