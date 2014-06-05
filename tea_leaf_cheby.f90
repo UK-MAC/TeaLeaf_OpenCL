@@ -58,10 +58,12 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                            y_min,             &
                            y_max,             &
                            u,                &
+                           u0,                &
                            p,                &
                            r,            &
-                           u0,                &
+                           Mi,            &
                            w,     &
+                           z,            &
                            Kx,                &
                            Ky,  &
                            ch_alphas, &
@@ -77,7 +79,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r, Mi, z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
   INTEGER :: j,k, max_cheby_iters
@@ -94,51 +96,33 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
+            !z(j, k) = Mi(j, k)*r(j, k)
+          p(j, k) = (Mi(j, k)*r(j, k))/theta
         ENDDO
     ENDDO
 !$OMP END DO
 !$OMP DO
   DO k=y_min,y_max
       DO j=x_min,x_max
-          p(j, k) = r(j, k)/theta
+          u(j, k) = u(j, k) + p(j, k)
       ENDDO
   ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
 
-  call tea_leaf_kernel_cheby_iterate(x_min,&
-      x_max,                       &
-      y_min,                       &
-      y_max,                       &
-      u,                           &
-      p,                 &
-      r,                 &
-      u0,                 &
-      w,                 &
-      Kx,                 &
-      Ky,                 &
-      ch_alphas, ch_betas, max_cheby_iters, &
-      rx, ry, 1)
-
-  ! then calculate the norm
-  call tea_leaf_calc_2norm_kernel(x_min,        &
-      x_max,                       &
-      y_min,                       &
-      y_max,                       &
-      r,                 &
-      error)
-
-end SUBROUTINE
+END SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                            x_max,             &
                            y_min,             &
                            y_max,             &
                            u,                &
+                           u0,                &
                            p,                &
                            r,            &
-                           u0,                &
+                           Mi,            &
                            w,     &
+                           z,            &
                            Kx,                &
                            Ky,  &
                            ch_alphas, &
@@ -154,7 +138,7 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r, Mi, z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
   INTEGER :: j,k
@@ -168,20 +152,21 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
-            u(j, k) = u(j, k) + p(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
                 + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*r(j, k)
+            !z(j, k) = Mi(j, k)*r(j, k)
+            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*Mi(j, k)*r(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            u(j, k) = u(j, k) + p(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
@@ -308,7 +293,7 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
 
   INTEGER :: tl_ch_cg_presteps, max_iters
   REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
-  REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag, z
+  REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag
   ! z not used for this
   REAL(KIND=8) :: eigmin, eigmax, tmp
   INTEGER :: n, info
@@ -324,6 +309,12 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   enddo
 
   CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
+
+  ! could just call this instead
+  !offdiag(:)=eoshift(offdiag(:),1)
+  !CALL dsterf(tl_ch_cg_presteps, diag, offdiag, info)
+
+  if (info .ne. 0) return
 
   ! bubble sort eigenvalues
   do
@@ -341,6 +332,8 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
 
   eigmin = diag(1)
   eigmax = diag(tl_ch_cg_presteps)
+
+  if (eigmin .lt. 0.0_8 .or. eigmax .lt. 0.0_8) info = 1
 
 END SUBROUTINE tea_calc_eigenvalues
 
