@@ -76,7 +76,7 @@ void CloverChunk::packRect
     CASE_BUF(work_array_1); break;
     default:
         device_buf = NULL;
-        DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
+        DIE("Invalid face %d passed to OpenCL buffer packing\n", which_field);
     }
 
     switch (edge)
@@ -153,6 +153,10 @@ void CloverChunk::packRect
  *  the operation being done and the side its being done on
  */
 #define CHECK_PACK(op, side1, side2, dest1, dest2)                          \
+    if (external_face != chunk_1 || external_face != chunk_2)               \
+    {                                                                       \
+        queue.finish();                                                     \
+    }                                                                       \
     if (external_face != chunk_1)                                           \
     {                                                                       \
         packRect(buffer_1,                                                  \
