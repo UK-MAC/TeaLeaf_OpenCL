@@ -21,7 +21,7 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if (tea_solver != TEA_ENUM_CHEBYSHEV)
+    //if (tea_solver != TEA_ENUM_CHEBYSHEV)
     {
         // use jacobi preconditioner when running CG solver
         options << "-DCG_DO_PRECONDITION ";
