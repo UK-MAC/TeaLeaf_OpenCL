@@ -106,7 +106,7 @@ void CloverChunk::initOcl
 
     if (desired_vendor == NO_PLAT)
     {
-        DIE("No platform specified in tea.in\n");
+        DIE("No opencl_vendor specified in tea.in\n");
     }
     else if (desired_vendor == LIST_PLAT)
     {
