@@ -5,7 +5,7 @@ __kernel void tea_leaf_cheby_solve_init_p
  __global const double * __restrict const u0,
  __global       double * __restrict const p,
  __global       double * __restrict const r,
- __global       double * __restrict const Mi,
+ __global const double * __restrict const Mi,
  __global       double * __restrict const w,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,

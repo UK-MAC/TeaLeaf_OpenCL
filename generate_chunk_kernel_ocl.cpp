@@ -70,8 +70,8 @@ const int g_rect, const int g_circ, const int g_point)
     generate_chunk_init_device.setArg(6, tmp_state_xvel);
     generate_chunk_init_device.setArg(7, tmp_state_yvel);
 
-    ENQUEUE(generate_chunk_init_device);
-    //ENQUEUE_OFFSET(generate_chunk_init_device);
+    //ENQUEUE(generate_chunk_init_device);
+    ENQUEUE_OFFSET(generate_chunk_init_device);
 
     generate_chunk_device.setArg(9, tmp_state_density);
     generate_chunk_device.setArg(10, tmp_state_energy);
@@ -92,8 +92,8 @@ const int g_rect, const int g_circ, const int g_point)
     {
         generate_chunk_device.setArg(22, state);
 
-        ENQUEUE(generate_chunk_device);
-        //ENQUEUE_OFFSET(generate_chunk_device);
+        //ENQUEUE(generate_chunk_device);
+        ENQUEUE_OFFSET(generate_chunk_device);
     }
 }
 

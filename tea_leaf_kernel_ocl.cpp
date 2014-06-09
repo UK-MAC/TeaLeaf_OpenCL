@@ -61,7 +61,8 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
+    //ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
+    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_resid_device);
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
@@ -98,10 +99,10 @@ void CloverChunk::tea_leaf_kernel_cheby_iterate
 {
     tea_leaf_cheby_solve_calc_p_device.setArg(12, cheby_calc_step-1);
 
-    //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
     //ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
+    //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
+    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
 }
 
 /********************/
@@ -228,8 +229,8 @@ void CloverChunk::tea_leaf_kernel_cg_calc_p
 {
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
 
-    ENQUEUE(tea_leaf_cg_solve_calc_p_device);
-    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
+    //ENQUEUE(tea_leaf_cg_solve_calc_p_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
 }
 
 /********************/
