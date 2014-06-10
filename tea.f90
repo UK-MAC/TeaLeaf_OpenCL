@@ -56,6 +56,8 @@ CONTAINS
 
 SUBROUTINE tea_leaf()
 
+  IMPLICIT NONE
+
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
   REAL(KIND=8) :: ry,rx, error, old_error
@@ -74,6 +76,12 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
   LOGICAL :: ch_switch_check
+
+  INTEGER :: cg_calc_steps
+  REAL(KIND=8) :: cg_time, ch_time
+  cg_time = 0.0_8
+  ch_time = 0.0_8
+  cg_calc_steps = 0
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -229,10 +237,14 @@ SUBROUTINE tea_leaf()
       endif
 
       DO n=1,max_iters
-        
+
+        if (profiler_on) kernel_time=timer()
+
         IF (tl_ch_cg_errswitch) then
+            ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
+            ! enough steps have passed
             ch_switch_check = n .ge. tl_ch_cg_presteps
         ENDIF
 
@@ -404,6 +416,7 @@ SUBROUTINE tea_leaf()
 
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
           fields(FIELD_P) = 1
+          cg_calc_steps = cg_calc_steps + 1
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
@@ -528,6 +541,14 @@ SUBROUTINE tea_leaf()
         ! updates u and possibly p
         CALL update_halo(fields,1)
 
+        if (profiler_on) then
+          IF (tl_use_chebyshev .and. ch_switch_check) then
+              ch_time=ch_time+(timer()-kernel_time)
+          else
+              cg_time=cg_time+(timer()-kernel_time)
+          endif
+        endif
+
         IF (abs(error) .LT. eps) EXIT
 
         ! if the error isn't getting any better, then exit - no point in going further
@@ -542,10 +563,6 @@ SUBROUTINE tea_leaf()
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
           WRITE(0,"('Iteration count ', i8)") n-1
-
-          if (tl_use_chebyshev) then
-            write(0, "('Chebyshev actually took ', i4)") cheby_calc_steps
-          endif
 !$      ENDIF
       ENDIF
 
@@ -577,7 +594,29 @@ SUBROUTINE tea_leaf()
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%PdV=profiler%tea+(timer()-kernel_time)
+  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
+
+  call clover_sum(ch_time)
+  call clover_sum(cg_time)
+  IF (profiler_on .and. parallel%boss .and. tl_use_chebyshev) THEN
+    write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
+        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
+    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
+        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
+    write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+        cheby_calc_steps, cheby_calc_steps-est_itc
+
+    write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
+        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
+    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
+        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
+    write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+        cheby_calc_steps, cheby_calc_steps-est_itc
+  endif
 
 END SUBROUTINE tea_leaf
 
