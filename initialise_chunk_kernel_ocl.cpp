@@ -10,6 +10,12 @@ extern "C" void initialise_chunk_kernel_ocl_
 void CloverChunk::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)
 {
+    #define ENQUEUE(knl)                                    \
+        CloverChunk::enqueueKernel(knl, __LINE__, __FILE__, \
+                                   cl::NullRange,           \
+                                   global_size,             \
+                                   local_group_size);
+
     initialise_chunk_first_device.setArg(0, d_xmin);
     initialise_chunk_first_device.setArg(1, d_ymin);
     initialise_chunk_first_device.setArg(2, d_dx);

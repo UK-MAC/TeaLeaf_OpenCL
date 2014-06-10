@@ -21,7 +21,7 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if (tea_solver != TEA_ENUM_CHEBYSHEV)
+    //if (tea_solver != TEA_ENUM_CHEBYSHEV)
     {
         // use jacobi preconditioner when running CG solver
         options << "-DCG_DO_PRECONDITION ";
@@ -779,8 +779,8 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_init_p_device.setArg(1, u0);
             tea_leaf_cheby_solve_init_p_device.setArg(2, work_array_1);
             tea_leaf_cheby_solve_init_p_device.setArg(3, work_array_2);
-            tea_leaf_cheby_solve_init_p_device.setArg(4, work_array_3);
-            tea_leaf_cheby_solve_init_p_device.setArg(5, work_array_4);
+            tea_leaf_cheby_solve_init_p_device.setArg(4, work_array_4);
+            tea_leaf_cheby_solve_init_p_device.setArg(5, work_array_3);
             tea_leaf_cheby_solve_init_p_device.setArg(6, work_array_5);
             tea_leaf_cheby_solve_init_p_device.setArg(7, work_array_6);
 
@@ -791,8 +791,8 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(1, u0);
             tea_leaf_cheby_solve_calc_p_device.setArg(2, work_array_1);
             tea_leaf_cheby_solve_calc_p_device.setArg(3, work_array_2);
-            tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_3);
-            tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_4);
+            tea_leaf_cheby_solve_calc_p_device.setArg(4, work_array_4);
+            tea_leaf_cheby_solve_calc_p_device.setArg(5, work_array_3);
             tea_leaf_cheby_solve_calc_p_device.setArg(6, work_array_5);
             tea_leaf_cheby_solve_calc_p_device.setArg(7, work_array_6);
 
