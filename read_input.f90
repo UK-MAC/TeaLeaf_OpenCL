@@ -75,6 +75,7 @@ SUBROUTINE read_input()
   use_Tealeaf=.TRUE.
   coefficient = CONDUCTIVITY
   profiler_on=.FALSE.
+  profile_solver=.false.
   profiler%timestep=0.0
   profiler%acceleration=0.0
   profiler%PdV=0.0
@@ -91,7 +92,7 @@ SUBROUTINE read_input()
 
   tl_ch_cg_errswitch = .false.
   tl_ch_cg_presteps = 30
-  tl_ch_cg_epslim = 1e-4
+  tl_ch_cg_epslim = 1e-5
 
   tl_use_chebyshev = .false.
   tl_use_cg = .false.
@@ -219,6 +220,9 @@ SUBROUTINE read_input()
         tl_use_jacobi = .false.
       CASE('use_vector_loops')
         use_vector_loops=.TRUE.
+      CASE('profile_solver')
+        profile_solver=.TRUE.
+        IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Timing iteration time of linear solver'
       CASE('profiler_on')
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'

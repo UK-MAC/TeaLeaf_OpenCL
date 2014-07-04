@@ -56,9 +56,11 @@ CONTAINS
 
 SUBROUTINE tea_leaf()
 
+  IMPLICIT NONE
+
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
-  REAL(KIND=8) :: ry,rx, error, old_error
+  REAL(KIND=8) :: ry,rx, error
 
   INTEGER :: fields(NUM_FIELDS)
 
@@ -72,14 +74,15 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
-  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
+  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
   LOGICAL :: ch_switch_check
 
   INTEGER :: cg_calc_steps
-  REAL(KIND=8) :: cg_time, ch_time
+  REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
   cg_time = 0.0_8
   ch_time = 0.0_8
   cg_calc_steps = 0
+  total_solve_time = 0.0_8
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -91,9 +94,6 @@ SUBROUTINE tea_leaf()
   DO c=1,number_of_chunks
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
-
-      ! set old error to 0 initially
-      old_error = 0.0
 
       fields=0
       fields(FIELD_ENERGY1) = 1
@@ -220,22 +220,18 @@ SUBROUTINE tea_leaf()
           ! do something like this or copy the functions but remove the Mi
           ! and z arrays (messy). This does mean extra memory bandwidth will
           ! be used, but it's not too much of an issue
-          !call tea_leaf_kernel_cheby_reset_Mi(chunks(c)%field%x_min,&
-          !  chunks(c)%field%x_max,                       &
-          !  chunks(c)%field%y_min,                       &
-          !  chunks(c)%field%y_max,                       &
-          !  chunks(c)%field%work_array1,                &
-          !  chunks(c)%field%work_array2,                &
-          !  chunks(c)%field%work_array3,                &
-          !  chunks(c)%field%work_array5,                &
-          !  rro)
+          !
+          ! Need to turn preconditioner on/off from tea.in, but will probably
+          ! require adding  an extra set of functions (copy pasted)
         elseif(use_opencl_kernels) then
           call tea_leaf_kernel_cheby_copy_u_ocl()
         endif
       endif
 
       DO n=1,max_iters
-        
+
+        if (profile_solver) solve_timer=timer()
+
         IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
@@ -351,16 +347,17 @@ SUBROUTINE tea_leaf()
             if (parallel%boss) then
               write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(g_out,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(g_out,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
               write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(0,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(0,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             if (info .ne. 0) then
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
             endif
 
+            switch_step = n
             cheby_calc_steps = 2
           else
             IF(use_fortran_kernels) THEN
@@ -384,12 +381,12 @@ SUBROUTINE tea_leaf()
                   rx, ry, cheby_calc_steps)
             ENDIF
 
-            ! this reduces number of reductions done
-            ! should speed it up in most situations
-            !if ((n .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
-
             ! after estimated number of iterations has passed, calc resid
-            if (n .ge. est_itc) then
+            ! Leaving 10 iterations between each global reduction won't affect
+            ! total time spent much if at all (number of steps spent in
+            ! chebyshev is typically O(300+)) but will greatyl reduce global
+            ! synchronisations needed
+            if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
               IF(use_fortran_kernels) THEN
                 call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                       chunks(c)%field%x_max,                       &
@@ -537,17 +534,16 @@ SUBROUTINE tea_leaf()
         ! updates u and possibly p
         CALL update_halo(fields,1)
 
-IF (tl_use_chebyshev .and. ch_switch_check) then
-    ch_time=ch_time+(timer()-kernel_time)
-else
-    cg_time=cg_time+(timer()-kernel_time)
-endif
+        if (profile_solver) then
+          IF (tl_use_chebyshev .and. ch_switch_check) then
+              ch_time=ch_time+(timer()-solve_timer)
+          else
+              cg_time=cg_time+(timer()-solve_timer)
+          endif
+          total_solve_time = total_solve_time + (timer() - solve_timer)
+        endif
 
         IF (abs(error) .LT. eps) EXIT
-
-        ! if the error isn't getting any better, then exit - no point in going further
-        !IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
-        old_error = error
 
       ENDDO
 
@@ -557,13 +553,6 @@ endif
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
           WRITE(0,"('Iteration count ', i8)") n-1
-
-          if (tl_use_chebyshev) then
-            write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-                cheby_calc_steps, cheby_calc_steps-est_itc
-            write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-                cheby_calc_steps, cheby_calc_steps-est_itc
-          endif
 !$      ENDIF
       ENDIF
 
@@ -595,22 +584,39 @@ endif
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
+  IF(profile_solver) profiler%tea=profiler%tea+(timer()-kernel_time)
 
-  call clover_sum(ch_time)
-  call clover_sum(cg_time)
-  call clover_barrier()
-  call flush(0)
-  IF (parallel%boss) THEN
-    write(0,"('CH time ', f16.10)") ch_time+0.0_8
-    write(0,"('CG time ', f16.10)") cg_time+0.0_8
-    write(0,"('CH steps ', i6)") cheby_calc_steps
-    write(0,"('CG steps ', i6)") cG_calc_steps
-    write(0,"('CG per iteration ', f16.10)") cg_time/cg_calc_steps
-    write(0,"('ch per iteration ', f16.10)") ch_time/cheby_calc_steps
+  IF (profile_solver .and. parallel%boss) then
+    write(0, "(a16, a7, a16)") "Time", "Steps", "Per it"
+    write(0, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
+    write(g_out, "(a16, a7, a16)") "Time", "Steps", "Per it"
+    write(g_out, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
   endif
-  call flush(0)
-  call clover_barrier()
+
+  IF (profile_solver .and. tl_use_chebyshev) THEN
+    call clover_sum(ch_time)
+    call clover_sum(cg_time)
+    if (parallel%boss) then
+      cg_per_it = merge((cg_time/cg_calc_steps)/parallel%max_task, 0.0_8, cg_calc_steps .gt. 0)
+      ch_per_it = merge((ch_time/cheby_calc_steps)/parallel%max_task, 0.0_8, cheby_calc_steps .gt. 0)
+
+      write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+      write(0, "(a3, f16.10, i7, f16.10, f7.2)") &
+          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
+      write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
+      write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+          cheby_calc_steps, cheby_calc_steps-est_itc
+
+      write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") &
+          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
+      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
+      write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+          cheby_calc_steps, cheby_calc_steps-est_itc
+    endif
+  endif
 
 END SUBROUTINE tea_leaf
 
