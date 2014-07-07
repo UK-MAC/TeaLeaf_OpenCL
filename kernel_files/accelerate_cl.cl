@@ -24,11 +24,11 @@ __kernel void accelerate
     && /*column >= (x_min + 1) &&*/ column <= (x_max + 1) + 1)
     {
         nodal_mass =
-            (density0[THARR2D(-1, -1, 0)] * volume[THARR2D(-1, -1, 0)]
-            + density0[THARR2D(0, -1, 0)] * volume[THARR2D(0, -1, 0)]
-            + density0[THARR2D(0, 0, 0)] * volume[THARR2D(0, 0, 0)]
-            + density0[THARR2D(-1, 0, 0)] * volume[THARR2D(-1, 0, 0)])
-            * 0.25;
+            (density0[THARR2D(-1, -1, 0)]*volume[THARR2D(-1, -1, 0)] +
+             density0[THARR2D(0, -1, 0)] *volume[THARR2D(0, -1, 0)]  +
+             density0[THARR2D(0, 0, 0)]  *volume[THARR2D(0, 0, 0)]   +
+             density0[THARR2D(-1, 0, 0)] *volume[THARR2D(-1, 0, 0)]) *
+             0.25;
 
         step_by_mass = 0.5 * dbyt / nodal_mass;
 
