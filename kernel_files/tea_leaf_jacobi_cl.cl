@@ -62,8 +62,8 @@ __kernel void tea_leaf_jacobi_copy_u
 
 __kernel void tea_leaf_jacobi_solve
 (double rx, double ry,
- __global       double * __restrict const Kx,
- __global       double * __restrict const Ky,
+ __global const double * __restrict const Kx,
+ __global const double * __restrict const Ky,
  __global const double * __restrict const u0,
  __global       double * __restrict const u1,
  __global const double * __restrict const un,
@@ -85,7 +85,7 @@ __kernel void tea_leaf_jacobi_solve
             /(1.0 + (Kx[THARR2D(0, 0, 0)] + Kx[THARR2D(1, 0, 0)])*rx
                   + (Ky[THARR2D(0, 0, 0)] + Ky[THARR2D(0, 1, 0)])*ry);
         
-        error_local[lid] = u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)];
+        error_local[lid] = fabs(u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)]);
     }
 
     REDUCTION(error_local, error, MAX);
