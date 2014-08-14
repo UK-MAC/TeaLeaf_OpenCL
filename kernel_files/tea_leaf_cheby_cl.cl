@@ -49,8 +49,8 @@ __kernel void tea_leaf_cheby_solve_calc_p
  __global       double * __restrict const w,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
- __global const double * __restrict const alpha,
- __global const double * __restrict const beta,
+ __constant const double * __restrict const alpha,
+ __constant const double * __restrict const beta,
  double rx, double ry, int step)
 {
     __kernel_indexes;
