@@ -144,7 +144,7 @@ SUBROUTINE read_input()
         IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'initial_timestep ',dtinit
       CASE('max_timestep')
         dtmax=parse_getrval(parse_getword(.TRUE.))
-        IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'max_timestep',dtinit
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'max_timestep',dtmax
       CASE('timestep_rise')
         dtrise=parse_getrval(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'timestep_rise',dtrise
