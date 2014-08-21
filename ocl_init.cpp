@@ -179,6 +179,7 @@ void CloverChunk::initOcl
     }
 
     int preferred_device = preferredDevice(input);
+    preferred_device = (preferred_device < 0) ? 0 : preferred_device;
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
     desired_type = typeRead(input);
 
