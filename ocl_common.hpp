@@ -141,6 +141,7 @@ private:
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
     #define TEA_ENUM_CHEBYSHEV  3
+    #define TEA_ENUM_PPCG       4
     int tea_solver;
 
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
@@ -160,7 +161,12 @@ private:
     cl::Kernel tea_leaf_cheby_solve_calc_u_device;
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
     cl::Kernel tea_leaf_cheby_solve_calc_resid_device;
-    //cl::Kernel tea_leaf_cheby_solve_loop_calc_u_device;
+
+    cl::Kernel tea_leaf_ppcg_solve_init_r_device;
+    cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
+    cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
+    cl::Kernel tea_leaf_ppcg_solve_update_r_device;
+    cl::Kernel tea_leaf_ppcg_solve_init_p_device;
 
     // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
     cl::Buffer ch_alphas_device, ch_betas_device;
@@ -413,6 +419,9 @@ public:
     void tea_leaf_kernel_cheby_iterate
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const int cheby_calc_steps);
+
+    void ppcg_init(int);
+    void ppcg_inner(int);
 
     void tea_leaf_finalise();
 

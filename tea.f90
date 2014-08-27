@@ -33,16 +33,27 @@ MODULE tea_leaf_module
   interface
     subroutine tea_leaf_kernel_cheby_copy_u_ocl()
     end subroutine
+
     subroutine tea_leaf_calc_2norm_kernel_ocl(initial, norm)
       integer :: initial
       real(kind=8) :: norm
     end subroutine
+
     subroutine tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, n_coefs, &
         rx, ry, theta, error)
       real(kind=8) :: rx, ry, theta, error
       integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
+
+    subroutine tea_leaf_kernel_ppcg_init_ocl(n)
+      integer :: n
+    end subroutine
+
+    subroutine tea_leaf_kernel_ppcg_inner_ocl(n)
+      integer :: n
+    end subroutine
+
     subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, n_coefs, &
         rx, ry, cheby_calc_step)
       real(kind=8) :: rx, ry
@@ -108,7 +119,7 @@ SUBROUTINE tea_leaf()
         ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2)
       endif
 
-      IF(tl_use_cg .or. tl_use_chebyshev) then
+      IF(tl_use_cg .or. tl_use_chebyshev .or. tl_use_ppcg) then
         IF(use_fortran_kernels) THEN
           CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
@@ -210,19 +221,6 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%y_max,                       &
             chunks(c)%field%u0,                &
             chunks(c)%field%u)
-
-          ! TODO find a smarter way to do this
-          !
-          ! If a preconditioner is used with the CG solver before launching
-          ! into the chebyshev routine then the eigenvalues calculated are
-          ! that of the preconditioned system and not the original one.
-          ! Preconditioner is easily disabled in OpenCL, but here it's either
-          ! do something like this or copy the functions but remove the Mi
-          ! and z arrays (messy). This does mean extra memory bandwidth will
-          ! be used, but it's not too much of an issue
-          !
-          ! Need to turn preconditioner on/off from tea.in, but will probably
-          ! require adding  an extra set of functions (copy pasted)
         elseif(use_opencl_kernels) then
           call tea_leaf_kernel_cheby_copy_u_ocl()
         endif
@@ -240,7 +238,7 @@ SUBROUTINE tea_leaf()
             ch_switch_check = n .ge. tl_ch_cg_presteps
         ENDIF
 
-        IF (tl_use_chebyshev .and. ch_switch_check) then
+        IF ((tl_use_chebyshev .or. tl_use_ppcg) .and. ch_switch_check) then
           ! don't need to update p any more
           fields(FIELD_P) = 0
 
@@ -261,152 +259,203 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
                 theta, max_cheby_iters)
+          endif
 
-            ! calculate 2 norm of u0
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u0,                 &
-                    bb)
-            ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(0, bb)
-            ENDIF
+          if (tl_use_chebyshev) then
+              if (cheby_calc_steps .eq. 0) then
+                  ! calculate 2 norm of u0
+                  IF(use_fortran_kernels) THEN
+                    call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                          chunks(c)%field%x_max,                       &
+                          chunks(c)%field%y_min,                       &
+                          chunks(c)%field%y_max,                       &
+                          chunks(c)%field%u0,                 &
+                          bb)
+                  ELSEIF(use_opencl_kernels) THEN
+                    call tea_leaf_calc_2norm_kernel_ocl(0, bb)
+                  ENDIF
+    
+                  call clover_allsum(bb)
+    
+                  ! initialise 'p' array
+                  IF(use_fortran_kernels) THEN
+                    call tea_leaf_kernel_cheby_init(chunks(c)%field%x_min,&
+                          chunks(c)%field%x_max,                       &
+                          chunks(c)%field%y_min,                       &
+                          chunks(c)%field%y_max,                       &
+                          chunks(c)%field%u,                           &
+                          chunks(c)%field%u0,                 &
+                          chunks(c)%field%work_array1,                 &
+                          chunks(c)%field%work_array2,                 &
+                          chunks(c)%field%work_array3,                 &
+                          chunks(c)%field%work_array4,                 &
+                          chunks(c)%field%work_array5,                 &
+                          chunks(c)%field%work_array6,                 &
+                          chunks(c)%field%work_array7,                 &
+                          ch_alphas, ch_betas, max_cheby_iters, &
+                          rx, ry, theta, error)
+                  ELSEIF(use_opencl_kernels) THEN
+                    call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
+                      max_cheby_iters, rx, ry, theta, error)
+                  ENDIF
+    
+                  CALL update_halo(fields,1)
+    
+                  IF(use_fortran_kernels) THEN
+                      call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
+                          chunks(c)%field%x_max,                       &
+                          chunks(c)%field%y_min,                       &
+                          chunks(c)%field%y_max,                       &
+                          chunks(c)%field%u,                           &
+                          chunks(c)%field%u0,                          &
+                          chunks(c)%field%work_array1,                 &
+                          chunks(c)%field%work_array2,                 &
+                          chunks(c)%field%work_array3,                 &
+                          chunks(c)%field%work_array4,                 &
+                          chunks(c)%field%work_array5,                 &
+                          chunks(c)%field%work_array6,                 &
+                          chunks(c)%field%work_array7,                 &
+                          ch_alphas, ch_betas, max_cheby_iters,        &
+                          rx, ry, cheby_calc_steps)
+                  ELSEIF(use_opencl_kernels) THEN
+                      call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+                        rx, ry, cheby_calc_steps)
+                  ENDIF
+    
+                  IF(use_fortran_kernels) THEN
+                    call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                          chunks(c)%field%x_max,                       &
+                          chunks(c)%field%y_min,                       &
+                          chunks(c)%field%y_max,                       &
+                          chunks(c)%field%work_array2,                 &
+                          error)
+                  ELSEIF(use_opencl_kernels) THEN
+                    call tea_leaf_calc_2norm_kernel_ocl(1, error)
+                  ENDIF
+    
+                  call clover_allsum(error)
+    
+                  ! FIXME not giving correct estimate
+                  it_alpha = eps*bb/(4.0_8*error)
+                  cn = eigmax/eigmin
+                  gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
+                  est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
+    
+                  ! FIXME still not giving correct answer, but multiply by 2.5 does
+                  ! an 'okay' job for now
+                  est_itc = est_itc * 2.5
+    
+                  if (parallel%boss) then
+                    write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+                    write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+                    write(g_out,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+                    write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+                    write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+                    write(0,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+                  endif
+    
+                  if (info .ne. 0) then
+                    CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+                  endif
 
-            call clover_allsum(bb)
+                  switch_step = n
+                  cheby_calc_steps = 2
+              else
+                  IF(use_fortran_kernels) THEN
+                      call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
+                          chunks(c)%field%x_max,                       &
+                          chunks(c)%field%y_min,                       &
+                          chunks(c)%field%y_max,                       &
+                          chunks(c)%field%u,                           &
+                          chunks(c)%field%u0,                          &
+                          chunks(c)%field%work_array1,                 &
+                          chunks(c)%field%work_array2,                 &
+                          chunks(c)%field%work_array3,                 &
+                          chunks(c)%field%work_array4,                 &
+                          chunks(c)%field%work_array5,                 &
+                          chunks(c)%field%work_array6,                 &
+                          chunks(c)%field%work_array7,                 &
+                          ch_alphas, ch_betas, max_cheby_iters,        &
+                          rx, ry, cheby_calc_steps)
+                  ELSEIF(use_opencl_kernels) THEN
+                      call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+                        rx, ry, cheby_calc_steps)
+                  ENDIF
 
-            ! initialise 'p' array
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_kernel_cheby_init(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%u0,                 &
-                    chunks(c)%field%work_array1,                 &
-                    chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array3,                 &
-                    chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array5,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    ch_alphas, ch_betas, max_cheby_iters, &
-                    rx, ry, theta, error)
-            ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
-                max_cheby_iters, rx, ry, theta, error)
-            ENDIF
+                  ! after estimated number of iterations has passed, calc resid
+                  ! Leaving 10 iterations between each global reduction won't affect
+                  ! total time spent much if at all (number of steps spent in
+                  ! chebyshev is typically O(300+)) but will greatyl reduce global
+                  ! synchronisations needed
+                  if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
+                    IF(use_fortran_kernels) THEN
+                      call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                            chunks(c)%field%x_max,                       &
+                            chunks(c)%field%y_min,                       &
+                            chunks(c)%field%y_max,                       &
+                            chunks(c)%field%work_array2,                 &
+                            error)
+                    ELSEIF(use_opencl_kernels) THEN
+                      call tea_leaf_calc_2norm_kernel_ocl(1, error)
+                    ENDIF
 
-            CALL update_halo(fields,1)
+                    call clover_allsum(error)
+                  else
+                    ! dummy to make it go smaller every time but not reach tolerance
+                    error = 1.0_8/(cheby_calc_steps)
+                  endif
+              endif
+          else if (tl_use_ppcg) then
+            if (cheby_calc_steps .eq. 0) then
+                cheby_calc_steps = 1
 
-            IF(use_fortran_kernels) THEN
-                call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%u0,                          &
-                    chunks(c)%field%work_array1,                 &
-                    chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array3,                 &
-                    chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array5,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    ch_alphas, ch_betas, max_cheby_iters,        &
-                    rx, ry, cheby_calc_steps)
-            ELSEIF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-                  rx, ry, cheby_calc_steps)
-            ENDIF
-
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array2,                 &
-                    error)
-            ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(1, error)
-            ENDIF
-
-            call clover_allsum(error)
-
-            ! FIXME not giving correct estimate
-            it_alpha = eps*bb/(4.0_8*error)
-            cn = eigmax/eigmin
-            gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
-            est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
-
-            ! FIXME still not giving correct answer, but multiply by 2.5 does
-            ! an 'okay' job for now
-            est_itc = est_itc * 2.5
-
-            if (parallel%boss) then
-              write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-              write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(g_out,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
-              write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-              write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(0,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
-            endif
-
-            if (info .ne. 0) then
-              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
-            endif
-
-            switch_step = n
-            cheby_calc_steps = 2
-          else
-            IF(use_fortran_kernels) THEN
-                call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%u0,                          &
-                    chunks(c)%field%work_array1,                 &
-                    chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array3,                 &
-                    chunks(c)%field%work_array4,                 &
-                    chunks(c)%field%work_array5,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    ch_alphas, ch_betas, max_cheby_iters,        &
-                    rx, ry, cheby_calc_steps)
-            ELSEIF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-                  rx, ry, cheby_calc_steps)
-            ENDIF
-
-            ! after estimated number of iterations has passed, calc resid
-            ! Leaving 10 iterations between each global reduction won't affect
-            ! total time spent much if at all (number of steps spent in
-            ! chebyshev is typically O(300+)) but will greatyl reduce global
-            ! synchronisations needed
-            if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
-              IF(use_fortran_kernels) THEN
-                call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                      chunks(c)%field%x_max,                       &
-                      chunks(c)%field%y_min,                       &
-                      chunks(c)%field%y_max,                       &
-                      chunks(c)%field%work_array2,                 &
-                      error)
-              ELSEIF(use_opencl_kernels) THEN
-                call tea_leaf_calc_2norm_kernel_ocl(1, error)
-              ENDIF
-
-              call clover_allsum(error)
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  ! FIXME change to an input file number of iterations
+                  CALL tea_leaf_kernel_ppcg_init_ocl(10)
+                ENDIF
             else
-              ! dummy to make it go smaller every time but not reach tolerance
-              error = 1.0_8/(cheby_calc_steps)
+                fields(FIELD_P) = 1
+                cg_calc_steps = cg_calc_steps + 1
+
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
+                ENDIF
+
+                CALL clover_allsum(pw)
+                alpha = rro/pw
+                if(tl_use_chebyshev) cg_alphas(n) = alpha
+
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
+                ENDIF
+
+                CALL clover_allsum(rrn)
+
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  ! FIXME change to an input file number of iterations
+                  CALL tea_leaf_kernel_ppcg_inner_ocl(10)
+                ENDIF
+
+                beta = rrn/rro
+                if(tl_use_chebyshev) cg_betas(n) = beta
+
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
+                ENDIF
+
+                error = rrn
+                rro = rrn
+
+                CALL clover_allsum(error)
             endif
           endif
 
           cheby_calc_steps = cheby_calc_steps + 1
-
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
           fields(FIELD_P) = 1
           cg_calc_steps = cg_calc_steps + 1

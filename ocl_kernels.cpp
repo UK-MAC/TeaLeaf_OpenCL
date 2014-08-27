@@ -93,7 +93,9 @@ void CloverChunk::initProgram
     compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
     compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_y", advec_cell_y_device);
 
-    if (tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV)
+    if (tea_solver == TEA_ENUM_CG ||
+    tea_solver == TEA_ENUM_CHEBYSHEV ||
+    tea_solver == TEA_ENUM_PPCG)
     {
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_init_u", tea_leaf_cg_init_u_device);
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_init_directions", tea_leaf_cg_init_directions_device);
@@ -108,6 +110,13 @@ void CloverChunk::initProgram
             compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device);
             compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device);
             compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_resid", tea_leaf_cheby_solve_calc_resid_device);
+        }
+        else if (tea_solver == TEA_ENUM_PPCG)
+        {
+            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_r", tea_leaf_ppcg_solve_init_r_device);
+            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device);
+            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device);
+            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_p", tea_leaf_ppcg_solve_init_p_device);
         }
     }
     else

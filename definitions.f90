@@ -76,6 +76,7 @@ MODULE definitions_module
    LOGICAL      :: use_Hydro
    LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg
+   LOGICAL      :: tl_use_ppcg
    LOGICAL      :: tl_use_jacobi
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps

@@ -96,6 +96,7 @@ SUBROUTINE read_input()
 
   tl_use_chebyshev = .false.
   tl_use_cg = .false.
+  tl_use_ppcg = .false.
   tl_use_jacobi = .true.
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
@@ -209,14 +210,22 @@ SUBROUTINE read_input()
       CASE('tl_use_jacobi')
         tl_use_chebyshev = .false.
         tl_use_cg = .false.
+        tl_use_ppcg=.false.
         tl_use_jacobi = .true.
       CASE('tl_use_cg')
         tl_use_chebyshev = .false.
         tl_use_cg = .true.
+        tl_use_ppcg=.false.
+        tl_use_jacobi = .false.
+      CASE('tl_use_ppcg')
+        tl_use_chebyshev = .false.
+        tl_use_cg = .false.
+        tl_use_ppcg=.true.
         tl_use_jacobi = .false.
       CASE('tl_use_chebyshev')
         tl_use_chebyshev = .true.
         tl_use_cg = .false.
+        tl_use_ppcg=.false.
         tl_use_jacobi = .false.
       CASE('use_vector_loops')
         use_vector_loops=.TRUE.

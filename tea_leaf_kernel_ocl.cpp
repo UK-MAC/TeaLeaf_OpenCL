@@ -295,3 +295,42 @@ void CloverChunk::tea_leaf_finalise
     ENQUEUE_OFFSET(tea_leaf_finalise_device);
 }
 
+/********************/
+
+extern "C" void tea_leaf_kernel_ppcg_init_ocl_
+(int * n)
+{
+    chunk.ppcg_init(*n);
+}
+
+extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
+(int * n)
+{
+}
+
+void CloverChunk::ppcg_init
+(int n)
+{
+    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_r_device);
+
+    ppcg_inner(n);
+
+    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
+}
+
+void CloverChunk::ppcg_inner
+(int n)
+{
+    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
+
+    for (int ii = 0; ii < n; ii++)
+    {
+        ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
+
+        if (ii < n - 1)
+        {
+            ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
+        }
+    }
+}
+
