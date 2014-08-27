@@ -298,9 +298,11 @@ void CloverChunk::tea_leaf_finalise
 /********************/
 
 extern "C" void tea_leaf_kernel_ppcg_init_ocl_
-(int * n)
+(const double * ch_alphas, const double * ch_betas, int* n_coefs,
+ double* theta, int* n)
 {
-    chunk.ppcg_init(*n);
+    chunk.ppcg_init(ch_alphas, ch_betas, *n_coefs,
+        *theta, *n);
 }
 
 extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
@@ -309,8 +311,22 @@ extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
 }
 
 void CloverChunk::ppcg_init
-(int n)
+(const double * ch_alphas, const double * ch_betas, int n_coefs,
+ const double theta, int n)
 {
+    size_t ch_buf_sz = n_coefs*sizeof(double);
+
+    // upload to device
+    ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
+    queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
+    ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
+    queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
+
+    tea_leaf_ppcg_solve_init_sd_device.setArg(2, theta);
+
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(2, ch_alphas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_betas_device);
+
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_r_device);
 
     ppcg_inner(n);
@@ -329,6 +345,7 @@ void CloverChunk::ppcg_inner
 
         if (ii < n - 1)
         {
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ii + 1);
             ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
         }
     }

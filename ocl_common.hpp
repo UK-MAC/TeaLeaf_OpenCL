@@ -248,6 +248,7 @@ private:
     cl::Buffer work_array_4;
     cl::Buffer work_array_5;
     cl::Buffer work_array_6;
+    cl::Buffer work_array_8;
 
     // for reduction in PdV
     cl::Buffer PdV_reduce_buf;
@@ -420,7 +421,8 @@ public:
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const int cheby_calc_steps);
 
-    void ppcg_init(int);
+    void ppcg_init(const double * ch_alphas, const double * ch_betas,
+        int n_coefs, const double theta, int n);
     void ppcg_inner(int);
 
     void tea_leaf_finalise();

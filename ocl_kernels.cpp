@@ -815,13 +815,31 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(7, work_array_6);
 
             tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
-
-            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(0, u);
-            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(1, work_array_1);
-            //tea_leaf_cheby_solve_loop_calc_u_device.setArg(2, work_array_2);
         }
         else if (tea_solver == TEA_ENUM_PPCG)
         {
+            tea_leaf_ppcg_solve_init_r_device.setArg(0, u);
+            tea_leaf_ppcg_solve_init_r_device.setArg(1, u0);
+            tea_leaf_ppcg_solve_init_r_device.setArg(2, work_array_2);
+            tea_leaf_ppcg_solve_init_r_device.setArg(3, work_array_5);
+            tea_leaf_ppcg_solve_init_r_device.setArg(4, work_array_6);
+            tea_leaf_ppcg_solve_init_r_device.setArg(5, work_array_8);
+
+            tea_leaf_ppcg_solve_init_sd_device.setArg(0, work_array_2);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(1, work_array_8);
+
+            tea_leaf_ppcg_solve_update_r_device.setArg(0, u);
+            tea_leaf_ppcg_solve_update_r_device.setArg(1, work_array_2);
+            tea_leaf_ppcg_solve_update_r_device.setArg(2, work_array_5);
+            tea_leaf_ppcg_solve_update_r_device.setArg(3, work_array_6);
+            tea_leaf_ppcg_solve_update_r_device.setArg(4, work_array_8);
+
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(0, work_array_2);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, work_array_8);
+
+            tea_leaf_ppcg_solve_init_p_device.setArg(0, work_array_1);
+            tea_leaf_ppcg_solve_init_p_device.setArg(1, work_array_2);
+            tea_leaf_ppcg_solve_init_p_device.setArg(2, reduce_buf_1);
         }
     }
     else

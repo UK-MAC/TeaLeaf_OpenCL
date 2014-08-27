@@ -77,6 +77,7 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(u0, 0, 0);
     BUF2D_ALLOC(z, 1, 1);
     BUF2D_ALLOC(work_array_6, 1, 1);
+    BUF2D_ALLOC(work_array_8, 1, 1);
 
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2

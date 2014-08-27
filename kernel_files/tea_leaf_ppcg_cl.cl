@@ -6,8 +6,7 @@ __kernel void tea_leaf_ppcg_solve_init_r
  __global       double * __restrict const r,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
- __global const double * __restrict const sd,
- double theta)
+ __global const double * __restrict const sd)
 {
     __kernel_indexes;
 

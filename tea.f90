@@ -46,8 +46,11 @@ MODULE tea_leaf_module
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
 
-    subroutine tea_leaf_kernel_ppcg_init_ocl(n)
-      integer :: n
+    subroutine tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, n_coefs, &
+        theta, n)
+      integer :: n, n_coefs
+      real(kind=8) :: theta
+      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
 
     subroutine tea_leaf_kernel_ppcg_inner_ocl(n)
@@ -213,7 +216,7 @@ SUBROUTINE tea_leaf()
       fields(FIELD_U) = 1
 
       ! need the original value of u
-      if(tl_use_chebyshev) then
+      if(tl_use_chebyshev .or. tl_use_ppcg) then
         IF(use_fortran_kernels) then
           call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
             chunks(c)%field%x_max,                       &
@@ -412,7 +415,8 @@ SUBROUTINE tea_leaf()
                 IF(use_fortran_kernels) THEN
                 ELSEIF(use_opencl_kernels) THEN
                   ! FIXME change to an input file number of iterations
-                  CALL tea_leaf_kernel_ppcg_init_ocl(10)
+                    call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
+                      max_cheby_iters, theta, 10)
                 ENDIF
             else
                 fields(FIELD_P) = 1
