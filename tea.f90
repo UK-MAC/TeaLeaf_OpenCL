@@ -230,7 +230,7 @@ SUBROUTINE tea_leaf()
 
         if (profile_solver) solve_timer=timer()
 
-        IF (tl_ch_cg_errswitch) then
+        IF (tl_ch_cg_errswitch .or. tl_use_ppcg) then
             ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
@@ -456,7 +456,7 @@ SUBROUTINE tea_leaf()
           endif
 
           cheby_calc_steps = cheby_calc_steps + 1
-        ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
+        ELSEIF(tl_use_cg .or. tl_use_chebyshev .or. tl_use_ppcg) then
           fields(FIELD_P) = 1
           cg_calc_steps = cg_calc_steps + 1
 

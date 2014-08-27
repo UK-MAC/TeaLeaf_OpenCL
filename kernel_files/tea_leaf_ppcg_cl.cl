@@ -26,7 +26,8 @@ __kernel void tea_leaf_ppcg_solve_init_r
 
 __kernel void tea_leaf_ppcg_solve_init_sd
 (__global       double * __restrict const r,
- __global       double * __restrict const sd)
+ __global       double * __restrict const sd,
+ double theta)
 {
     __kernel_indexes;
 
@@ -40,7 +41,6 @@ __kernel void tea_leaf_ppcg_solve_init_sd
 __kernel void tea_leaf_ppcg_solve_update_r
 (__global       double * __restrict const u,
  __global       double * __restrict const r,
- __global const double * __restrict const sd,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
  __global       double * __restrict const sd)
@@ -62,17 +62,13 @@ __kernel void tea_leaf_ppcg_solve_update_r
 }
 
 __kernel void tea_leaf_ppcg_solve_calc_sd
-(__global       double * __restrict const r,
- __global const double * __restrict const sd,
- __global       double * __restrict const rro,
+(__global const double * __restrict const r,
+ __global       double * __restrict const sd,
  __constant const double * __restrict const alpha,
  __constant const double * __restrict const beta,
  int step)
 {
     __kernel_indexes;
-
-    __local double rro_shared[BLOCK_SZ];
-    rro_shared[lid] = 0.0;
 
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
@@ -82,8 +78,8 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
     }
 }
 
-__kernel void tea_leaf_ppcg_init_p
-(__global const double * __restrict const p,
+__kernel void tea_leaf_ppcg_solve_init_p
+(__global       double * __restrict const p,
  __global const double * __restrict const r,
  __global       double * __restrict const rro)
 {
