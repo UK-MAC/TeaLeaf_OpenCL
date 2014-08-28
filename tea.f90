@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Driver for the heat conduction kernel
@@ -20,7 +20,7 @@
 !>  @details Invokes the user specified kernel for the heat conduction
 
 MODULE tea_leaf_module
- 
+
   USE report_module
   USE data_module
   USE tea_leaf_kernel_module
@@ -233,7 +233,7 @@ SUBROUTINE tea_leaf()
 
         if (profile_solver) solve_timer=timer()
 
-        IF (tl_ch_cg_errswitch .or. tl_use_ppcg) then
+        IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
@@ -259,6 +259,19 @@ SUBROUTINE tea_leaf()
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
                 theta, max_cheby_iters)
+
+            if (parallel%boss) then
+              write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(g_out,'(4a11)')"eigmin", "eigmax", "cn", "error"
+              write(g_out,'(2f11.5,2e11.4)')eigmin, eigmax, cn, error
+              write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(0,'(4a11)')"eigmin", "eigmax", "cn", "error"
+              write(0,'(2f11.5,2e11.4)')eigmin, eigmax, cn, error
+            endif
+
+            if (info .ne. 0) then
+              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+            endif
           endif
 
           if (tl_use_chebyshev) then
@@ -277,9 +290,9 @@ SUBROUTINE tea_leaf()
                   ELSEIF(use_opencl_kernels) THEN
                     call tea_leaf_calc_2norm_kernel_ocl(0, bb)
                   ENDIF
-    
+
                   call clover_allsum(bb)
-    
+
                   ! initialise 'p' array
                   IF(use_fortran_kernels) THEN
                     call tea_leaf_kernel_cheby_init(chunks(c)%field%x_min,&
@@ -301,9 +314,9 @@ SUBROUTINE tea_leaf()
                     call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
                       max_cheby_iters, rx, ry, theta, error)
                   ENDIF
-    
+
                   CALL update_halo(fields,1)
-    
+
                   IF(use_fortran_kernels) THEN
                       call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
                           chunks(c)%field%x_max,                       &
@@ -324,7 +337,7 @@ SUBROUTINE tea_leaf()
                       call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
                         rx, ry, cheby_calc_steps)
                   ENDIF
-    
+
                   IF(use_fortran_kernels) THEN
                     call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                           chunks(c)%field%x_max,                       &
@@ -335,30 +348,24 @@ SUBROUTINE tea_leaf()
                   ELSEIF(use_opencl_kernels) THEN
                     call tea_leaf_calc_2norm_kernel_ocl(1, error)
                   ENDIF
-    
+
                   call clover_allsum(error)
-    
+
                   ! FIXME not giving correct estimate
                   it_alpha = eps*bb/(4.0_8*error)
                   cn = eigmax/eigmin
                   gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
                   est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
-    
+
                   ! FIXME still not giving correct answer, but multiply by 2.5 does
                   ! an 'okay' job for now
                   est_itc = est_itc * 2.5
-    
+
                   if (parallel%boss) then
-                    write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-                    write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-                    write(g_out,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
-                    write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-                    write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-                    write(0,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
-                  endif
-    
-                  if (info .ne. 0) then
-                    CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+                    write(g_out,'(a11)')"est itc"
+                    write(g_out,'(11i11)')est_itc
+                    write(0,'(a11)')"est itc"
+                    write(0,'(11i11)')est_itc
                   endif
 
                   switch_step = n
@@ -431,7 +438,6 @@ SUBROUTINE tea_leaf()
 
                 CALL clover_allsum(pw)
                 alpha = rro/pw
-                if(tl_use_chebyshev) cg_alphas(n) = alpha
 
                 IF(use_fortran_kernels) THEN
                 ELSEIF(use_opencl_kernels) THEN
@@ -453,7 +459,6 @@ SUBROUTINE tea_leaf()
                 CALL clover_allsum(rrn)
 
                 beta = rrn/rro
-                if(tl_use_chebyshev) cg_betas(n) = beta
 
                 IF(use_fortran_kernels) THEN
                 ELSEIF(use_opencl_kernels) THEN
@@ -498,7 +503,7 @@ SUBROUTINE tea_leaf()
 
           CALL clover_allsum(pw)
           alpha = rro/pw
-          if(tl_use_chebyshev) cg_alphas(n) = alpha
+          if(tl_use_chebyshev .or. tl_use_ppcg) cg_alphas(n) = alpha
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
@@ -530,7 +535,7 @@ SUBROUTINE tea_leaf()
 
           CALL clover_allsum(rrn)
           beta = rrn/rro
-          if(tl_use_chebyshev) cg_betas(n) = beta
+          if(tl_use_chebyshev .or. tl_use_ppcg) cg_betas(n) = beta
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
