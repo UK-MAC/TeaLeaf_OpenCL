@@ -260,6 +260,8 @@ SUBROUTINE tea_leaf()
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
                 theta, max_cheby_iters)
 
+            cn = eigmax/eigmin
+
             if (parallel%boss) then
               write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(g_out,'(4a11)')"eigmin", "eigmax", "cn", "error"
@@ -353,7 +355,6 @@ SUBROUTINE tea_leaf()
 
                   ! FIXME not giving correct estimate
                   it_alpha = eps*bb/(4.0_8*error)
-                  cn = eigmax/eigmin
                   gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
                   est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
 
@@ -416,6 +417,8 @@ SUBROUTINE tea_leaf()
                   endif
               endif
           else if (tl_use_ppcg) then
+            fields = 0
+            fields(FIELD_U) = 1
             fields(FIELD_P) = 1
             fields(FIELD_SD) = 1
 
