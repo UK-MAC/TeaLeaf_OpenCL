@@ -299,20 +299,21 @@ void CloverChunk::tea_leaf_finalise
 
 extern "C" void tea_leaf_kernel_ppcg_init_ocl_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
- double* theta, int* n_inner_steps)
+ double* theta, int* n_inner_steps, double * rro)
 {
     chunk.ppcg_init(ch_alphas, ch_betas, *n_coefs,
-        *theta, *n_inner_steps);
+        *theta, *n_inner_steps, rro);
 }
 
 extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
 (int * n_inner_steps)
 {
+    chunk.ppcg_inner(*n_inner_steps);
 }
 
 void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double theta, int n_inner_steps)
+ const double theta, int n_inner_steps, double * rro)
 {
     tea_leaf_ppcg_solve_init_sd_device.setArg(2, theta);
 
@@ -333,6 +334,8 @@ void CloverChunk::ppcg_init
     ppcg_inner(n_inner_steps);
 
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
+
+    *rro = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
 }
 
 void CloverChunk::ppcg_inner
@@ -348,9 +351,9 @@ void CloverChunk::ppcg_inner
         ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
 
         // FIXME move back into fortran
-        static int fields[19] = {0};
-        static int neigh[4] = {-1};
-        fields[FIELD_sd-1] = 1;
+        static int fields[NUM_FIELDS] = {0};
+        static int neigh[4] = {-1, -1, -1, -1};
+        fields[FIELD_sd - 1] = 1;
         update_halo_kernel(fields, 1, neigh);
     }
 }

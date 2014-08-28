@@ -424,7 +424,7 @@ public:
      const double rx, const double ry, const int cheby_calc_steps);
 
     void ppcg_init(const double * ch_alphas, const double * ch_betas,
-        int n_coefs, const double theta, int n);
+        int n_coefs, const double theta, int n, double * rro);
     void ppcg_inner(int);
 
     void tea_leaf_finalise();

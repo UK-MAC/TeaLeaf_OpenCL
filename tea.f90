@@ -47,9 +47,9 @@ MODULE tea_leaf_module
     end subroutine
 
     subroutine tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, n_coefs, &
-        theta, n)
+        theta, n, rro)
       integer :: n, n_coefs
-      real(kind=8) :: theta
+      real(kind=8) :: theta, rro
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
 
@@ -429,50 +429,48 @@ SUBROUTINE tea_leaf()
                 ELSEIF(use_opencl_kernels) THEN
                   ! FIXME change to an input file number of iterations
                     call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                      max_cheby_iters, theta, 10)
+                      max_cheby_iters, theta, 10, rro)
                 ENDIF
-            else
-                cg_calc_steps = cg_calc_steps + 1
-
-                IF(use_fortran_kernels) THEN
-                ELSEIF(use_opencl_kernels) THEN
-                  CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
-                ENDIF
-
-                CALL clover_allsum(pw)
-                alpha = rro/pw
-
-                IF(use_fortran_kernels) THEN
-                ELSEIF(use_opencl_kernels) THEN
-                  ! XXX don't need to do the reduction
-                  CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
-                ENDIF
-
-                IF(use_fortran_kernels) THEN
-                ELSEIF(use_opencl_kernels) THEN
-                  ! FIXME change to an input file number of iterations
-                  CALL tea_leaf_kernel_ppcg_inner_ocl(10)
-                ENDIF
-
-                IF(use_fortran_kernels) THEN
-                ELSEIF(use_opencl_kernels) THEN
-                  call tea_leaf_calc_2norm_kernel_ocl(1, rrn)
-                ENDIF
-
-                CALL clover_allsum(rrn)
-
-                beta = rrn/rro
-
-                IF(use_fortran_kernels) THEN
-                ELSEIF(use_opencl_kernels) THEN
-                  CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
-                ENDIF
-
-                error = rrn
-                rro = rrn
-
-                CALL clover_allsum(error)
             endif
+
+            IF(use_fortran_kernels) THEN
+            ELSEIF(use_opencl_kernels) THEN
+              CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
+            ENDIF
+
+            CALL clover_allsum(pw)
+            alpha = rro/pw
+
+            IF(use_fortran_kernels) THEN
+            ELSEIF(use_opencl_kernels) THEN
+              ! XXX don't need to do the reduction
+              CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
+            ENDIF
+
+            IF(use_fortran_kernels) THEN
+            ELSEIF(use_opencl_kernels) THEN
+              ! FIXME change to an input file number of iterations
+              CALL tea_leaf_kernel_ppcg_inner_ocl(10)
+            ENDIF
+
+            IF(use_fortran_kernels) THEN
+            ELSEIF(use_opencl_kernels) THEN
+              call tea_leaf_calc_2norm_kernel_ocl(1, rrn)
+            ENDIF
+
+            CALL clover_allsum(rrn)
+
+            beta = rrn/rro
+
+            IF(use_fortran_kernels) THEN
+            ELSEIF(use_opencl_kernels) THEN
+              CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
+            ENDIF
+
+            error = rrn
+            rro = rrn
+
+            CALL clover_allsum(error)
           endif
 
           cheby_calc_steps = cheby_calc_steps + 1
