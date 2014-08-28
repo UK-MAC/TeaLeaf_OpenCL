@@ -242,9 +242,6 @@ SUBROUTINE tea_leaf()
         ENDIF
 
         IF ((tl_use_chebyshev .or. tl_use_ppcg) .and. ch_switch_check) then
-          ! don't need to update p any more
-          fields(FIELD_P) = 0
-
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
@@ -265,6 +262,9 @@ SUBROUTINE tea_leaf()
           endif
 
           if (tl_use_chebyshev) then
+              ! don't need to update p any more
+              fields(FIELD_P) = 0
+
               if (cheby_calc_steps .eq. 0) then
                   ! calculate 2 norm of u0
                   IF(use_fortran_kernels) THEN
@@ -409,6 +409,9 @@ SUBROUTINE tea_leaf()
                   endif
               endif
           else if (tl_use_ppcg) then
+            fields(FIELD_P) = 1
+            fields(FIELD_SD) = 1
+
             if (cheby_calc_steps .eq. 0) then
                 cheby_calc_steps = 1
 
@@ -419,7 +422,6 @@ SUBROUTINE tea_leaf()
                       max_cheby_iters, theta, 10)
                 ENDIF
             else
-                fields(FIELD_P) = 1
                 cg_calc_steps = cg_calc_steps + 1
 
                 IF(use_fortran_kernels) THEN
@@ -433,16 +435,22 @@ SUBROUTINE tea_leaf()
 
                 IF(use_fortran_kernels) THEN
                 ELSEIF(use_opencl_kernels) THEN
+                  ! XXX don't need to do the reduction
                   CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
                 ENDIF
-
-                CALL clover_allsum(rrn)
 
                 IF(use_fortran_kernels) THEN
                 ELSEIF(use_opencl_kernels) THEN
                   ! FIXME change to an input file number of iterations
                   CALL tea_leaf_kernel_ppcg_inner_ocl(10)
                 ENDIF
+
+                IF(use_fortran_kernels) THEN
+                ELSEIF(use_opencl_kernels) THEN
+                  call tea_leaf_calc_2norm_kernel_ocl(1, rrn)
+                ENDIF
+
+                CALL clover_allsum(rrn)
 
                 beta = rrn/rro
                 if(tl_use_chebyshev) cg_betas(n) = beta

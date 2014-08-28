@@ -82,5 +82,6 @@ const int* chunk_neighbours)
 
     HALO_UPDATE_RESIDENT(u, CELL);
     HALO_UPDATE_RESIDENT(work_array_1, CELL);
+    HALO_UPDATE_RESIDENT(work_array_8, CELL);
 }
 

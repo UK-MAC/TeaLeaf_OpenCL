@@ -23,7 +23,7 @@
   opencl_vendor=nvidia
   opencl_type=gpu
 
-  tl_max_iters=10000
+  tl_max_iters=300
   test_problem 1
   tl_eps=0.00000000001
 

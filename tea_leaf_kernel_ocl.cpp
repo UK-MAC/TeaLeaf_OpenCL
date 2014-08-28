@@ -299,22 +299,25 @@ void CloverChunk::tea_leaf_finalise
 
 extern "C" void tea_leaf_kernel_ppcg_init_ocl_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
- double* theta, int* n)
+ double* theta, int* n_inner_steps)
 {
     chunk.ppcg_init(ch_alphas, ch_betas, *n_coefs,
-        *theta, *n);
+        *theta, *n_inner_steps);
 }
 
 extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
-(int * n)
+(int * n_inner_steps)
 {
 }
 
 void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double theta, int n)
+ const double theta, int n_inner_steps)
 {
-    size_t ch_buf_sz = n_coefs*sizeof(double);
+    tea_leaf_ppcg_solve_init_sd_device.setArg(2, theta);
+
+    // never going to do more than n_inner_steps steps? XXX
+    size_t ch_buf_sz = n_inner_steps*sizeof(double);
 
     // upload to device
     ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
@@ -322,32 +325,33 @@ void CloverChunk::ppcg_init
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
 
-    tea_leaf_ppcg_solve_init_sd_device.setArg(2, theta);
-
     tea_leaf_ppcg_solve_calc_sd_device.setArg(2, ch_alphas_device);
     tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_betas_device);
 
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_r_device);
 
-    ppcg_inner(n);
+    ppcg_inner(n_inner_steps);
 
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
 }
 
 void CloverChunk::ppcg_inner
-(int n)
+(int n_inner_steps)
 {
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
 
-    for (int ii = 0; ii < n; ii++)
+    for (int ii = 0; ii < n_inner_steps; ii++)
     {
         ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
 
-        if (ii < n - 1)
-        {
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ii + 1);
-            ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
-        }
+        tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ii + 1);
+        ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
+
+        // FIXME move back into fortran
+        static int fields[19] = {0};
+        static int neigh[4] = {-1};
+        fields[FIELD_sd-1] = 1;
+        update_halo_kernel(fields, 1, neigh);
     }
 }
 

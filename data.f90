@@ -58,7 +58,8 @@ MODULE data_module
                                 ,FIELD_MASS_FLUX_Y=15         &
                                 ,FIELD_U          =16         &
                                 ,FIELD_P          =17         &
-                                ,NUM_FIELDS       =17
+                                ,FIELD_SD         =18         &
+                                ,NUM_FIELDS       =18
 
    INTEGER,         PARAMETER :: CELL_DATA     = 1,        &
                                  VERTEX_DATA   = 2,        &
