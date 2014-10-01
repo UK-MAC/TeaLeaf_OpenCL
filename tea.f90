@@ -249,7 +249,7 @@ SUBROUTINE tea_leaf()
             rro = error
 
             ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(ch_alphas, ch_betas,  &
+            call tea_calc_ch_coefs(cg_alphas, cg_betas,  &
                 ch_alphas, ch_betas, &
                 eigmin, eigmax, &
                 max_iters, max_cheby_iters, &
@@ -276,7 +276,8 @@ SUBROUTINE tea_leaf()
               fields(FIELD_P) = 0
 
               if (cheby_calc_steps .eq. 0) then
-                call tea_leaf_cheby_first_step()
+                call tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
+                    error, rx, ry, theta, cn, max_cheby_iters)
 
                 cheby_calc_steps = 2
 
