@@ -546,13 +546,15 @@ SUBROUTINE tea_leaf()
       IF (parallel%boss) THEN
 !$      IF(OMP_GET_THREAD_NUM().EQ.0) THEN
           WRITE(g_out,"('Conduction error ',e14.7)") error
-          WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
-          WRITE(0,"('Iteration count ', i8)") n-1
+
           if (tl_check_result) then
             write(0,"('EXACT error calculated as', e14.7)") exact_error
             write(g_out,"('EXACT error calculated as', e14.7)") exact_error
           endif
+
+          WRITE(g_out,"('Iteration count ',i8)") n-1
+          WRITE(0,"('Iteration count ', i8)") n-1
 !$      ENDIF
       ENDIF
 
