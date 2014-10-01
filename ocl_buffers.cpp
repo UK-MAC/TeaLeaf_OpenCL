@@ -93,9 +93,6 @@ void CloverChunk::initBuffers
     lr_mpi_buf_sz = sizeof(double)*(y_max + 5);
     bt_mpi_buf_sz = sizeof(double)*(x_max + 5);
 
-    fprintf(stdout, "%d %d\n", y_max, x_max);
-    //fprintf(stdout, "%zu %zu\n", lr_mpi_buf_sz, bt_mpi_buf_sz);
-
     // enough for 1 for each array - overkill, but not that much extra space
     BUF_ALLOC(left_buffer, NUM_BUFFERED_FIELDS*2*lr_mpi_buf_sz);
     BUF_ALLOC(right_buffer, NUM_BUFFERED_FIELDS*2*lr_mpi_buf_sz);

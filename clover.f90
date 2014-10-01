@@ -264,6 +264,8 @@ SUBROUTINE clover_exchange(fields,depth)
         CALL clover_pack_left(chunk, fields, depth, left_right_offset)
       endif
 
+      write(*,*) "LEFT"
+
       !send and recv messagse to the left
       CALL clover_send_recv_message_left(chunks(chunk)%left_snd_buffer,                      &
                                          chunks(chunk)%left_rcv_buffer,                      &
@@ -281,6 +283,8 @@ SUBROUTINE clover_exchange(fields,depth)
       else
         CALL clover_pack_right(chunk, fields, depth, left_right_offset)
       endif
+
+      write(*,*) "RIGHT"
 
       !send message to the right
       CALL clover_send_recv_message_right(chunks(chunk)%right_snd_buffer,                     &
