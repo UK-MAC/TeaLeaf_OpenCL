@@ -288,16 +288,24 @@ SUBROUTINE tqli(d,e,n, info)
     end do
 END SUBROUTINE tqli
 
-SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-    max_iters, tl_ch_cg_presteps, info)
+SUBROUTINE tea_calc_ch_coefs(cg_alphas, cg_betas, &
+    ch_alphas, ch_betas, &
+    eigmin, eigmax, &
+    max_total_iters, max_cheby_iters, &
+    tl_ch_cg_presteps, info, theta)
 
-  INTEGER :: tl_ch_cg_presteps, max_iters
-  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
+  INTEGER :: tl_ch_cg_presteps, max_total_iters
+  REAL(KIND=8), DIMENSION(max_total_iters) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag
   ! z not used for this
   REAL(KIND=8) :: eigmin, eigmax, tmp
   INTEGER :: n, info
   LOGICAL :: swapped
+
+  INTEGER :: max_cheby_iters
+  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
+
+  REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
 
   diag = 0
   offdiag = 0
@@ -333,18 +341,10 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   eigmin = diag(1)
   eigmax = diag(tl_ch_cg_presteps)
 
-  if (eigmin .lt. 0.0_8 .or. eigmax .lt. 0.0_8) info = 1
-
-END SUBROUTINE tea_calc_eigenvalues
-
-SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-    theta, max_cheby_iters)
-
-  INTEGER :: n, max_cheby_iters
-  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
-  REAL(KIND=8) :: eigmin, eigmax
-
-  REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
+  if (eigmin .lt. 0.0_8 .or. eigmax .lt. 0.0_8) then
+    info = 1
+    return
+  endif
 
   theta = (eigmax + eigmin)/2
   delta = (eigmax - eigmin)/2
