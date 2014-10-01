@@ -9,14 +9,8 @@
 
 // 2 dimensional arrays - use a 2D tile for local group
 const static size_t LOCAL_X = 128;
-
-#ifdef ONED_KERNEL_LAUNCHES
-const static size_t LOCAL_Y = 1;
-const static cl::NDRange local_group_size(LOCAL_X);
-#else
 const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-#endif
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density0      1
@@ -139,6 +133,25 @@ private:
     cl::Kernel update_halo_bottom_device;
     cl::Kernel update_halo_left_device;
     cl::Kernel update_halo_right_device;
+    // mpi packing
+    cl::Kernel pack_left_buffer_device;
+    cl::Kernel unpack_left_buffer_device;
+    cl::Kernel pack_right_buffer_device;
+    cl::Kernel unpack_right_buffer_device;
+    cl::Kernel pack_bottom_buffer_device;
+    cl::Kernel unpack_bottom_buffer_device;
+    cl::Kernel pack_top_buffer_device;
+    cl::Kernel unpack_top_buffer_device;
+
+    // main buffers, with sub buffers for each offset
+    cl::Buffer left_buffer;
+    cl::Buffer right_buffer;
+    cl::Buffer bottom_buffer;
+    cl::Buffer top_buffer;
+    std::vector<cl::Buffer> left_subbuffers[2];
+    std::vector<cl::Buffer> right_subbuffers[2];
+    std::vector<cl::Buffer> bottom_subbuffers[2];
+    std::vector<cl::Buffer> top_subbuffers[2];
 
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
@@ -284,6 +297,9 @@ private:
     // mpi rank
     int rank;
 
+    // size of mpi buffers
+    size_t lr_mpi_buf_sz, bt_mpi_buf_sz;
+
     // desired type for opencl
     int desired_type;
 
@@ -291,26 +307,11 @@ private:
     int profiler_on;
     // for recording times if profiling is on
     std::map<std::string, double> kernel_times;
+    // recording number of times each kernel was called
+    std::map<std::string, int> kernel_calls;
 
     // Where to send debug output
     FILE* DBGOUT;
-
-    // type of callback for buffer packing
-    typedef cl_int (cl::CommandQueue::*buffer_func_t)
-    (
-        const cl::Buffer&,
-        cl_bool,
-        const cl::size_t<3>&,
-        const cl::size_t<3>&,
-        const cl::size_t<3>&,
-        size_t,
-        size_t,
-        size_t,
-        size_t,
-        void *,
-        const std::vector<cl::Event> *,
-        cl::Event
-    ) const;
 
     // compile a file and the contained kernels, and check for errors
     void compileKernel
@@ -450,11 +451,11 @@ public:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL) ;
 
-    #define ENQUEUE_OFFSET(knl)                                     \
-        CloverChunk::enqueueKernel(knl, __LINE__, __FILE__,         \
-                                   launch_specs.at(#knl).offset,    \
-                                   launch_specs.at(#knl).global,    \
-                                   local_group_size);
+    #define ENQUEUE_OFFSET(knl)                        \
+        enqueueKernel(knl, __LINE__, __FILE__,         \
+                      launch_specs.at(#knl).offset,    \
+                      launch_specs.at(#knl).global,    \
+                      local_group_size);
 
     // reduction
     template <typename T>
@@ -462,22 +463,18 @@ public:
     (reduce_info_vec_t& red_kernels,
      const cl::Buffer& results_buf);
 
-    // mpi packing
-    #define PACK_ARGS                                       \
-        int chunk_1, int chunk_2, int external_face,        \
-        int x_inc, int y_inc, int depth, int which_field,   \
-        double *buffer_1, double *buffer_2
-
-    void pack_left_right(PACK_ARGS);
-    void unpack_left_right(PACK_ARGS);
-    void pack_top_bottom(PACK_ARGS);
-    void unpack_top_bottom(PACK_ARGS);
+    void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
 
     void packRect
-    (double* device_buffer, buffer_func_t buffer_func,
-     int x_inc, int y_inc, int edge, int dest,
+    (double* host_buffer,
+     int x_inc, int y_inc,
+     int edge, int dest,
      int which_field, int depth);
 };
+
+extern CloverChunk chunk;
 
 class KernelCompileError : std::exception
 {
