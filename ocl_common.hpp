@@ -161,9 +161,6 @@ private:
     #define TEA_ENUM_PPCG       4
     int tea_solver;
 
-    // TODO could be used by all - precalculate diagonal + scale Kx/Ky
-    cl::Kernel tea_leaf_init_diag_device;
-
     // tea leaf
     cl::Kernel tea_leaf_cg_init_u_device;
     cl::Kernel tea_leaf_cg_init_directions_device;
@@ -177,7 +174,7 @@ private:
     cl::Kernel tea_leaf_cheby_solve_init_p_device;
     cl::Kernel tea_leaf_cheby_solve_calc_u_device;
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
-    cl::Kernel tea_leaf_cheby_solve_calc_resid_device;
+    cl::Kernel tea_leaf_cheby_calc_2norm_device;
 
     cl::Kernel tea_leaf_ppcg_solve_init_r_device;
     cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
@@ -195,6 +192,9 @@ private:
 
     cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;
+    // TODO could be used by all - precalculate diagonal + scale Kx/Ky
+    cl::Kernel tea_leaf_init_diag_device;
+    cl::Kernel tea_leaf_calc_residual_device;
 
     // tolerance specified in tea.in
     float tolerance;
@@ -431,6 +431,7 @@ public:
     void ppcg_inner(int);
 
     void tea_leaf_finalise();
+    void tea_leaf_calc_residual(double * exact_error);
 
     // ctor
     CloverChunk

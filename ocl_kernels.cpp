@@ -113,7 +113,7 @@ void CloverChunk::initProgram
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
 
-        compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_resid", tea_leaf_cheby_solve_calc_resid_device);
+        compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_calc_2norm", tea_leaf_cheby_calc_2norm_device);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
@@ -139,6 +139,7 @@ void CloverChunk::initProgram
 
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_diag", tea_leaf_init_diag_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device);
+    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device);
 
     fprintf(stdout, "done.\n");
     fprintf(DBGOUT, "All kernels compiled\n");
@@ -439,7 +440,7 @@ void CloverChunk::initSizes
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0); // works
 
-        FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_resid, 0, 0, 0, 0);
+        FIND_PADDING_SIZE(tea_leaf_cheby_calc_2norm, 0, 0, 0, 0);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
@@ -465,6 +466,7 @@ void CloverChunk::initSizes
 
     FIND_PADDING_SIZE(tea_leaf_init_diag, -1, 1, -1, 1);
     FIND_PADDING_SIZE(tea_leaf_finalise, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_calc_residual, 0, 0, 0, 0);
 }
 
 void CloverChunk::initArgs
@@ -804,7 +806,7 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_p_device.setArg(2, work_array_2);
         tea_leaf_cg_solve_calc_p_device.setArg(3, z);
 
-        tea_leaf_cheby_solve_calc_resid_device.setArg(1, reduce_buf_1);
+        tea_leaf_cheby_calc_2norm_device.setArg(1, reduce_buf_1);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
@@ -877,6 +879,12 @@ void CloverChunk::initArgs
 
     tea_leaf_init_diag_device.setArg(0, work_array_5);
     tea_leaf_init_diag_device.setArg(1, work_array_6);
+
+    tea_leaf_calc_residual_device.setArg(0, u);
+    tea_leaf_calc_residual_device.setArg(1, u0);
+    tea_leaf_calc_residual_device.setArg(2, work_array_2);
+    tea_leaf_calc_residual_device.setArg(3, work_array_5);
+    tea_leaf_calc_residual_device.setArg(4, work_array_6);
 
     // both finalise the same
     tea_leaf_finalise_device.setArg(0, density1);

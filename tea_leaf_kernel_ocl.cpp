@@ -49,20 +49,20 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u0);
+        tea_leaf_cheby_calc_2norm_device.setArg(0, u0);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_2);
+        tea_leaf_cheby_calc_2norm_device.setArg(0, work_array_2);
     }
     else
     {
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    //ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_resid_device);
+    //ENQUEUE(tea_leaf_cheby_calc_2norm_device);
+    ENQUEUE_OFFSET(tea_leaf_cheby_calc_2norm_device);
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
@@ -287,12 +287,25 @@ extern "C" void tea_leaf_kernel_finalise_ocl_
     chunk.tea_leaf_finalise();
 }
 
+extern "C" void tea_leaf_calc_residual_ocl_
+(double * exact_error)
+{
+    chunk.tea_leaf_calc_residual(exact_error);
+}
+
 // both
 void CloverChunk::tea_leaf_finalise
 (void)
 {
     //ENQUEUE(tea_leaf_finalise_device);
     ENQUEUE_OFFSET(tea_leaf_finalise_device);
+}
+
+void CloverChunk::tea_leaf_calc_residual
+(double * exact_error)
+{
+    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+    tea_leaf_calc_2norm_kernel(1, exact_error);
 }
 
 /********************/

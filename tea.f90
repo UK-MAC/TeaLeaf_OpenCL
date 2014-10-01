@@ -74,7 +74,7 @@ SUBROUTINE tea_leaf()
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
-  REAL(KIND=8) :: ry,rx, error
+  REAL(KIND=8) :: ry,rx, error, exact_error
 
   INTEGER :: fields(NUM_FIELDS)
 
@@ -214,18 +214,16 @@ SUBROUTINE tea_leaf()
       fields=0
       fields(FIELD_U) = 1
 
-      ! need the original value of u
-      if(tl_use_chebyshev .or. tl_use_ppcg) then
-        IF(use_fortran_kernels) then
-          call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
-            chunks(c)%field%x_max,                       &
-            chunks(c)%field%y_min,                       &
-            chunks(c)%field%y_max,                       &
-            chunks(c)%field%u0,                &
-            chunks(c)%field%u)
-        elseif(use_opencl_kernels) then
-          call tea_leaf_kernel_cheby_copy_u_ocl()
-        endif
+      ! Copy every time - is used for most tea leaf configurations + error checking
+      IF(use_fortran_kernels) then
+        call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
+          chunks(c)%field%x_max,                       &
+          chunks(c)%field%y_min,                       &
+          chunks(c)%field%y_max,                       &
+          chunks(c)%field%u0,                &
+          chunks(c)%field%u)
+      elseif(use_opencl_kernels) then
+        call tea_leaf_kernel_cheby_copy_u_ocl()
       endif
 
       DO n=1,max_iters
@@ -526,12 +524,35 @@ SUBROUTINE tea_leaf()
 
       ENDDO
 
+      if (tl_check_result) then
+        IF(use_fortran_kernels) THEN
+            CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
+                chunks(c)%field%x_max,                       &
+                chunks(c)%field%y_min,                       &
+                chunks(c)%field%y_max,                       &
+                chunks(c)%field%u,                           &
+                chunks(c)%field%u0,                 &
+                chunks(c)%field%work_array2,                 &
+                chunks(c)%field%work_array6,                 &
+                chunks(c)%field%work_array7,                 &
+                rx, ry, exact_error)
+        ELSEIF(use_opencl_kernels) THEN
+            CALL tea_leaf_calc_residual_ocl(exact_error)
+        ENDIF
+
+        call clover_allsum(exact_error)
+      endif
+
       IF (parallel%boss) THEN
 !$      IF(OMP_GET_THREAD_NUM().EQ.0) THEN
           WRITE(g_out,"('Conduction error ',e14.7)") error
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
           WRITE(0,"('Iteration count ', i8)") n-1
+          if (tl_check_result) then
+            write(0,"('EXACT error calculated as', e14.7)") exact_error
+            write(g_out,"('EXACT error calculated as', e14.7)") exact_error
+          endif
 !$      ENDIF
       ENDIF
 

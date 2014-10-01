@@ -54,11 +54,11 @@ SUBROUTINE tea_leaf_kernel_init(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: density
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: energy
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: heat_capacity
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Kx_tmp
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Ky_tmp
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Kx
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Ky
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: heat_capacity
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx_tmp
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky_tmp
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u1
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: un
 
@@ -138,8 +138,8 @@ SUBROUTINE tea_leaf_kernel_solve(x_min,       &
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0, un
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u1
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Kx
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+3,y_min-2:y_max+3) :: Ky
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
   REAL(KIND=8) :: ry,rx, error
 
@@ -200,6 +200,51 @@ SUBROUTINE tea_leaf_kernel_finalise(x_min,    &
 !$OMP END PARALLEL DO
 
 END SUBROUTINE tea_leaf_kernel_finalise
+
+SUBROUTINE tea_leaf_calc_residual(x_min,       &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           u ,                &
+                           u0,                &
+                           r,                &
+                           Kx,                &
+                           Ky,                &
+                           rx, ry, &
+                           exact_error)
+
+
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0, u, r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
+
+  REAL(KIND=8) :: smvp, exact_error, rx, ry
+
+  INTEGER(KIND=4) :: j,k
+
+  exact_error = 0.0_8
+
+!$OMP PARALLEL
+!$OMP DO private(smvp) reduction(+:exact_error)
+    DO k=y_min, y_max
+      DO j=x_min, x_max
+        smvp = (1.0_8                                      &
+            + ry*(Ky(j, k+1) + Ky(j, k))                      &
+            + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+            - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+            - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
+        r(j, k) = u0(j, k) - smvp
+
+        exact_error = exact_error + r(j, k)*r(j, k)
+      ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+
+END SUBROUTINE tea_leaf_calc_residual
 
 END MODULE tea_leaf_kernel_module
 
