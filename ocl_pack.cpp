@@ -212,12 +212,23 @@ void CloverChunk::packUnpackAllBuffers
         }
     }
 
+    #define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
+
+    if(rank)
+    {
+    fprintf(stdout, "%d\n", n_exchanged);
+    fprintf(stdout, "%zu\n", side_size);
+    fprintf(stdout, "%zu\n", n_exchanged*depth*side_size);
+    }
+
     if (pack)
     {
         queue.finish();
+        CL_SAFE_CALL(
         queue.enqueueReadBuffer(*side_buffer, CL_TRUE, 0,
             n_exchanged*depth*side_size,
             buffer);
+            )
     }
 }
 
