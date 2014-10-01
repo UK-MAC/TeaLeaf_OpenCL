@@ -104,7 +104,7 @@ SUBROUTINE tea_leaf()
   error = 1e10
   cheby_calc_steps = 0
 
-  DO c=1,number_of_chunks
+  DO c=1,chunks_per_task
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
 
@@ -685,11 +685,11 @@ subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
   it_alpha = eps*bb/(4.0_8*error)
   gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
   est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
-  
+
   ! FIXME still not giving correct answer, but multiply by 2.5 does
   ! an 'okay' job for now
   est_itc = int(est_itc * 2.5)
-  
+
   if (parallel%boss) then
       write(g_out,'(a11)')"est itc"
       write(g_out,'(11i11)')est_itc
