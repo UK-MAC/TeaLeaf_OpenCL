@@ -254,8 +254,7 @@ SUBROUTINE tea_leaf()
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
                 max_iters, n-1, info)
 
-            if (info .ne. 0) then
-              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+            if (info .ne. 0) CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
 
             if (tl_use_chebyshev) then
               ! calculate chebyshev coefficients
