@@ -428,6 +428,7 @@ public:
 
     void ppcg_init(const double * ch_alphas, const double * ch_betas,
         int n_coefs, const double theta, int n, double * rro);
+    void ppcg_init_sd();
     void ppcg_inner(int);
 
     void tea_leaf_finalise();

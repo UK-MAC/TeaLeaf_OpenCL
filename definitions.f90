@@ -89,6 +89,8 @@ MODULE definitions_module
    REAL(KIND=8) :: tl_ch_cg_epslim
    ! number of steps of cg to run to before switching to ch if tl_ch_cg_errswitch not set
    INTEGER      :: tl_ch_cg_presteps
+   ! number of inner steps in ppcg solver
+   INTEGER      :: tl_ppcg_inner_steps
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 
