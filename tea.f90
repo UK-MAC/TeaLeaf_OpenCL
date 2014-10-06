@@ -218,7 +218,6 @@ SUBROUTINE tea_leaf()
       fields=0
       fields(FIELD_U) = 1
 
-      ! Copy every time - is used for most tea leaf configurations + error checking
       IF(use_fortran_kernels) then
         call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
           chunks(c)%field%x_max,                       &
