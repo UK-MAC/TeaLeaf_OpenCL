@@ -256,9 +256,16 @@ SUBROUTINE tea_leaf()
             ! maximum number of iterations in chebyshev solver
             max_cheby_iters = max_iters - n + 2
 
-            ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                theta, max_cheby_iters)
+            if (tl_use_chebyshev) then
+              ! calculate chebyshev coefficients
+              call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, max_cheby_iters)
+            else
+              ! calculate least squares coefficients
+              call tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, 10)
+                  ! TODO change like below
+            endif
 
             cn = eigmax/eigmin
 
