@@ -94,6 +94,7 @@ SUBROUTINE read_input()
   tl_ch_cg_presteps = 30
   tl_ch_cg_epslim = 1e-5
   tl_check_result = .false.
+  tl_ppcg_inner_steps = 20
 
   tl_use_chebyshev = .false.
   tl_use_cg = .false.
@@ -183,6 +184,9 @@ SUBROUTINE read_input()
       CASE('tl_ch_cg_presteps')
         tl_ch_cg_presteps=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ch_cg_presteps',tl_ch_cg_presteps
+      CASE('tl_ppcg_inner_steps')
+        tl_ppcg_inner_steps=parse_getival(parse_getword(.TRUE.))
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
       CASE('tl_ch_cg_epslim')
         tl_ch_cg_epslim=parse_getrval(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'tl_ch_cg_epslim',tl_ch_cg_epslim

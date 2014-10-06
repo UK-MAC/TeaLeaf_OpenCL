@@ -365,20 +365,23 @@ SUBROUTINE tea_calc_ch_coefs(cg_alphas, cg_betas, &
 
 END SUBROUTINE tea_calc_ch_coefs
 
-! TODO move into another file
+! TODO move into another file with fortran implementations of kernels
 SUBROUTINE tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-    theta, max_cheby_iters)
+    theta, ppcg_inner_steps)
 
-  INTEGER :: n, max_cheby_iters
-  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
+  INTEGER :: n, ppcg_inner_steps
+  REAL(KIND=8), DIMENSION(ppcg_inner_steps) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax
 
   REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
 
+  n=1
   ch_alphas(n) = cur_alpha
   ch_betas(n) = cur_beta
 
   ! TODO
+  call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+    theta, ppcg_inner_steps)
 
 end subroutine
 

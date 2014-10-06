@@ -91,6 +91,8 @@ MODULE definitions_module
    INTEGER      :: tl_ch_cg_presteps
    ! do b-Ax after finishing to make sure solver actually converged
    LOGICAL      :: tl_check_result
+   ! number of inner steps in ppcg solver
+   INTEGER      :: tl_ppcg_inner_steps
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 
