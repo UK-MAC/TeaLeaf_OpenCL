@@ -246,15 +246,22 @@ SUBROUTINE tea_leaf()
             max_cheby_iters = max_iters - n + 2
             rro = error
 
-            ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(cg_alphas, cg_betas,  &
-                ch_alphas, ch_betas, &
-                eigmin, eigmax, &
-                max_iters, max_cheby_iters, &
-                n - 1, info, theta)
+            ! calculate eigenvalues
+            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+                max_iters, n-1, info)
 
             if (info .ne. 0) then
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+
+            if (tl_use_chebyshev) then
+              ! calculate chebyshev coefficients
+              call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, max_cheby_iters)
+            else
+              ! calculate least squares coefficients
+              call tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, 10)
+                  ! TODO change like below
             endif
 
             cn = eigmax/eigmin
