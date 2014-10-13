@@ -53,6 +53,9 @@ MODULE tea_leaf_module
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
 
+    subroutine tea_leaf_kernel_ppcg_init_sd_ocl()
+    end subroutine
+
     subroutine tea_leaf_kernel_ppcg_inner_ocl(n)
       integer :: n
     end subroutine
@@ -90,7 +93,8 @@ SUBROUTINE tea_leaf()
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
   LOGICAL :: ch_switch_check
 
-  INTEGER :: cg_calc_steps
+  INTEGER :: cg_calc_steps, ppcg_cur_step
+
   REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
 
   cg_time = 0.0_8
@@ -216,7 +220,6 @@ SUBROUTINE tea_leaf()
       fields=0
       fields(FIELD_U) = 1
 
-      ! Copy every time - is used for most tea leaf configurations + error checking
       IF(use_fortran_kernels) then
         call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
           chunks(c)%field%x_max,                       &
@@ -248,15 +251,20 @@ SUBROUTINE tea_leaf()
             max_cheby_iters = max_iters - n + 2
             rro = error
 
-            ! calculate chebyshev coefficients
-            call tea_calc_ch_coefs(cg_alphas, cg_betas,  &
-                ch_alphas, ch_betas, &
-                eigmin, eigmax, &
-                max_iters, max_cheby_iters, &
-                n - 1, info, theta)
+            ! calculate eigenvalues
+            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+                max_iters, n-1, info)
 
-            if (info .ne. 0) then
-              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+            if (info .ne. 0) CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+
+            if (tl_use_chebyshev) then
+              ! calculate chebyshev coefficients
+              call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, max_cheby_iters)
+            else if (tl_use_ppcg) then
+              ! calculate least squares coefficients
+              call tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
+                  theta, tl_ppcg_inner_steps)
             endif
 
             cn = eigmax/eigmin
@@ -338,7 +346,7 @@ SUBROUTINE tea_leaf()
                 ELSEIF(use_opencl_kernels) THEN
                   ! FIXME change to an input file number of iterations
                     call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                      max_cheby_iters, theta, 10, rro)
+                      max_cheby_iters, theta, tl_ppcg_inner_steps, rro)
                 ENDIF
             endif
 
@@ -358,9 +366,15 @@ SUBROUTINE tea_leaf()
 
             IF(use_fortran_kernels) THEN
             ELSEIF(use_opencl_kernels) THEN
-              ! FIXME change to an input file number of iterations
-              CALL tea_leaf_kernel_ppcg_inner_ocl(10)
+              CALL tea_leaf_kernel_ppcg_init_sd_ocl()
             ENDIF
+
+            DO ppcg_cur_step=1,tl_ppcg_inner_steps
+              IF(use_fortran_kernels) THEN
+              ELSEIF(use_opencl_kernels) THEN
+                CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
+              ENDIF
+            ENDDO
 
             IF(use_fortran_kernels) THEN
             ELSEIF(use_opencl_kernels) THEN

@@ -13,7 +13,7 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if (tea_solver != TEA_ENUM_PPCG)
+    if(0)
     {
         // use jacobi preconditioner when running CG solver
         options << "-DCG_DO_PRECONDITION ";
