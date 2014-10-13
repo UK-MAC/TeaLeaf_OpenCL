@@ -176,7 +176,6 @@ private:
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
     cl::Kernel tea_leaf_cheby_calc_2norm_device;
 
-    cl::Kernel tea_leaf_ppcg_solve_init_r_device;
     cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_update_r_device;
@@ -432,7 +431,7 @@ public:
     void ppcg_inner(int);
 
     void tea_leaf_finalise();
-    void tea_leaf_calc_residual(double * exact_error);
+    void tea_leaf_calc_residual(void);
 
     // ctor
     CloverChunk

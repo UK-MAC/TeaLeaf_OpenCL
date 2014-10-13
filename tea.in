@@ -19,7 +19,7 @@
   end_time=5.0
   end_step=5
 
-  use_opencl_kernels
+  !use_opencl_kernels
   opencl_vendor=nvidia
   opencl_type=gpu
 
@@ -27,9 +27,9 @@
   test_problem 1
   tl_eps=0.00000000001
 
-  tl_use_cg
+  !tl_use_cg
   !tl_use_chebyshev
-  !tl_use_ppcg
+  tl_use_ppcg
 
   tl_check_result
 

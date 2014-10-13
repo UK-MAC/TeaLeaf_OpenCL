@@ -288,9 +288,9 @@ extern "C" void tea_leaf_kernel_finalise_ocl_
 }
 
 extern "C" void tea_leaf_calc_residual_ocl_
-(double * exact_error)
+(void)
 {
-    chunk.tea_leaf_calc_residual(exact_error);
+    chunk.tea_leaf_calc_residual();
 }
 
 // both
@@ -302,10 +302,9 @@ void CloverChunk::tea_leaf_finalise
 }
 
 void CloverChunk::tea_leaf_calc_residual
-(double * exact_error)
+(void)
 {
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
-    tea_leaf_calc_2norm_kernel(1, exact_error);
 }
 
 /********************/
@@ -348,7 +347,7 @@ void CloverChunk::ppcg_init
     tea_leaf_ppcg_solve_calc_sd_device.setArg(2, ch_alphas_device);
     tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_betas_device);
 
-    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_r_device);
+    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
 
     ppcg_inner(n_inner_steps);
 

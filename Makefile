@@ -170,6 +170,7 @@ FORTRAN_FILES=\
 	tea_leaf_jacobi.o			\
 	tea_leaf_cg.o			\
 	tea_leaf_cheby.o			\
+	tea_leaf_ppcg.o			\
 	report.o			\
 	timer.o			\
 	parse.o			\

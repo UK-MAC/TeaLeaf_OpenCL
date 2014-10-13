@@ -210,9 +210,7 @@ SUBROUTINE tea_leaf_calc_residual(x_min,       &
                            r,                &
                            Kx,                &
                            Ky,                &
-                           rx, ry, &
-                           exact_error)
-
+                           rx, ry)
 
   IMPLICIT NONE
 
@@ -221,14 +219,12 @@ SUBROUTINE tea_leaf_calc_residual(x_min,       &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
-  REAL(KIND=8) :: smvp, exact_error, rx, ry
+  REAL(KIND=8) :: smvp, rx, ry
 
   INTEGER(KIND=4) :: j,k
 
-  exact_error = 0.0_8
-
 !$OMP PARALLEL
-!$OMP DO private(smvp) reduction(+:exact_error)
+!$OMP DO private(smvp)
     DO k=y_min, y_max
       DO j=x_min, x_max
         smvp = (1.0_8                                      &
@@ -237,8 +233,6 @@ SUBROUTINE tea_leaf_calc_residual(x_min,       &
             - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
             - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
         r(j, k) = u0(j, k) - smvp
-
-        exact_error = exact_error + r(j, k)*r(j, k)
       ENDDO
     ENDDO
 !$OMP END DO
