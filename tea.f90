@@ -369,12 +369,22 @@ SUBROUTINE tea_leaf()
               CALL tea_leaf_kernel_ppcg_init_sd_ocl()
             ENDIF
 
+            ! inner steps
             DO ppcg_cur_step=1,tl_ppcg_inner_steps
+              fields = 0
+              fields(FIELD_SD) = 1
+
               IF(use_fortran_kernels) THEN
               ELSEIF(use_opencl_kernels) THEN
                 CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
               ENDIF
+
+              CALL update_halo(fields,1)
             ENDDO
+
+            fields = 0
+            fields(FIELD_U) = 1
+            fields(FIELD_P) = 1
 
             IF(use_fortran_kernels) THEN
             ELSEIF(use_opencl_kernels) THEN
