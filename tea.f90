@@ -351,6 +351,15 @@ SUBROUTINE tea_leaf()
             endif
 
             IF(use_fortran_kernels) THEN
+              CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
+                  chunks(c)%field%x_max,                       &
+                  chunks(c)%field%y_min,                       &
+                  chunks(c)%field%y_max,                       &
+                  chunks(c)%field%work_array1,                 &
+                  chunks(c)%field%work_array4,                 &
+                  chunks(c)%field%work_array6,                 &
+                  chunks(c)%field%work_array7,                 &
+                  rx, ry, pw)
             ELSEIF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
             ENDIF
@@ -359,10 +368,22 @@ SUBROUTINE tea_leaf()
             alpha = rro/pw
 
             IF(use_fortran_kernels) THEN
+              call tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
+                  chunks(c)%field%x_max,                       &
+                  chunks(c)%field%y_min,                       &
+                  chunks(c)%field%y_max,                       &
+                  chunks(c)%field%u,                           &
+                  chunks(c)%field%work_array1,                 &
+                  chunks(c)%field%work_array2,                 &
+                  chunks(c)%field%work_array3,                 &
+                  chunks(c)%field%work_array4,                 &
+                  chunks(c)%field%work_array5,                 &
+                  alpha, rrn)
             ELSEIF(use_opencl_kernels) THEN
-              ! XXX don't need to do the reduction
               CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
             ENDIF
+
+            ! not using rrn, so don't do a clover_allsum
 
             IF(use_fortran_kernels) THEN
             ELSEIF(use_opencl_kernels) THEN
@@ -387,6 +408,12 @@ SUBROUTINE tea_leaf()
             fields(FIELD_P) = 1
 
             IF(use_fortran_kernels) THEN
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array2,                 &
+                    rrn)
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(1, rrn)
             ENDIF
@@ -396,14 +423,20 @@ SUBROUTINE tea_leaf()
             beta = rrn/rro
 
             IF(use_fortran_kernels) THEN
+              CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
+                  chunks(c)%field%x_max,                       &
+                  chunks(c)%field%y_min,                       &
+                  chunks(c)%field%y_max,                       &
+                  chunks(c)%field%work_array1,                 &
+                  chunks(c)%field%work_array2,                 &
+                  chunks(c)%field%work_array5,                 &
+                  beta)
             ELSEIF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
             ENDIF
 
             error = rrn
             rro = rrn
-
-            CALL clover_allsum(error)
           endif
 
           cheby_calc_steps = cheby_calc_steps + 1
@@ -440,7 +473,7 @@ SUBROUTINE tea_leaf()
           if(tl_use_chebyshev .or. tl_use_ppcg) cg_alphas(n) = alpha
 
           IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
+            call tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
                 chunks(c)%field%x_max,                       &
                 chunks(c)%field%y_min,                       &
                 chunks(c)%field%y_max,                       &
@@ -495,8 +528,6 @@ SUBROUTINE tea_leaf()
 
           error = rrn
           rro = rrn
-
-          CALL clover_allsum(error)
         ELSE
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve(chunks(c)%field%x_min,&
