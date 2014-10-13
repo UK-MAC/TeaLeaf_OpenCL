@@ -408,11 +408,11 @@ SUBROUTINE tea_leaf()
               CALL tea_leaf_kernel_ppcg_init_sd_ocl()
             ENDIF
 
+            fields = 0
+            fields(FIELD_SD) = 1
+
             ! inner steps
             DO ppcg_cur_step=1,tl_ppcg_inner_steps
-              fields = 0
-              fields(FIELD_SD) = 1
-
               IF(use_fortran_kernels) THEN
                 call tea_leaf_kernel_ppcg_inner(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                       &
