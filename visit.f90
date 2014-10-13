@@ -175,3 +175,156 @@ SUBROUTINE visit
   IF(profiler_on) profiler%visit=profiler%visit+(timer()-kernel_time)
 
 END SUBROUTINE visit
+
+  subroutine visitcommandcallback (cmd, lcmd, args, largs)
+  implicit none
+  character*8 cmd, args
+  integer     lcmd, largs
+  end
+
+  integer function visitbroadcastintfunction(value, sender)
+  implicit none
+  integer value, sender
+!     REPLACE WITH MPI COMMUNICATION IF SIMULATION IS PARALLEL
+  visitbroadcastintfunction = 0
+  end
+
+  integer function visitbroadcaststringfunction(str, lstr, sender)
+  implicit none
+  character*8 str
+  integer     lstr, sender
+!     REPLACE WITH MPI COMMUNICATION IF SIMULATION IS PARALLEL
+  visitbroadcaststringfunction = 0
+  end
+
+  subroutine visitslaveprocesscallback ()
+  implicit none
+!     REPLACE WITH MPI COMMUNICATION IF SIMULATION IS PARALLEL
+  end
+
+  integer function visitactivatetimestep()
+  implicit none
+  include "visitfortransimV2interface.inc"
+  visitactivatetimestep = VISIT_OKAY
+  end
+
+  integer function visitgetmetadata()
+  implicit none
+  include "visitfortransimV2interface.inc"
+      integer runflag, simcycle, m1
+      real simtime
+      common /SIMSTATE/ runflag, simcycle, simtime
+
+      integer md, err
+
+      if(visitmdsimalloc(md).eq.VISIT_OKAY) then
+          err = visitmdsimsetcycletime(md, simcycle, simtime)
+          if(runflag.eq.1) then
+              err = visitmdsimsetmode(md, VISIT_SIMMODE_RUNNING)
+          else
+              err = visitmdsimsetmode(md, VISIT_SIMMODE_STOPPED)
+          endif
+
+          if(visitmdmeshalloc(m1).eq.VISIT_OKAY) then
+              err = visitmdmeshsetname(m1, "energy", 6)
+              err = visitmdmeshsetmeshtype(m1, VISIT_MESHTYPE_RECTILINEAR)
+              err = visitmdmeshsettopologicaldim(m1, 2)
+              err = visitmdmeshsetspatialdim(m1, 2)
+              err = visitmdmeshsetxunits(m1, "cells", 2)
+              err = visitmdmeshsetyunits(m1, "cells", 2)
+              err = visitmdmeshsetxlabel(m1, "Width", 5)
+              err = visitmdmeshsetylabel(m1, "Height", 6)
+              err = visitmdmeshsetcellorigin(m1, 1)
+              err = visitmdmeshsetnodeorigin(m1, 1)
+
+              err = visitmdsimaddmesh(md, m1)
+          endif
+      endif
+      visitgetmetadata = md
+  end
+
+  integer function visitgetmesh(domain, name, lname)
+  implicit none
+  character*8 name
+  integer     domain, lname, h, err, x, y
+  integer     xmax, ymax
+      common /SIMSIZE/ xmax, ymax
+  integer, dimension(xmax) :: xs, ys
+  include "visitfortransimV2interface.inc" 
+      h = VISIT_INVALID_HANDLE
+  xs = 1
+  ys = 1
+      if(visitstrcmp(name, lname, "energy", 6).eq.0) then
+          if(visitrectmeshalloc(h).eq.VISIT_OKAY) then
+              err = visitvardataalloc(x)
+              err = visitvardataalloc(y)
+              err = visitvardatasetf(x,VISIT_OWNER_SIM,1,xmax, xs)
+              err = visitvardatasetf(y,VISIT_OWNER_SIM,1,ymax, ys)
+
+              err = visitrectmeshsetcoordsxy(h, x, y)
+          endif
+      endif
+      visitgetmesh = h
+  end
+
+  integer function visitgetvariable(domain, name, lname)
+  implicit none
+  character*8 name
+  integer     domain, lname
+  include "visitfortransimV2interface.inc"
+  visitgetvariable = VISIT_INVALID_HANDLE
+  end
+
+  integer function visitgetcurve(name, lname)
+  use definitions_module
+  implicit none
+  character*8 name
+  integer     lname, h, nvals, err
+  integer     xmax, ymax
+      common /SIMSIZE/ xmax, ymax
+  include "visitfortransimV2interface.inc"
+      h = VISIT_INVALID_HANDLE
+
+      if(visitstrcmp(name, lname, "energy", 6).eq.0) then
+          if(visitvardataalloc(h).eq.VISIT_OKAY) then
+              nvals = (xmax-1) * (ymax-1)
+              err = visitvardatasetf(h, VISIT_OWNER_SIM,1,nvals, &
+                chunks(1)%field%u)
+          endif
+      endif
+
+      visitgetcurve = h
+  end
+
+  integer function visitgetdomainlist(name, lname)
+  implicit none
+  character*8 name
+  integer     lname
+  include "visitfortransimV2interface.inc"
+  visitgetdomainlist = VISIT_INVALID_HANDLE
+  end
+
+  integer function visitgetdomainbounds(name, lname)
+  implicit none
+  character*8 name
+  integer     lname
+  include "visitfortransimV2interface.inc"
+  visitgetdomainbounds = VISIT_INVALID_HANDLE
+  end
+
+  integer function visitgetdomainnesting(name, lname)
+  implicit none
+  character*8 name
+  integer     lname
+  include "visitfortransimV2interface.inc"
+  visitgetdomainnesting = VISIT_INVALID_HANDLE
+  end
+
+  integer function visitgetmaterial(domain, name, lname)
+  implicit none
+  character*8 name
+  integer     domain, lname
+  include "visitfortransimV2interface.inc"
+  visitgetmaterial = VISIT_INVALID_HANDLE
+  end
+

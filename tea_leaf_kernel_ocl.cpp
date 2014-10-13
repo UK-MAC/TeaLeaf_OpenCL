@@ -338,6 +338,11 @@ void CloverChunk::ppcg_init
     // never going to do more than n_inner_steps steps? XXX
     size_t ch_buf_sz = n_inner_steps*sizeof(double);
 
+    if (ch_buf_sz == 0)
+    {
+        DIE("0 inner steps specified for PPCG");
+    }
+
     // upload to device
     ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
@@ -349,6 +354,7 @@ void CloverChunk::ppcg_init
 
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
 
+    ppcg_init_sd();
     ppcg_inner(n_inner_steps);
 
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);

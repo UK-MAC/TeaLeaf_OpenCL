@@ -120,7 +120,7 @@ endif
 
 MPICXX_LIB=-lmpi_cxx
 
-LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
+LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB) -lsimV2f -lsimV2dyn
 CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D MPI_HDR
 
 VPATH+=kernel_files
@@ -256,7 +256,7 @@ include make.deps
 %.mod %_module.mod %_leaf_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile make.deps
-	$(MPI_COMPILER) $(FLAGS) -c $< -o $*.o
+	$(MPI_COMPILER) $(FLAGS) -I /home/mb8224/apps/visit/2.8.0/linux-x86_64/libsim/V2/include -c $< -o $*.o
 %.o: %.c Makefile make.deps
 	$(C_MPI_COMPILER) $(CFLAGS) -c $< -o $*.o
 

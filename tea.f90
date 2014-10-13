@@ -79,11 +79,20 @@ SUBROUTINE tea_leaf()
 
   IMPLICIT NONE
 
+  include "visitfortransimV2interface.inc"
+
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
   REAL(KIND=8) :: ry,rx, error, exact_error
 
   INTEGER :: fields(NUM_FIELDS)
+
+  integer visitstate, result, blocking
+      integer runflag, simcycle
+      real simtime
+      common /SIMSTATE/ runflag, simcycle, simtime
+  integer     xmax, ymax
+      common /SIMSIZE/ xmax, ymax
 
   REAL(KIND=8) :: kernel_time,timer
 
@@ -100,6 +109,17 @@ SUBROUTINE tea_leaf()
   INTEGER :: cg_calc_steps, ppcg_cur_step
 
   REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
+
+  xmax = chunks(1)%field%x_max
+  ymax = chunks(1)%field%y_max
+
+  info = visitsetupenv()
+  info = visitinitializesim("fsim4", 5, &
+      "Fortran prototype simulation connects to VisIt", 46, &
+      "/no/useful/path", 15,    &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN)
 
   cg_time = 0.0_8
   ch_time = 0.0_8
@@ -235,7 +255,36 @@ SUBROUTINE tea_leaf()
         call tea_leaf_kernel_cheby_copy_u_ocl()
       endif
 
+      runflag = 1
+
       DO n=1,max_iters
+
+        if(runflag.eq.1) then
+            blocking = 0
+        else
+            blocking = 1
+        endif
+        visitstate = visitdetectinput(blocking, -1)
+
+        if (visitstate.lt.0) then
+            exit
+        elseif (visitstate.eq.0) then
+            !call simulate_one_timestep()
+        elseif (visitstate.eq.1) then
+            runflag = 0
+            result = visitattemptconnection()
+            if (result.eq.1) then
+            write (6,*) 'VisIt connected!'
+            else
+            write (6,*) 'VisIt did not connect!'
+            endif
+        elseif (visitstate.eq.2) then
+            runflag = 0
+            if (visitprocessenginecommand().eq.0) then
+                result = visitdisconnect()
+                runflag = 1
+            endif
+        endif
 
         if (profile_solver) solve_timer=timer()
 
@@ -359,6 +408,8 @@ SUBROUTINE tea_leaf()
                     call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
                       max_cheby_iters, theta, tl_ppcg_inner_steps, rro)
                 ENDIF
+
+                call clover_allsum(rro)
             endif
 
             IF(use_fortran_kernels) THEN
@@ -410,6 +461,8 @@ SUBROUTINE tea_leaf()
 
             fields = 0
             fields(FIELD_SD) = 1
+
+            CALL update_halo(fields,1)
 
             ! inner steps
             DO ppcg_cur_step=1,tl_ppcg_inner_steps
