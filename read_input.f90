@@ -94,7 +94,7 @@ SUBROUTINE read_input()
   tl_ch_cg_presteps = 30
   tl_ch_cg_epslim = 1e-5
   tl_check_result = .false.
-  tl_ppcg_inner_steps = 20
+  tl_ppcg_inner_steps = 10
 
   tl_use_chebyshev = .false.
   tl_use_cg = .false.

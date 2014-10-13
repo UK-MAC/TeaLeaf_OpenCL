@@ -338,11 +338,6 @@ SUBROUTINE tea_leaf()
                   endif
               endif
           else if (tl_use_ppcg) then
-            fields = 0
-            fields(FIELD_U) = 1
-            fields(FIELD_P) = 1
-            fields(FIELD_SD) = 1
-
             if (cheby_calc_steps .eq. 0) then
                 cheby_calc_steps = 1
 
