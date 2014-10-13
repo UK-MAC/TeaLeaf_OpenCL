@@ -92,6 +92,7 @@ SUBROUTINE tea_leaf()
 
   INTEGER :: cg_calc_steps
   REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
+
   cg_time = 0.0_8
   ch_time = 0.0_8
   cg_calc_steps = 0
@@ -117,11 +118,13 @@ SUBROUTINE tea_leaf()
       IF(profiler_on) kernel_time=timer()
 
       if (use_fortran_kernels .or. use_c_kernels) then
+        ! Calculated in C++ code if OpenCL is being used
         rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2)
         ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2)
       endif
 
       IF(tl_use_cg .or. tl_use_chebyshev .or. tl_use_ppcg) then
+        ! All 3 of these solvers use the CG kernels
         IF(use_fortran_kernels) THEN
           CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
               chunks(c)%field%x_max,                       &
@@ -158,7 +161,7 @@ SUBROUTINE tea_leaf()
               rx, ry, rro, coefficient)
         ENDIF
 
-        ! need to update p at this stage
+        ! need to update p when using CG due to matrix/vector multiplication
         fields=0
         fields(FIELD_U) = 1
         fields(FIELD_P) = 1
@@ -208,7 +211,6 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array7,                 &
               coefficient)
         ENDIF
-
       ENDIF
 
       fields=0
@@ -302,10 +304,10 @@ SUBROUTINE tea_leaf()
                         rx, ry, cheby_calc_steps)
                   ENDIF
 
-                  ! after estimated number of iterations has passed, calc resid
+                  ! after estimated number of iterations has passed, calc resid.
                   ! Leaving 10 iterations between each global reduction won't affect
                   ! total time spent much if at all (number of steps spent in
-                  ! chebyshev is typically O(300+)) but will greatyl reduce global
+                  ! chebyshev is typically O(300+)) but will greatly reduce global
                   ! synchronisations needed
                   if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
                     IF(use_fortran_kernels) THEN
@@ -320,9 +322,6 @@ SUBROUTINE tea_leaf()
                     ENDIF
 
                     call clover_allsum(error)
-                  else
-                    ! dummy to make it go smaller every time but not reach tolerance
-                    error = 1.0_8/(cheby_calc_steps)
                   endif
               endif
           else if (tl_use_ppcg) then
@@ -704,13 +703,14 @@ subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
 
   call clover_allsum(error)
 
-  ! FIXME not giving correct estimate
   it_alpha = eps*bb/(4.0_8*error)
   gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
   est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
 
-  ! FIXME still not giving correct answer, but multiply by 2.5 does
-  ! an 'okay' job for now
+  ! This will never really give a super accurate answer due to the fact that the
+  ! eigenvalues will not be completely accurate - overestimating the estimated
+  ! iteration count is better than underestimating it because it reduces the
+  ! amount of global synchronisation needed, so multiply by 2.5
   est_itc = int(est_itc * 2.5)
 
   if (parallel%boss) then
