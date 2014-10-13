@@ -88,6 +88,6 @@ __kernel void tea_leaf_jacobi_solve
         error_local[lid] = fabs(u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)]);
     }
 
-    REDUCTION(error_local, error, MAX);
+    REDUCTION(error_local, error, SUM);
 }
 

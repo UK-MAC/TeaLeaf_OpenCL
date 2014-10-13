@@ -589,7 +589,7 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%work_array2)
           ENDIF
 
-          CALL clover_max(error)
+          CALL clover_allsum(error)
         ENDIF
 
         ! updates u and possibly p

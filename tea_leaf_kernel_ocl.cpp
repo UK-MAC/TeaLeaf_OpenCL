@@ -275,7 +275,7 @@ void CloverChunk::tea_leaf_kernel_jacobi
     //ENQUEUE(tea_leaf_jacobi_solve_device);
     ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
 
-    *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
+    *error = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
 /********************/
@@ -353,7 +353,7 @@ void CloverChunk::ppcg_init
 
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
 
-    *rro = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
+    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
 void CloverChunk::ppcg_init_sd

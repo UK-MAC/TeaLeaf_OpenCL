@@ -156,7 +156,7 @@ SUBROUTINE tea_leaf_kernel_solve(x_min,       &
     ENDDO
 !$OMP END DO
 
-!$OMP DO REDUCTION(MAX:error)
+!$OMP DO REDUCTION(+:error)
     DO k=y_min, y_max
       DO j=x_min, x_max
         u1(j,k) = (u0(j,k) + rx*(Kx(j+1,k  )*un(j+1,k  ) + Kx(j  ,k  )*un(j-1,k  )) &
@@ -165,7 +165,7 @@ SUBROUTINE tea_leaf_kernel_solve(x_min,       &
                                 + rx*(Kx(j,k)+Kx(j+1,k)) &
                                 + ry*(Ky(j,k)+Ky(j,k+1)))
 
-        error = MAX(error, ABS(u1(j,k)-un(j,k)))
+        error = error +  ABS(u1(j,k)-un(j,k))
       ENDDO
     ENDDO
 !$OMP END DO
