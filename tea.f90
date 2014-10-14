@@ -748,6 +748,8 @@ subroutine tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
 
   CALL update_halo(fields,1)
 
+  return
+  ! Only reduces run time by a fraction
   IF(use_fortran_kernels) THEN
     CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
         chunks(c)%field%x_max,                       &
