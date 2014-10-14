@@ -50,11 +50,15 @@ MODULE tea_leaf_module
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
 
-    subroutine tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, n_coefs, &
-        theta, n, rro)
-      integer :: n, n_coefs
-      real(kind=8) :: theta, rro
+    subroutine tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
+        theta, n_coefs)
+      integer :: n_coefs
+      real(kind=8) :: theta
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
+    end subroutine
+
+    subroutine tea_leaf_kernel_ppcg_init_p_ocl(rro)
+      real(kind=8) :: rro
     end subroutine
 
     subroutine tea_leaf_kernel_ppcg_init_sd_ocl()
@@ -97,7 +101,7 @@ SUBROUTINE tea_leaf()
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
   LOGICAL :: ch_switch_check
 
-  INTEGER :: cg_calc_steps, ppcg_cur_step
+  INTEGER :: cg_calc_steps
 
   REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
 
@@ -341,24 +345,42 @@ SUBROUTINE tea_leaf()
             if (cheby_calc_steps .eq. 0) then
               cheby_calc_steps = 1
 
+              IF(use_opencl_kernels) THEN
+                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
+                    theta, tl_ppcg_inner_steps)
+              ENDIF
+
               IF(use_fortran_kernels) THEN
-                CALL tea_leaf_kernel_ppcg_init(chunks(c)%field%x_min,&
+                CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                       &
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                 &
+                    chunks(c)%field%u,                           &
                     chunks(c)%field%u0,                 &
-                    chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
-                    chunks(c)%field%work_array8,                 &
-                    ch_alphas, ch_betas,                 &
-                    rx, ry, rro)
+                    rx, ry)
               ELSEIF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                    max_cheby_iters, theta, tl_ppcg_inner_steps, rro)
+                CALL tea_leaf_calc_residual_ocl()
               ENDIF
+
+              call tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
+                  rx, ry, tl_ppcg_inner_steps, c)
+
+              IF(use_fortran_kernels) THEN
+                call tea_leaf_kernel_ppcg_init_p(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array2,                 &
+                    rro)
+              ELSEIF(use_opencl_kernels) THEN
+                call tea_leaf_kernel_ppcg_init_p_ocl(rro)
+              ENDIF
+
+              CALL clover_allsum(rro)
             endif
 
             IF(use_fortran_kernels) THEN
@@ -396,46 +418,8 @@ SUBROUTINE tea_leaf()
 
             ! not using rrn, so don't do a clover_allsum
 
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%work_array8,                 &
-                  theta)
-            ELSEIF(use_opencl_kernels) THEN
-              CALL tea_leaf_kernel_ppcg_init_sd_ocl()
-            ENDIF
-
-            fields = 0
-            fields(FIELD_SD) = 1
-
-            ! inner steps
-            DO ppcg_cur_step=1,tl_ppcg_inner_steps
-              IF(use_fortran_kernels) THEN
-                call tea_leaf_kernel_ppcg_inner(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    ppcg_cur_step, &
-                    ch_alphas, ch_betas, &
-                    rx, ry, &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    chunks(c)%field%work_array8)
-              ELSEIF(use_opencl_kernels) THEN
-                CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
-              ENDIF
-
-              CALL update_halo(fields,1)
-            ENDDO
-
-            fields = 0
-            fields(FIELD_U) = 1
-            fields(FIELD_P) = 1
+            call tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
+                rx, ry, tl_ppcg_inner_steps, c)
 
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
@@ -712,6 +696,56 @@ SUBROUTINE tea_leaf()
   endif
 
 END SUBROUTINE tea_leaf
+
+subroutine tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
+    rx, ry, tl_ppcg_inner_steps, c)
+
+  INTEGER :: fields(NUM_FIELDS)
+  INTEGER :: c, tl_ppcg_inner_steps, ppcg_cur_step
+  REAL(KIND=8) :: rx, ry, theta
+  REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
+
+  IF(use_fortran_kernels) THEN
+    call tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&
+        chunks(c)%field%x_max,                       &
+        chunks(c)%field%y_min,                       &
+        chunks(c)%field%y_max,                       &
+        chunks(c)%field%work_array2,                 &
+        chunks(c)%field%work_array8,                 &
+        theta)
+  ELSEIF(use_opencl_kernels) THEN
+    CALL tea_leaf_kernel_ppcg_init_sd_ocl()
+  ENDIF
+
+  fields = 0
+  fields(FIELD_SD) = 1
+
+  ! inner steps
+  DO ppcg_cur_step=1,tl_ppcg_inner_steps
+    CALL update_halo(fields,1)
+
+    IF(use_fortran_kernels) THEN
+      call tea_leaf_kernel_ppcg_inner(chunks(c)%field%x_min,&
+          chunks(c)%field%x_max,                       &
+          chunks(c)%field%y_min,                       &
+          chunks(c)%field%y_max,                       &
+          ppcg_cur_step, &
+          ch_alphas, ch_betas, &
+          rx, ry, &
+          chunks(c)%field%u,                           &
+          chunks(c)%field%work_array2,                 &
+          chunks(c)%field%work_array6,                 &
+          chunks(c)%field%work_array7,                 &
+          chunks(c)%field%work_array8)
+    ELSEIF(use_opencl_kernels) THEN
+      CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
+    ENDIF
+  ENDDO
+
+  fields = 0
+  fields(FIELD_U) = 1
+  fields(FIELD_P) = 1
+end subroutine
 
 subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
     error, rx, ry, theta, cn, max_cheby_iters)
