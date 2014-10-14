@@ -339,26 +339,26 @@ SUBROUTINE tea_leaf()
               endif
           else if (tl_use_ppcg) then
             if (cheby_calc_steps .eq. 0) then
-                cheby_calc_steps = 1
+              cheby_calc_steps = 1
 
-                IF(use_fortran_kernels) THEN
-                    CALL tea_leaf_kernel_ppcg_init(chunks(c)%field%x_min,&
-                        chunks(c)%field%x_max,                       &
-                        chunks(c)%field%y_min,                       &
-                        chunks(c)%field%y_max,                       &
-                        chunks(c)%field%u,                 &
-                        chunks(c)%field%u0,                 &
-                        chunks(c)%field%work_array1,                 &
-                        chunks(c)%field%work_array2,                 &
-                        chunks(c)%field%work_array6,                 &
-                        chunks(c)%field%work_array7,                 &
-                        chunks(c)%field%work_array8,                 &
-                        ch_alphas, ch_betas,                 &
-                        rx, ry, rro)
-                ELSEIF(use_opencl_kernels) THEN
-                    call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                      max_cheby_iters, theta, tl_ppcg_inner_steps, rro)
-                ENDIF
+              IF(use_fortran_kernels) THEN
+                CALL tea_leaf_kernel_ppcg_init(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%u,                 &
+                    chunks(c)%field%u0,                 &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array2,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    chunks(c)%field%work_array8,                 &
+                    ch_alphas, ch_betas,                 &
+                    rx, ry, rro)
+              ELSEIF(use_opencl_kernels) THEN
+                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
+                    max_cheby_iters, theta, tl_ppcg_inner_steps, rro)
+              ENDIF
             endif
 
             IF(use_fortran_kernels) THEN

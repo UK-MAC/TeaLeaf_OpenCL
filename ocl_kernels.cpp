@@ -13,7 +13,7 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if(1)
+    if(0)
     {
         // use jacobi preconditioner when running CG solver
         options << "-DCG_DO_PRECONDITION ";
