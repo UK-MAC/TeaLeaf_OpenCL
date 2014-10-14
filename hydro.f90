@@ -35,6 +35,8 @@ SUBROUTINE hydro
 
   IMPLICIT NONE
 
+  include "visitfortransimV2interface.inc"
+
   INTEGER         :: loc(1)
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
   
@@ -43,7 +45,27 @@ SUBROUTINE hydro
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
 
+  integer visitstate, result, blocking
+      integer runflag, simcycle, err
+      real simtime
+      common /SIMSTATE/ runflag, simcycle, simtime
+  integer     xmax, ymax
+      common /SIMSIZE/ xmax, ymax
+
   timerstart = timer()
+
+  runflag = 1
+
+  xmax = chunks(1)%field%x_max
+  ymax = chunks(1)%field%y_max
+
+  err = visitsetupenv()
+  err = visitinitializesim("fsim4", 5, &
+      "Fortran prototype simulation connects to VisIt", 46, &
+      "/no/useful/path", 15,    &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN)
 
   DO
 
@@ -70,6 +92,33 @@ SUBROUTINE hydro
       ! copy tl0 to tl1
       CALL set_field()
       ENDIF
+
+        if(runflag.eq.1) then
+            blocking = 0
+        else
+            blocking = 1
+        endif
+        visitstate = visitdetectinput(blocking, -1)
+
+        if (visitstate.lt.0) then
+            exit
+        elseif (visitstate.eq.0) then
+            !call simulate_one_timestep()
+        elseif (visitstate.eq.1) then
+            runflag = 0
+            result = visitattemptconnection()
+            if (result.eq.1) then
+            write (6,*) 'VisIt connected!'
+            else
+            write (6,*) 'VisIt did not connect!'
+            endif
+        elseif (visitstate.eq.2) then
+            runflag = 0
+            if (visitprocessenginecommand().eq.0) then
+                result = visitdisconnect()
+                runflag = 1
+            endif
+        endif
         
       CALL tea_leaf()
     ENDIF
