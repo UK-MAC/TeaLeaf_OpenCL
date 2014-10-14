@@ -7,32 +7,6 @@ IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_kernel_ppcg_init(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                &
-                           u0,                &
-                           r,            &
-                           Kx,                &
-                           Ky,  &
-                           sd,  &
-                           rx, &
-                           ry)
-
-  IMPLICIT NONE
-
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0, r, sd, Kx, Ky
-
-  REAL(KIND=8) ::  rx, ry, theta
-
-  call tea_leaf_calc_residual(x_min, x_max, y_min, y_max, u, u0, r, Kx, Ky, rx, ry)
-
-  call tea_leaf_kernel_ppcg_init_sd(x_min, x_max, y_min, y_max, r, sd, theta)
-
-end subroutine
-
 SUBROUTINE tea_leaf_kernel_ppcg_init_p(x_min,             &
                            x_max,             &
                            y_min,             &

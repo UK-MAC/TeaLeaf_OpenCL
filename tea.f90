@@ -745,6 +745,23 @@ subroutine tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   fields = 0
   fields(FIELD_U) = 1
   fields(FIELD_P) = 1
+
+  CALL update_halo(fields,1)
+
+  IF(use_fortran_kernels) THEN
+    CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
+        chunks(c)%field%x_max,                       &
+        chunks(c)%field%y_min,                       &
+        chunks(c)%field%y_max,                       &
+        chunks(c)%field%u,                           &
+        chunks(c)%field%u0,                 &
+        chunks(c)%field%work_array2,                 &
+        chunks(c)%field%work_array6,                 &
+        chunks(c)%field%work_array7,                 &
+        rx, ry)
+  ELSEIF(use_opencl_kernels) THEN
+    CALL tea_leaf_calc_residual_ocl()
+  ENDIF
 end subroutine
 
 subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &

@@ -351,11 +351,6 @@ void CloverChunk::ppcg_init
 
     tea_leaf_ppcg_solve_calc_sd_device.setArg(2, ch_alphas_device);
     tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_betas_device);
-    return;
-
-    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
-
-    ppcg_init_sd();
 }
 
 void CloverChunk::ppcg_init_p
