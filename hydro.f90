@@ -62,13 +62,14 @@ SUBROUTINE hydro
   err = visitsetupenv()
   err = visitinitializesim("fsim4", 5, &
       "Fortran prototype simulation connects to VisIt", 46, &
-      "/no/useful/path", 15,    &
+      "/home/michael/TeaLeaf_OpenCL/log.txt", 36,    &
       VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
       VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
       VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN)
 
   DO
 
+call sleep(1)
     step_time = timer()
 
     step = step + 1

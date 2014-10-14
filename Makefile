@@ -249,6 +249,9 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 	-o tea_leaf
 	@echo $(MESSAGE)
 
+run: tea_leaf
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$$VISIT/lib ./tea_leaf
+
 include make.deps
 
 %.o: %.cpp Makefile make.deps

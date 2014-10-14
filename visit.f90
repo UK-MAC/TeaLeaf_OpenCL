@@ -230,8 +230,8 @@ END SUBROUTINE visit
               err = visitmdmeshsetmeshtype(m1, VISIT_MESHTYPE_RECTILINEAR)
               err = visitmdmeshsettopologicaldim(m1, 2)
               err = visitmdmeshsetspatialdim(m1, 2)
-              err = visitmdmeshsetxunits(m1, "cells", 2)
-              err = visitmdmeshsetyunits(m1, "cells", 2)
+              err = visitmdmeshsetxunits(m1, "cells", 5)
+              err = visitmdmeshsetyunits(m1, "cells", 5)
               err = visitmdmeshsetxlabel(m1, "Width", 5)
               err = visitmdmeshsetylabel(m1, "Height", 6)
               err = visitmdmeshsetcellorigin(m1, 1)
@@ -249,17 +249,27 @@ END SUBROUTINE visit
   integer     domain, lname, h, err, x, y
   integer     xmax, ymax
       common /SIMSIZE/ xmax, ymax
-  integer, dimension(xmax) :: xs, ys
+  real, dimension(xmax) :: x_cell_pos, y_cell_pos
   include "visitfortransimV2interface.inc" 
       h = VISIT_INVALID_HANDLE
-  xs = 1
-  ys = 1
+
+      ! size of each cell
+      do err=1,xmax
+        x_cell_pos(err) = err - 1
+      enddo
+      do err=1,ymax
+        y_cell_pos(err) = err - 1
+      enddo
+
+      write(*,*) x_cell_pos
+      write(*,*) y_cell_pos
+
       if(visitstrcmp(name, lname, "energy", 6).eq.0) then
           if(visitrectmeshalloc(h).eq.VISIT_OKAY) then
               err = visitvardataalloc(x)
               err = visitvardataalloc(y)
-              err = visitvardatasetf(x,VISIT_OWNER_SIM,1,xmax, xs)
-              err = visitvardatasetf(y,VISIT_OWNER_SIM,1,ymax, ys)
+              err = visitvardatasetf(x,VISIT_OWNER_SIM,1, 5, x_cell_pos)
+              err = visitvardatasetf(y,VISIT_OWNER_SIM,1, 5, y_cell_pos)
 
               err = visitrectmeshsetcoordsxy(h, x, y)
           endif
@@ -268,22 +278,18 @@ END SUBROUTINE visit
   end
 
   integer function visitgetvariable(domain, name, lname)
-  implicit none
-  character*8 name
-  integer     domain, lname
-  include "visitfortransimV2interface.inc"
-  visitgetvariable = VISIT_INVALID_HANDLE
-  end
-
-  integer function visitgetcurve(name, lname)
   use definitions_module
   implicit none
   character*8 name
-  integer     lname, h, nvals, err
+  integer     domain, lname, h, nvals, err
   integer     xmax, ymax
       common /SIMSIZE/ xmax, ymax
   include "visitfortransimV2interface.inc"
       h = VISIT_INVALID_HANDLE
+
+      write(*,*) xmax, ymax
+
+                write(*,*) chunks(1)%field%u(50, 50)
 
       if(visitstrcmp(name, lname, "energy", 6).eq.0) then
           if(visitvardataalloc(h).eq.VISIT_OKAY) then
@@ -293,7 +299,15 @@ END SUBROUTINE visit
           endif
       endif
 
-      visitgetcurve = h
+      visitgetvariable = h
+  end
+
+  integer function visitgetcurve(name, lname)
+  implicit none
+  character*8 name
+  integer     lname
+  include "visitfortransimV2interface.inc"
+  visitgetcurve = VISIT_INVALID_HANDLE
   end
 
   integer function visitgetdomainlist(name, lname)
