@@ -7,37 +7,6 @@ IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_kernel_ppcg_init_p(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           p,                &
-                           r,            &
-                           rro)
-
-  IMPLICIT NONE
-
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
-
-  INTEGER :: j,k
-  REAL(KIND=8) ::  rro
-
-  rro = 0.0_8
-
-!$OMP PARALLEL
-!$OMP DO reduction(+:rro)
-  DO k=y_min,y_max
-    DO j=x_min,x_max
-      p(j, k) = r(j, k)
-      rro = rro + r(j, k)*r(j, k)
-    ENDDO
-  ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-END SUBROUTINE
-
 SUBROUTINE tea_leaf_kernel_ppcg_init_sd(x_min,             &
                            x_max,             &
                            y_min,             &
@@ -112,6 +81,37 @@ SUBROUTINE tea_leaf_kernel_ppcg_inner(x_min,             &
 
 end SUBROUTINE
 
+SUBROUTINE tea_leaf_kernel_ppcg_init_p(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           p,                &
+                           r,            &
+                           rro)
+
+  IMPLICIT NONE
+
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r
+
+  INTEGER :: j,k
+  REAL(KIND=8) ::  rro
+
+  rro = 0.0_8
+
+!$OMP PARALLEL
+!$OMP DO reduction(+:rro)
+  DO k=y_min,y_max
+    DO j=x_min,x_max
+      p(j, k) = r(j, k)
+      rro = rro + p(j, k)*r(j, k)
+    ENDDO
+  ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+
+END SUBROUTINE
+
 ! TODO move into another file with fortran implementations of kernels
 SUBROUTINE tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
     theta, ppcg_inner_steps)
@@ -121,10 +121,6 @@ SUBROUTINE tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
   REAL(KIND=8) :: eigmin, eigmax
 
   REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
-
-  n=1
-  ch_alphas(n) = cur_alpha
-  ch_betas(n) = cur_beta
 
   ! TODO
   call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
