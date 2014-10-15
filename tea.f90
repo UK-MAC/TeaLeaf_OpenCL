@@ -175,7 +175,6 @@ SUBROUTINE tea_leaf()
 
         ! need to update p when using CG due to matrix/vector multiplication
         fields=0
-        fields(FIELD_U) = 1
         fields(FIELD_P) = 1
         CALL update_halo(fields,1)
 
@@ -262,6 +261,9 @@ SUBROUTINE tea_leaf()
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
                 max_iters, n-1, info)
+
+            eigmin = eigmin*0.95
+            eigmax = eigmax*1.05
 
             if (info .ne. 0) CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
 
@@ -379,6 +381,9 @@ SUBROUTINE tea_leaf()
               ELSEIF(use_opencl_kernels) THEN
                 call tea_leaf_kernel_ppcg_init_p_ocl(rro)
               ENDIF
+
+              ! update p
+              CALL update_halo(fields,1)
 
               CALL clover_allsum(rro)
             endif
@@ -743,25 +748,7 @@ subroutine tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   ENDDO
 
   fields = 0
-  fields(FIELD_U) = 1
   fields(FIELD_P) = 1
-
-  CALL update_halo(fields,1)
-
-  IF(use_fortran_kernels) THEN
-    CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-        chunks(c)%field%x_max,                       &
-        chunks(c)%field%y_min,                       &
-        chunks(c)%field%y_max,                       &
-        chunks(c)%field%u,                           &
-        chunks(c)%field%u0,                 &
-        chunks(c)%field%work_array2,                 &
-        chunks(c)%field%work_array6,                 &
-        chunks(c)%field%work_array7,                 &
-        rx, ry)
-  ELSEIF(use_opencl_kernels) THEN
-    CALL tea_leaf_calc_residual_ocl()
-  ENDIF
 end subroutine
 
 subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
