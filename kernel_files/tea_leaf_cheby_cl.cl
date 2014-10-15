@@ -24,7 +24,7 @@ __kernel void tea_leaf_cheby_solve_init_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#if defined(CG_DO_PRECONDITION)
+#if defined(USE_PRECONDITIONER)
         p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
 #else
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
@@ -72,7 +72,7 @@ __kernel void tea_leaf_cheby_solve_calc_p
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
         p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
-#if defined(CG_DO_PRECONDITION)
+#if defined(USE_PRECONDITIONER)
                             + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 #else
                             + beta[step]*r[THARR2D(0, 0, 0)];

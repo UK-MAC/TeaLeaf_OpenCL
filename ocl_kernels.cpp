@@ -13,11 +13,10 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if(0)
-    {
-        // use jacobi preconditioner when running CG solver
-        options << "-DCG_DO_PRECONDITION ";
-    }
+#if defined(USE_PRECONDITIONER)
+    // use jacobi preconditioner when running CG solver
+    options << "-DUSE_PRECONDITIONER ";
+#endif
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -828,7 +827,8 @@ void CloverChunk::initArgs
         else if (tea_solver == TEA_ENUM_PPCG)
         {
             tea_leaf_ppcg_solve_init_sd_device.setArg(0, work_array_2);
-            tea_leaf_ppcg_solve_init_sd_device.setArg(1, work_array_8);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(1, work_array_4);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(2, work_array_8);
 
             tea_leaf_ppcg_solve_update_r_device.setArg(0, u);
             tea_leaf_ppcg_solve_update_r_device.setArg(1, work_array_2);
@@ -837,11 +837,13 @@ void CloverChunk::initArgs
             tea_leaf_ppcg_solve_update_r_device.setArg(4, work_array_8);
 
             tea_leaf_ppcg_solve_calc_sd_device.setArg(0, work_array_2);
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, work_array_8);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, work_array_4);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(2, work_array_8);
 
             tea_leaf_ppcg_solve_init_p_device.setArg(0, work_array_1);
             tea_leaf_ppcg_solve_init_p_device.setArg(1, work_array_2);
-            tea_leaf_ppcg_solve_init_p_device.setArg(2, reduce_buf_1);
+            tea_leaf_ppcg_solve_init_p_device.setArg(2, work_array_4);
+            tea_leaf_ppcg_solve_init_p_device.setArg(3, reduce_buf_1);
         }
     }
     else

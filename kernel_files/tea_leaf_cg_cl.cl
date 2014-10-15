@@ -85,7 +85,7 @@ __kernel void tea_leaf_cg_init_others
 
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#if defined(CG_DO_PRECONDITION)
+#if defined(USE_PRECONDITIONER)
         Mi[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
@@ -160,7 +160,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
-#if defined(CG_DO_PRECONDITION)
+#if defined(USE_PRECONDITIONER)
         z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
 #else
@@ -186,7 +186,7 @@ __kernel void tea_leaf_cg_solve_calc_p
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-#if defined(CG_DO_PRECONDITION)
+#if defined(USE_PRECONDITIONER)
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
 #else
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];

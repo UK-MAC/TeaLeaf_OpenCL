@@ -63,10 +63,10 @@ ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
 
-OMP_INTEL     = -openmp
+OMP_INTEL     = -openmp -fpp
 OMP_SUN       = -xopenmp=parallel -vpara
-OMP_GNU       = -fopenmp
-OMP_CRAY      =
+OMP_GNU       = -fopenmp -cpp
+OMP_CRAY      = -e Z
 OMP_PGI       = -mp=nonuma
 OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
@@ -125,6 +125,17 @@ CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D MPI_
 
 VPATH+=kernel_files
 
+FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
+CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
+MPI_COMPILER=mpif90
+C_MPI_COMPILER=mpicc
+CXX_MPI_COMPILER=mpiCC
+
+ifdef PRECONDITION
+FLAGS+=-D USE_PRECONDITIONER
+CFLAGS+=-D USE_PRECONDITIONER
+endif
+
 ifdef PHI_SOURCE_PROFILING
 CXXFLAGS+=-D _PWD_="\"$(shell pwd)/\"" -D PHI_SOURCE_PROFILING
 endif
@@ -132,12 +143,6 @@ endif
 ifdef VERBOSE
 CXXFLAGS+=-D OCL_VERBOSE
 endif
-
-FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
-CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
-MPI_COMPILER=mpif90
-C_MPI_COMPILER=mpicc
-CXX_MPI_COMPILER=mpiCC
 
 CXXFLAGS+=$(CFLAGS)
 
