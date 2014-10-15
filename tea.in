@@ -19,7 +19,7 @@
   end_time=15.0
   end_step=50
 
-  !use_opencl_kernels
+  use_opencl_kernels
   opencl_vendor=nvidia
   opencl_type=gpu
 
