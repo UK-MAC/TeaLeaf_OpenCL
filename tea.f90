@@ -251,6 +251,10 @@ SUBROUTINE tea_leaf()
         ENDIF
 
         IF ((tl_use_chebyshev .or. tl_use_ppcg) .and. ch_switch_check) then
+          ! don't need to update p any more
+          fields = 0
+          fields(FIELD_u) = 0
+
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
