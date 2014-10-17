@@ -150,10 +150,6 @@ private:
     cl::Buffer right_buffer;
     cl::Buffer bottom_buffer;
     cl::Buffer top_buffer;
-    std::vector<cl::Buffer> left_subbuffers[2];
-    std::vector<cl::Buffer> right_subbuffers[2];
-    std::vector<cl::Buffer> bottom_subbuffers[2];
-    std::vector<cl::Buffer> top_subbuffers[2];
 
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
@@ -470,12 +466,6 @@ public:
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
-
-    void packRect
-    (double* host_buffer,
-     int x_inc, int y_inc,
-     int edge, int dest,
-     int which_field, int depth);
 };
 
 extern CloverChunk chunk;
@@ -489,7 +479,5 @@ public:
     ~KernelCompileError() throw(){}
     const char* what() const throw() {return this->_err.c_str();}
 };
-
-extern "C" void tqli_(double *d, double *e, int *np, double **z, int* info);
 
 #endif
