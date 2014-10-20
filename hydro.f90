@@ -20,6 +20,71 @@
 !>  @details Controls the top level cycle, invoking all the drivers and checks
 !>  for outputs and completion.
 
+subroutine outer
+    use clover_module
+
+    implicit none
+
+  include "visitfortransimV2interface.inc"
+
+  integer visitstate, result, blocking
+      integer runflag, simcycle, err
+      real simtime
+      common /SIMSTATE/ runflag, simcycle, simtime
+  integer     xmax, ymax
+      common /SIMSIZE/ xmax, ymax
+
+  xmax = chunks(1)%field%x_max + 4
+  ymax = chunks(1)%field%y_max + 4
+
+  err = visitsetupenv()
+  err = visitinitializesim("fsim4", 5, &
+      "Fortran prototype simulation connects to VisIt", 46, &
+      "/home/michael/TeaLeaf_OpenCL/log.txt", 36,    &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
+      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN)
+
+  runflag = 0
+  simcycle = 0
+
+    do
+        simcycle = simcycle + 1
+        if(runflag.eq.1) then
+            blocking = 0
+        else
+            blocking = 1
+        endif
+        visitstate = visitdetectinput(blocking, -1)
+
+        if (visitstate.lt.0) then
+            exit
+        elseif (visitstate.eq.0) then
+            call hydro
+
+        if (mod(simcycle, 5) .eq. 0) then
+          err = visittimestepchanged()
+          err = visitupdateplots()
+        endif
+
+        elseif (visitstate.eq.1) then
+            runflag = 0
+            result = visitattemptconnection()
+            if (result.eq.1) then
+            write (6,*) 'VisIt connected!'
+            else
+            write (6,*) 'VisIt did not connect!'
+            endif
+        elseif (visitstate.eq.2) then
+            runflag = 0
+            if (visitprocessenginecommand().eq.0) then
+                result = visitdisconnect()
+                runflag = 1
+            endif
+        endif
+    enddo
+end subroutine
+
 SUBROUTINE hydro
 
   USE clover_module
@@ -35,8 +100,6 @@ SUBROUTINE hydro
 
   IMPLICIT NONE
 
-  include "visitfortransimV2interface.inc"
-
   INTEGER         :: loc(1)
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
   
@@ -45,31 +108,10 @@ SUBROUTINE hydro
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
 
-  integer visitstate, result, blocking
-      integer runflag, simcycle, err
-      real simtime
-      common /SIMSTATE/ runflag, simcycle, simtime
-  integer     xmax, ymax
-      common /SIMSIZE/ xmax, ymax
-
   timerstart = timer()
-
-  runflag = 1
-
-  xmax = chunks(1)%field%x_max
-  ymax = chunks(1)%field%y_max
-
-  err = visitsetupenv()
-  err = visitinitializesim("fsim4", 5, &
-      "Fortran prototype simulation connects to VisIt", 46, &
-      "/home/michael/TeaLeaf_OpenCL/log.txt", 36,    &
-      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
-      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN,  &
-      VISIT_F77NULLSTRING, VISIT_F77NULLSTRINGLEN)
 
   DO
 
-call sleep(1)
     step_time = timer()
 
     step = step + 1
@@ -94,34 +136,7 @@ call sleep(1)
       CALL set_field()
       ENDIF
 
-        if(runflag.eq.1) then
-            blocking = 0
-        else
-            blocking = 1
-        endif
-        visitstate = visitdetectinput(blocking, -1)
-
-        if (visitstate.lt.0) then
-            exit
-        elseif (visitstate.eq.0) then
-            !call simulate_one_timestep()
-        elseif (visitstate.eq.1) then
-            runflag = 0
-            result = visitattemptconnection()
-            if (result.eq.1) then
-            write (6,*) 'VisIt connected!'
-            else
-            write (6,*) 'VisIt did not connect!'
-            endif
-        elseif (visitstate.eq.2) then
-            runflag = 0
-            if (visitprocessenginecommand().eq.0) then
-                result = visitdisconnect()
-                runflag = 1
-            endif
-        endif
-        
-      CALL tea_leaf()
+        CALL tea_leaf()
     ENDIF
     
     CALL reset_field()
@@ -251,6 +266,8 @@ call sleep(1)
       WRITE(g_out,*)"Step time per cell    ",step_grind
 
      END IF
+
+     exit
 
   END DO
 

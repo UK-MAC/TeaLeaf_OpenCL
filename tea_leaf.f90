@@ -67,7 +67,7 @@ PROGRAM tea_leaf
 
   CALL initialise
 
-  CALL hydro
+  CALL outer
   
   ! Deallocate everything
   

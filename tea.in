@@ -1,12 +1,12 @@
 *tea
-  state 1 density=100.0 energy=0.0001
+  state 1 density=1.0 energy=0.0001
   state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0
   state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0
   state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0
   state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0
 
-  x_cells=20
-  y_cells=20
+  x_cells=300
+  y_cells=300
 
   xmin=0.0
   ymin=0.0
@@ -16,8 +16,8 @@
   initial_timestep=0.004
   timestep_rise=1.5
   max_timestep=0.04
-  end_time=50.0
-  end_step=5000
+  end_time=5000.0
+  end_step=500000
 
   !use_opencl_kernels
   opencl_vendor=nvidia
@@ -39,8 +39,8 @@
   tl_ch_cg_presteps=35
   tl_ch_cg_epslim=0.00001
 
-  hydro_off
-  tea_leaf_on
+  hydro_on
+  tea_leaf_off
 
   !profiler_on
   !profile_solver

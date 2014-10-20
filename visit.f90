@@ -177,9 +177,21 @@ SUBROUTINE visit
 END SUBROUTINE visit
 
   subroutine visitcommandcallback (cmd, lcmd, args, largs)
+  use tea_leaf_module
   implicit none
+include "visitfortransimV2interface.inc"
   character*8 cmd, args
   integer     lcmd, largs
+      integer runflag, simcycle
+      real simtime
+      common /SIMSTATE/ runflag, simcycle, simtime
+      if(visitstrcmp(cmd, lcmd, "halt", 4).eq.0) then
+          runflag = 0
+      elseif(visitstrcmp(cmd, lcmd, "step", 4).eq.0) then
+          CALL hydro
+      elseif(visitstrcmp(cmd, lcmd, "run", 3).eq.0) then
+          runflag = 1
+      endif
   end
 
   integer function visitbroadcastintfunction(value, sender)
@@ -211,7 +223,7 @@ END SUBROUTINE visit
   integer function visitgetmetadata()
   implicit none
   include "visitfortransimV2interface.inc"
-      integer runflag, simcycle, m1
+      integer runflag, simcycle, m1, vmd, cmd
       real simtime
       common /SIMSTATE/ runflag, simcycle, simtime
 
@@ -239,37 +251,69 @@ END SUBROUTINE visit
 
               err = visitmdsimaddmesh(md, m1)
           endif
+
+          if(visitmdvaralloc(vmd).eq.VISIT_OKAY) then
+              err = visitmdvarsetname(vmd, "zonal", 5)
+              err = visitmdvarsetmeshname(vmd, "energy", 6)
+              err = visitmdvarsetcentering(vmd, VISIT_VARCENTERING_ZONE)
+              err = visitmdvarsettype(vmd, VISIT_VARTYPE_SCALAR)
+              err = visitmdsimaddvariable(md, vmd)
+          endif
+
+          err = visitmdcmdalloc(cmd)
+          if(err.eq.VISIT_OKAY) then
+              err = visitmdcmdsetname(cmd, "halt", 4)
+              err = visitmdsimaddgenericcommand(md, cmd)
+          endif
+          err = visitmdcmdalloc(cmd)
+          if(err.eq.VISIT_OKAY) then
+              err = visitmdcmdsetname(cmd, "step", 4)
+              err = visitmdsimaddgenericcommand(md, cmd)
+          endif
+          err = visitmdcmdalloc(cmd)
+          if(err.eq.VISIT_OKAY) then
+              err = visitmdcmdsetname(cmd, "run", 3)
+              err = visitmdsimaddgenericcommand(md, cmd)
+          endif
       endif
       visitgetmetadata = md
   end
 
+  module pos
+  implicit none
+  real, allocatable, dimension(:) :: x_cell_pos
+  real, allocatable, dimension(:) :: y_cell_pos
+  end module pos
+
   integer function visitgetmesh(domain, name, lname)
+  use pos
   implicit none
   character*8 name
   integer     domain, lname, h, err, x, y
   integer     xmax, ymax
       common /SIMSIZE/ xmax, ymax
-  real, dimension(xmax) :: x_cell_pos, y_cell_pos
   include "visitfortransimV2interface.inc" 
       h = VISIT_INVALID_HANDLE
 
+      if (allocated(x_cell_pos) .eqv. .false.) then
+        allocate(x_cell_pos(xmax+1))
+        allocate(y_cell_pos(xmax+1))
+      endif
+
       ! size of each cell
-      do err=1,xmax
+      do err=1,xmax+1
         x_cell_pos(err) = err - 1
       enddo
-      do err=1,ymax
+      do err=1,ymax+1
         y_cell_pos(err) = err - 1
       enddo
-
-      write(*,*) x_cell_pos
-      write(*,*) y_cell_pos
 
       if(visitstrcmp(name, lname, "energy", 6).eq.0) then
           if(visitrectmeshalloc(h).eq.VISIT_OKAY) then
               err = visitvardataalloc(x)
               err = visitvardataalloc(y)
-              err = visitvardatasetf(x,VISIT_OWNER_SIM,1, 5, x_cell_pos)
-              err = visitvardatasetf(y,VISIT_OWNER_SIM,1, 5, y_cell_pos)
+              err = visitvardatasetf(x,VISIT_OWNER_SIM,1, size(x_cell_pos), x_cell_pos)
+              err = visitvardatasetf(y,VISIT_OWNER_SIM,1, size(y_cell_pos), y_cell_pos)
 
               err = visitrectmeshsetcoordsxy(h, x, y)
           endif
@@ -278,7 +322,8 @@ END SUBROUTINE visit
   end
 
   integer function visitgetvariable(domain, name, lname)
-  use definitions_module
+  use clover_module
+  use tea_leaf_module
   implicit none
   character*8 name
   integer     domain, lname, h, nvals, err
@@ -286,16 +331,17 @@ END SUBROUTINE visit
       common /SIMSIZE/ xmax, ymax
   include "visitfortransimV2interface.inc"
       h = VISIT_INVALID_HANDLE
+      nvals = (xmax) * (ymax)
+!$OMP PARALLEL DO
+        do err=1,size(chunks(1)%field%u2)
+        chunks(1)%field%u2 = chunks(1)%field%energy1
+        enddo
+!$OMP END PARALLEL DO
 
-      write(*,*) xmax, ymax
-
-                write(*,*) chunks(1)%field%u(50, 50)
-
-      if(visitstrcmp(name, lname, "energy", 6).eq.0) then
+      if(visitstrcmp(name, lname, "zonal", 5).eq.0) then
           if(visitvardataalloc(h).eq.VISIT_OKAY) then
-              nvals = (xmax-1) * (ymax-1)
               err = visitvardatasetf(h, VISIT_OWNER_SIM,1,nvals, &
-                chunks(1)%field%u)
+                chunks(1)%field%u2)
           endif
       endif
 
