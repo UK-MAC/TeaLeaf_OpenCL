@@ -238,7 +238,7 @@ include "visitfortransimV2interface.inc"
           endif
 
           if(visitmdmeshalloc(m1).eq.VISIT_OKAY) then
-              err = visitmdmeshsetname(m1, "energy", 6)
+              err = visitmdmeshsetname(m1, "meshlines", 9)
               err = visitmdmeshsetmeshtype(m1, VISIT_MESHTYPE_RECTILINEAR)
               err = visitmdmeshsettopologicaldim(m1, 2)
               err = visitmdmeshsetspatialdim(m1, 2)
@@ -253,8 +253,8 @@ include "visitfortransimV2interface.inc"
           endif
 
           if(visitmdvaralloc(vmd).eq.VISIT_OKAY) then
-              err = visitmdvarsetname(vmd, "zonal", 5)
-              err = visitmdvarsetmeshname(vmd, "energy", 6)
+              err = visitmdvarsetname(vmd, "energy", 6)
+              err = visitmdvarsetmeshname(vmd, "meshlines", 9)
               err = visitmdvarsetcentering(vmd, VISIT_VARCENTERING_ZONE)
               err = visitmdvarsettype(vmd, VISIT_VARTYPE_SCALAR)
               err = visitmdsimaddvariable(md, vmd)
@@ -308,7 +308,7 @@ include "visitfortransimV2interface.inc"
         y_cell_pos(err) = err - 1
       enddo
 
-      if(visitstrcmp(name, lname, "energy", 6).eq.0) then
+      if(visitstrcmp(name, lname, "meshlines", 9).eq.0) then
           if(visitrectmeshalloc(h).eq.VISIT_OKAY) then
               err = visitvardataalloc(x)
               err = visitvardataalloc(y)
@@ -332,13 +332,15 @@ include "visitfortransimV2interface.inc"
   include "visitfortransimV2interface.inc"
       h = VISIT_INVALID_HANDLE
       nvals = (xmax) * (ymax)
+
+      if(visitstrcmp(name, lname, "energy", 6).eq.0) then
+
 !$OMP PARALLEL DO
         do err=1,size(chunks(1)%field%u2)
-        chunks(1)%field%u2 = chunks(1)%field%energy1
+            chunks(1)%field%u2 = chunks(1)%field%energy1
         enddo
 !$OMP END PARALLEL DO
 
-      if(visitstrcmp(name, lname, "zonal", 5).eq.0) then
           if(visitvardataalloc(h).eq.VISIT_OKAY) then
               err = visitvardatasetf(h, VISIT_OWNER_SIM,1,nvals, &
                 chunks(1)%field%u2)
