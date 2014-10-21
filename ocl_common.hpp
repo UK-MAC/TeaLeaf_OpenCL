@@ -405,6 +405,8 @@ public:
 
     void viscosity_kernel();
 
+    void dumpenergy(double*);
+
     // Tea leaf
     void tea_leaf_init_jacobi(int, double, double*, double*);
     void tea_leaf_kernel_jacobi(double, double, double*);

@@ -48,6 +48,8 @@ subroutine outer
   runflag = 0
   simcycle = 0
 
+  write(*,*) "READY TO GO"
+
     do
         simcycle = simcycle + 1
         if(runflag.eq.1) then
@@ -62,7 +64,7 @@ subroutine outer
         elseif (visitstate.eq.0) then
             call hydro
 
-        if (mod(simcycle, 5) .eq. 0) then
+        if (mod(simcycle, 10) .eq. 0) then
           err = visittimestepchanged()
           err = visitupdateplots()
         endif

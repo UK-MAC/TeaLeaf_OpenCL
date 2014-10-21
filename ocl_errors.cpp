@@ -223,15 +223,28 @@ CloverChunk::~CloverChunk
     }
 }
 
-std::vector<double> CloverChunk::dumpArray
-(const std::string& arr_name, int x_extra, int y_extra)
-{
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
         ( ((x_max) + 4 + x_extra)       \
         * ((y_max) + 4 + y_extra)       \
         * sizeof(double) )
 
+extern "C" void dump_array_ocl_
+(double * storage)
+{
+    chunk.dumpenergy(storage);
+}
+
+void CloverChunk::dumpenergy
+(double * storage)
+{
+    std::vector<double> array = chunk.dumpArray("energy1", 0, 0);
+    memcpy(storage, &array.front(), BUFSZ2D(0, 0));
+}
+
+std::vector<double> CloverChunk::dumpArray
+(const std::string& arr_name, int x_extra, int y_extra)
+{
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));
 
     queue.finish();

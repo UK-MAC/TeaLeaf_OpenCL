@@ -326,7 +326,7 @@ include "visitfortransimV2interface.inc"
   use tea_leaf_module
   implicit none
   character*8 name
-  integer     domain, lname, h, nvals, err
+  integer     domain, lname, h, nvals, err,j,k
   integer     xmax, ymax
       common /SIMSIZE/ xmax, ymax
   include "visitfortransimV2interface.inc"
@@ -335,10 +335,16 @@ include "visitfortransimV2interface.inc"
 
       if(visitstrcmp(name, lname, "energy", 6).eq.0) then
 
+if (use_opencl_kernels) then
+    call dump_array_ocl(chunks(1)%field%energy1)
+endif
+
 !$OMP PARALLEL DO
-        do err=1,size(chunks(1)%field%u2)
-            chunks(1)%field%u2 = chunks(1)%field%energy1
-        enddo
+          DO k=-1,ymax-2
+            DO j=-1,xmax-2
+                chunks(1)%field%u2(j, k) = chunks(1)%field%energy1(j, k)
+            ENDDO
+          ENDDO
 !$OMP END PARALLEL DO
 
           if(visitvardataalloc(h).eq.VISIT_OKAY) then

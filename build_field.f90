@@ -56,8 +56,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%energy0   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%energy1   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%pressure  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%viscosity (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
@@ -86,8 +84,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    ALLOCATE(chunks(chunk)%field%u0        (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%u         (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%u2         (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
 
    ALLOCATE(chunks(chunk)%field%work_array1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
@@ -137,7 +133,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%density0=0.0
    chunks(chunk)%field%density1=0.0
    chunks(chunk)%field%energy0=0.0
-   chunks(chunk)%field%energy1=0.0
    chunks(chunk)%field%pressure=0.0
    chunks(chunk)%field%viscosity=0.0
    chunks(chunk)%field%soundspeed=0.0
@@ -168,5 +163,10 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
 !$OMP END PARALLEL
 
   ENDIF
+
+   ALLOCATE(chunks(chunk)%field%u2         (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   ALLOCATE(chunks(chunk)%field%energy1   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
   
 END SUBROUTINE build_field
