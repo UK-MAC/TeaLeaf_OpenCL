@@ -13,10 +13,11 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-#if defined(USE_PRECONDITIONER)
-    // use jacobi preconditioner when running CG solver
-    options << "-DUSE_PRECONDITIONER ";
-#endif
+    if (preconditioner_on)
+    {
+        // use jacobi preconditioner when running CG solver
+        options << "-DUSE_PRECONDITIONER ";
+    }
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -47,50 +48,19 @@ void CloverChunk::initProgram
     fprintf(stdout, "Compiling kernels (may take some time)...");
     fflush(stdout);
 
-    compileKernel(options_str, "./kernel_files/ideal_gas_cl.cl", "ideal_gas", ideal_gas_device);
-    compileKernel(options_str, "./kernel_files/accelerate_cl.cl", "accelerate", accelerate_device);
-    compileKernel(options_str, "./kernel_files/flux_calc_cl.cl", "flux_calc_x", flux_calc_x_device);
-    compileKernel(options_str, "./kernel_files/flux_calc_cl.cl", "flux_calc_y", flux_calc_y_device);
-    compileKernel(options_str, "./kernel_files/viscosity_cl.cl", "viscosity", viscosity_device);
-    compileKernel(options_str, "./kernel_files/revert_cl.cl", "revert", revert_device);
-
     compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device);
     compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device);
     compileKernel(options_str, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device);
     compileKernel(options_str, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device);
 
-    compileKernel(options_str, "./kernel_files/reset_field_cl.cl", "reset_field", reset_field_device);
     compileKernel(options_str, "./kernel_files/set_field_cl.cl", "set_field", set_field_device);
 
-    compileKernel(options_str, "./kernel_files/PdV_cl.cl", "PdV_predict", PdV_predict_device);
-    compileKernel(options_str, "./kernel_files/PdV_cl.cl", "PdV_not_predict", PdV_not_predict_device);
-
     compileKernel(options_str, "./kernel_files/field_summary_cl.cl", "field_summary", field_summary_device);
-    compileKernel(options_str, "./kernel_files/calc_dt_cl.cl", "calc_dt", calc_dt_device);
 
     compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device);
     compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_bottom", update_halo_bottom_device);
     compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_left", update_halo_left_device);
     compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_right", update_halo_right_device);
-
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_vol", advec_mom_vol_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_flux_post_x_1", advec_mom_node_flux_post_x_1_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_flux_post_x_2", advec_mom_node_flux_post_x_2_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_pre_x", advec_mom_node_pre_x_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_flux_x", advec_mom_flux_x_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_xvel", advec_mom_xvel_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_flux_post_y_1", advec_mom_node_flux_post_y_1_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_flux_post_y_2", advec_mom_node_flux_post_y_2_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_node_pre_y", advec_mom_node_pre_y_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_flux_y", advec_mom_flux_y_device);
-    compileKernel(options_str, "./kernel_files/advec_mom_cl.cl", "advec_mom_yvel", advec_mom_yvel_device);
-
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_pre_vol_x", advec_cell_pre_vol_x_device);
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_ener_flux_x", advec_cell_ener_flux_x_device);
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_x", advec_cell_x_device);
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_pre_vol_y", advec_cell_pre_vol_y_device);
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_ener_flux_y", advec_cell_ener_flux_y_device);
-    compileKernel(options_str, "./kernel_files/advec_cell_cl.cl", "advec_cell_y", advec_cell_y_device);
 
     compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "pack_left_buffer", pack_left_buffer_device);
     compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "unpack_left_buffer", unpack_left_buffer_device);
@@ -385,41 +355,8 @@ void CloverChunk::initSizes
         launch_specs[#knl"_device"] = cur_specs;                                \
     }
 
-    FIND_PADDING_SIZE(ideal_gas, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(accelerate, 0, 1, 0, 1);
-    FIND_PADDING_SIZE(flux_calc_x, 0, 0, 0, 1);
-    FIND_PADDING_SIZE(flux_calc_y, 0, 1, 0, 0);
-    FIND_PADDING_SIZE(viscosity, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(revert, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(reset_field, 0, 1, 0, 1);
     FIND_PADDING_SIZE(set_field, 0, 1, 0, 1);
     FIND_PADDING_SIZE(field_summary, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(calc_dt, 0, 0, 0, 0);
-
-    FIND_PADDING_SIZE(advec_mom_vol, -2, 2, -2, 2);
-
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_1, 0, 1, -2, 2);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_x_2, 0, 1, -1, 2);
-    FIND_PADDING_SIZE(advec_mom_node_pre_x, 0, 1, -1, 2);
-    FIND_PADDING_SIZE(advec_mom_flux_x, 0, 1, -1, 1);
-    FIND_PADDING_SIZE(advec_mom_xvel, 0, 1, 0, 1);
-
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_1, -2, 2, 0, 1);
-    FIND_PADDING_SIZE(advec_mom_node_flux_post_y_2, -1, 2, 0, 1);
-    FIND_PADDING_SIZE(advec_mom_node_pre_y, -1, 2, 0, 1);
-    FIND_PADDING_SIZE(advec_mom_flux_y, -1, 1, 0, 1);
-    FIND_PADDING_SIZE(advec_mom_yvel, 0, 1, 0, 1);
-
-    FIND_PADDING_SIZE(advec_cell_pre_vol_x, -2, 2, -2, 2);
-    FIND_PADDING_SIZE(advec_cell_ener_flux_x, 0, 0, 0, 2);
-    FIND_PADDING_SIZE(advec_cell_x, 0, 0, 0, 0);
-
-    FIND_PADDING_SIZE(advec_cell_pre_vol_y, -2, 2, -2, 2);
-    FIND_PADDING_SIZE(advec_cell_ener_flux_y, 0, 2, 0, 0);
-    FIND_PADDING_SIZE(advec_cell_y, 0, 0, 0, 0);
-
-    FIND_PADDING_SIZE(PdV_predict, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(PdV_not_predict, 0, 0, 0, 0);
 
     FIND_PADDING_SIZE(initialise_chunk_first, 0, 3, 0, 3);
     FIND_PADDING_SIZE(initialise_chunk_second, -2, 2, -2, 2);
@@ -479,48 +416,6 @@ void CloverChunk::initArgs
                 e.what(), e.err()); \
         }
 
-    // ideal_gas
-    ideal_gas_device.setArg(2, pressure);
-    ideal_gas_device.setArg(3, soundspeed);
-
-    // accelerate
-    accelerate_device.setArg(1, xarea);
-    accelerate_device.setArg(2, yarea);
-    accelerate_device.setArg(3, volume);
-    accelerate_device.setArg(4, density0);
-    accelerate_device.setArg(5, pressure);
-    accelerate_device.setArg(6, viscosity);
-    accelerate_device.setArg(7, xvel0);
-    accelerate_device.setArg(8, yvel0);
-    accelerate_device.setArg(9, xvel1);
-    accelerate_device.setArg(10, yvel1);
-
-    // flux calc
-    flux_calc_x_device.setArg(1, xarea);
-    flux_calc_x_device.setArg(2, xvel0);
-    flux_calc_x_device.setArg(3, xvel1);
-    flux_calc_x_device.setArg(4, vol_flux_x);
-
-    flux_calc_y_device.setArg(1, yarea);
-    flux_calc_y_device.setArg(2, yvel0);
-    flux_calc_y_device.setArg(3, yvel1);
-    flux_calc_y_device.setArg(4, vol_flux_y);
-
-    // viscosity
-    viscosity_device.setArg(0, celldx);
-    viscosity_device.setArg(1, celldy);
-    viscosity_device.setArg(2, density0);
-    viscosity_device.setArg(3, pressure);
-    viscosity_device.setArg(4, viscosity);
-    viscosity_device.setArg(5, xvel0);
-    viscosity_device.setArg(6, yvel0);
-
-    // revert
-    revert_device.setArg(0, density0);
-    revert_device.setArg(1, density1);
-    revert_device.setArg(2, energy0);
-    revert_device.setArg(3, energy1);
-
     // initialise chunk
     initialise_chunk_first_device.setArg(4, vertexx);
     initialise_chunk_first_device.setArg(5, vertexdx);
@@ -539,127 +434,12 @@ void CloverChunk::initArgs
     initialise_chunk_second_device.setArg(13, xarea);
     initialise_chunk_second_device.setArg(14, yarea);
 
-    // advec_mom
-    /*
-    post_vol = work array 1
-    node_flux = work array 2 _AND_ pre_vol = work array 2
-    node_mass_post = work array 3
-    node_mass_pre = work array 4
-    mom_flux = work array 5
-    */
-    advec_mom_vol_device.setArg(1, work_array_1);
-    advec_mom_vol_device.setArg(2, work_array_2);
-    advec_mom_vol_device.setArg(3, volume);
-    advec_mom_vol_device.setArg(4, vol_flux_x);
-    advec_mom_vol_device.setArg(5, vol_flux_y);
-
-    // x kernels
-    advec_mom_node_flux_post_x_1_device.setArg(0, work_array_2);
-    advec_mom_node_flux_post_x_1_device.setArg(1, mass_flux_x);
-
-    advec_mom_node_flux_post_x_2_device.setArg(0, work_array_3);
-    advec_mom_node_flux_post_x_2_device.setArg(1, work_array_1);
-    advec_mom_node_flux_post_x_2_device.setArg(2, density1);
-
-    advec_mom_node_pre_x_device.setArg(0, work_array_2);
-    advec_mom_node_pre_x_device.setArg(1, work_array_3);
-    advec_mom_node_pre_x_device.setArg(2, work_array_4);
-
-    advec_mom_flux_x_device.setArg(0, work_array_2);
-    advec_mom_flux_x_device.setArg(1, work_array_3);
-    advec_mom_flux_x_device.setArg(2, work_array_4);
-    advec_mom_flux_x_device.setArg(4, celldx);
-    advec_mom_flux_x_device.setArg(5, work_array_5);
-
-    advec_mom_xvel_device.setArg(0, work_array_3);
-    advec_mom_xvel_device.setArg(1, work_array_4);
-    advec_mom_xvel_device.setArg(2, work_array_5);
-
-    // y kernels
-    advec_mom_node_flux_post_y_1_device.setArg(0, work_array_2);
-    advec_mom_node_flux_post_y_1_device.setArg(1, mass_flux_y);
-
-    advec_mom_node_flux_post_y_2_device.setArg(0, work_array_3);
-    advec_mom_node_flux_post_y_2_device.setArg(1, work_array_1);
-    advec_mom_node_flux_post_y_2_device.setArg(2, density1);
-
-    advec_mom_node_pre_y_device.setArg(0, work_array_2);
-    advec_mom_node_pre_y_device.setArg(1, work_array_3);
-    advec_mom_node_pre_y_device.setArg(2, work_array_4);
-
-    advec_mom_flux_y_device.setArg(0, work_array_2);
-    advec_mom_flux_y_device.setArg(1, work_array_3);
-    advec_mom_flux_y_device.setArg(2, work_array_4);
-    advec_mom_flux_y_device.setArg(4, celldy);
-    advec_mom_flux_y_device.setArg(5, work_array_5);
-
-    advec_mom_yvel_device.setArg(0, work_array_3);
-    advec_mom_yvel_device.setArg(1, work_array_4);
-    advec_mom_yvel_device.setArg(2, work_array_5);
-
-    // advec cell
-    /*
-    post_vol = work array 1 _AND_ ener_flux = work_array_1
-    pre_vol = work array 2
-    */
-
-    #define SET_SHARED(knl)             \
-        knl.setArg(1, volume);          \
-        knl.setArg(2, vol_flux_x);      \
-        knl.setArg(3, vol_flux_y);      \
-        knl.setArg(4, work_array_2);    \
-        knl.setArg(5, density1);        \
-        knl.setArg(6, energy1);         \
-        knl.setArg(7, work_array_1);
-
-    // x kernels
-    advec_cell_pre_vol_x_device.setArg(1, work_array_2);
-    advec_cell_pre_vol_x_device.setArg(2, work_array_1);
-    advec_cell_pre_vol_x_device.setArg(3, volume);
-    advec_cell_pre_vol_x_device.setArg(4, vol_flux_x);
-    advec_cell_pre_vol_x_device.setArg(5, vol_flux_y);
-
-    SET_SHARED(advec_cell_ener_flux_x_device)
-    advec_cell_ener_flux_x_device.setArg(8, vertexdx);
-    advec_cell_ener_flux_x_device.setArg(9, mass_flux_x);
-
-    SET_SHARED(advec_cell_x_device)
-    advec_cell_x_device.setArg(8, mass_flux_x);
-
-    // y kernels
-    advec_cell_pre_vol_y_device.setArg(1, work_array_2);
-    advec_cell_pre_vol_y_device.setArg(2, work_array_1);
-    advec_cell_pre_vol_y_device.setArg(3, volume);
-    advec_cell_pre_vol_y_device.setArg(4, vol_flux_x);
-    advec_cell_pre_vol_y_device.setArg(5, vol_flux_y);
-
-    SET_SHARED(advec_cell_ener_flux_y_device)
-    advec_cell_ener_flux_y_device.setArg(8, vertexdy);
-    advec_cell_ener_flux_y_device.setArg(9, mass_flux_y);
-
-    SET_SHARED(advec_cell_y_device)
-    advec_cell_y_device.setArg(8, mass_flux_y);
-
-    #undef SET_SHARED
-
-    // reset field
-    reset_field_device.setArg(0, density0);
-    reset_field_device.setArg(1, density1);
-    reset_field_device.setArg(2, energy0);
-    reset_field_device.setArg(3, energy1);
-    reset_field_device.setArg(4, xvel0);
-    reset_field_device.setArg(5, xvel1);
-    reset_field_device.setArg(6, yvel0);
-    reset_field_device.setArg(7, yvel1);
-
     // set field
-    set_field_device.setArg(0, density0);
-    set_field_device.setArg(1, density1);
-    set_field_device.setArg(2, energy0);
-    set_field_device.setArg(3, energy1);
+    set_field_device.setArg(0, energy0);
+    set_field_device.setArg(1, energy1);
 
     // generate chunk
-    generate_chunk_init_device.setArg(0, density0);
+    generate_chunk_init_device.setArg(0, density);
     generate_chunk_init_device.setArg(1, energy0);
     generate_chunk_init_device.setArg(2, xvel0);
     generate_chunk_init_device.setArg(3, yvel0);
@@ -668,51 +448,17 @@ void CloverChunk::initArgs
     generate_chunk_device.setArg(1, vertexy);
     generate_chunk_device.setArg(2, cellx);
     generate_chunk_device.setArg(3, celly);
-    generate_chunk_device.setArg(4, density0);
+    generate_chunk_device.setArg(4, density);
     generate_chunk_device.setArg(5, energy0);
     generate_chunk_device.setArg(6, xvel0);
     generate_chunk_device.setArg(7, yvel0);
     generate_chunk_device.setArg(8, u);
 
-    // PdV
-    PdV_predict_device.setArg(1, PdV_reduce_buf);
-    PdV_predict_device.setArg(2, xarea);
-    PdV_predict_device.setArg(3, yarea);
-    PdV_predict_device.setArg(4, volume);
-    PdV_predict_device.setArg(5, density0);
-    PdV_predict_device.setArg(6, density1);
-    PdV_predict_device.setArg(7, energy0);
-    PdV_predict_device.setArg(8, energy1);
-    PdV_predict_device.setArg(9, pressure);
-    PdV_predict_device.setArg(10, viscosity);
-    PdV_predict_device.setArg(11, xvel0);
-    PdV_predict_device.setArg(12, yvel0);
-    PdV_predict_device.setArg(13, xvel1);
-    PdV_predict_device.setArg(14, yvel1);
-
-    PdV_not_predict_device.setArg(1, PdV_reduce_buf);
-    PdV_not_predict_device.setArg(2, xarea);
-    PdV_not_predict_device.setArg(3, yarea);
-    PdV_not_predict_device.setArg(4, volume);
-    PdV_not_predict_device.setArg(5, density0);
-    PdV_not_predict_device.setArg(6, density1);
-    PdV_not_predict_device.setArg(7, energy0);
-    PdV_not_predict_device.setArg(8, energy1);
-    PdV_not_predict_device.setArg(9, pressure);
-    PdV_not_predict_device.setArg(10, viscosity);
-    PdV_not_predict_device.setArg(11, xvel0);
-    PdV_not_predict_device.setArg(12, yvel0);
-    PdV_not_predict_device.setArg(13, xvel1);
-    PdV_not_predict_device.setArg(14, yvel1);
-
     // field summary
     field_summary_device.setArg(0, volume);
-    field_summary_device.setArg(1, density0);
+    field_summary_device.setArg(1, density);
     field_summary_device.setArg(2, energy0);
-    field_summary_device.setArg(3, pressure);
-    field_summary_device.setArg(4, xvel0);
-    field_summary_device.setArg(5, yvel0);
-    field_summary_device.setArg(6, u);
+    field_summary_device.setArg(3, u);
 
     field_summary_device.setArg(7, reduce_buf_1);
     field_summary_device.setArg(8, reduce_buf_2);
@@ -720,24 +466,6 @@ void CloverChunk::initArgs
     field_summary_device.setArg(10, reduce_buf_4);
     field_summary_device.setArg(11, reduce_buf_5);
     field_summary_device.setArg(12, reduce_buf_6);
-
-    // calc dt
-    /*
-    work_array_1 = jk_ctrl
-    work_array_2 = dt_min
-    */
-    calc_dt_device.setArg(7, xarea);
-    calc_dt_device.setArg(8, yarea);
-    calc_dt_device.setArg(9, celldx);
-    calc_dt_device.setArg(10, celldy);
-    calc_dt_device.setArg(11, volume);
-    calc_dt_device.setArg(12, density0);
-    calc_dt_device.setArg(13, viscosity);
-    calc_dt_device.setArg(14, soundspeed);
-    calc_dt_device.setArg(15, xvel0);
-    calc_dt_device.setArg(16, yvel0);
-    calc_dt_device.setArg(17, reduce_buf_1);
-    calc_dt_device.setArg(18, reduce_buf_2);
 
     // no parameters set for update_halo here
 
@@ -760,7 +488,7 @@ void CloverChunk::initArgs
          *  reduce_buf_3 = pw
          *  reduce_buf_4 = rrn
          */
-        tea_leaf_cg_init_u_device.setArg(0, density1);
+        tea_leaf_cg_init_u_device.setArg(0, density);
         tea_leaf_cg_init_u_device.setArg(1, energy1);
         tea_leaf_cg_init_u_device.setArg(2, u);
         tea_leaf_cg_init_u_device.setArg(3, work_array_1);
@@ -848,7 +576,7 @@ void CloverChunk::initArgs
     }
     else
     {
-        tea_leaf_jacobi_init_device.setArg(0, density1);
+        tea_leaf_jacobi_init_device.setArg(0, density);
         tea_leaf_jacobi_init_device.setArg(1, energy1);
         tea_leaf_jacobi_init_device.setArg(2, work_array_5);
         tea_leaf_jacobi_init_device.setArg(3, work_array_6);
@@ -878,7 +606,7 @@ void CloverChunk::initArgs
     tea_leaf_cheby_calc_2norm_device.setArg(1, reduce_buf_1);
 
     // both finalise the same
-    tea_leaf_finalise_device.setArg(0, density1);
+    tea_leaf_finalise_device.setArg(0, density);
     tea_leaf_finalise_device.setArg(1, u);
     tea_leaf_finalise_device.setArg(2, energy1);
 

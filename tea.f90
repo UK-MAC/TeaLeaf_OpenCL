@@ -274,7 +274,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, left_right_offset, depth, &
             CHUNK_LEFT, chunks(chunk)%left_snd_buffer)
       else
-        CALL clover_pack_left(chunk, fields, depth, left_right_offset)
+        CALL tea_pack_left(chunk, fields, depth, left_right_offset)
       endif
 
       !send and recv messagse to the left
@@ -292,7 +292,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, left_right_offset, depth, &
             CHUNK_RIGHT, chunks(chunk)%right_snd_buffer)
       else
-        CALL clover_pack_right(chunk, fields, depth, left_right_offset)
+        CALL tea_pack_right(chunk, fields, depth, left_right_offset)
       endif
 
       !send message to the right
@@ -313,7 +313,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, left_right_offset, depth, &
             CHUNK_LEFT, chunks(chunk)%left_rcv_buffer)
       else
-        CALL clover_unpack_left(fields, chunk, depth,                      &
+        CALL tea_unpack_left(fields, chunk, depth,                      &
                                 chunks(chunk)%left_rcv_buffer,             &
                                 left_right_offset)                  
       endif
@@ -326,7 +326,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, left_right_offset, depth, &
             CHUNK_RIGHT, chunks(chunk)%right_rcv_buffer)
       else
-        CALL clover_unpack_right(fields, chunk, depth,                     &
+        CALL tea_unpack_right(fields, chunk, depth,                     &
                                  chunks(chunk)%right_rcv_buffer,           &
                                  left_right_offset)
       endif
@@ -341,7 +341,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_BOTTOM, chunks(chunk)%bottom_snd_buffer)
       else
-        CALL clover_pack_bottom(chunk, fields, depth, bottom_top_offset)
+        CALL tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
       endif
 
       !send message downwards
@@ -359,7 +359,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_TOP, chunks(chunk)%top_snd_buffer)
       else
-        CALL clover_pack_top(chunk, fields, depth, bottom_top_offset)
+        CALL tea_pack_top(chunk, fields, depth, bottom_top_offset)
       endif
 
       !send message upwards
@@ -380,7 +380,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_TOP, chunks(chunk)%top_rcv_buffer)
       else
-        CALL clover_unpack_top(fields, chunk, depth,                       &
+        CALL tea_unpack_top(fields, chunk, depth,                       &
                                chunks(chunk)%top_rcv_buffer,               &
                                bottom_top_offset)
       endif
@@ -392,7 +392,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_BOTTOM, chunks(chunk)%bottom_rcv_buffer)
       else
-        CALL clover_unpack_bottom(fields, chunk, depth,                   &
+        CALL tea_unpack_bottom(fields, chunk, depth,                   &
                                  chunks(chunk)%bottom_rcv_buffer,         &
                                  bottom_top_offset)
       endif

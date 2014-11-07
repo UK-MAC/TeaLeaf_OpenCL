@@ -13,29 +13,17 @@ const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 
 // used in update_halo and for copying back to host for mpi transfers
-#define FIELD_density0      1
-#define FIELD_density1      2
-#define FIELD_energy0       3
-#define FIELD_energy1       4
-#define FIELD_pressure      5
-#define FIELD_viscosity     6
-#define FIELD_soundspeed    7
-#define FIELD_xvel0         8
-#define FIELD_xvel1         9
-#define FIELD_yvel0         10
-#define FIELD_yvel1         11
-#define FIELD_vol_flux_x    12
-#define FIELD_vol_flux_y    13
-#define FIELD_mass_flux_x   14
-#define FIELD_mass_flux_y   15
-#define FIELD_u             16
-#define FIELD_p             17
-#define FIELD_sd            18
-#define NUM_FIELDS          18
+#define FIELD_density       1
+#define FIELD_energy0       2
+#define FIELD_energy1       3
+#define FIELD_u             4
+#define FIELD_p             5
+#define FIELD_sd            6
+#define NUM_FIELDS          6
 #define FIELD_work_array_1 FIELD_p
 #define FIELD_work_array_8 FIELD_sd
 
-#define NUM_BUFFERED_FIELDS 10
+#define NUM_BUFFERED_FIELDS 3
 
 // which side to pack - keep the same as in fortran file
 #define CHUNK_LEFT 1
@@ -164,6 +152,8 @@ private:
 
     // tolerance specified in tea.in
     float tolerance;
+    // using preconditioner
+    bool preconditioner_on;
 
     // calculate rx/ry to pass back to fortran
     void calcrxry
@@ -193,13 +183,9 @@ private:
     std::string device_type_prepro;
 
     // buffers
-    cl::Buffer density0;
-    cl::Buffer density1;
+    cl::Buffer density;
     cl::Buffer energy0;
     cl::Buffer energy1;
-    cl::Buffer pressure;
-    cl::Buffer soundspeed;
-    cl::Buffer viscosity;
     cl::Buffer volume;
 
     cl::Buffer vol_flux_x;
@@ -325,18 +311,8 @@ private:
     (int line, const char* filename, const char* format, ...);
 
 public:
-    // kernels
-    void calc_dt_kernel(double g_small, double g_big, double dtmin,
-        double dtc_safe, double dtu_safe, double dtv_safe,
-        double dtdiv_safe, double* dt_min_val, int* dtl_control,
-        double* xl_pos, double* yl_pos, int* jldt, int* kldt, int* small);
-
     void field_summary_kernel(double* vol, double* mass,
         double* ie, double* ke, double* press, double* temp);
-
-    void PdV_kernel(int* error_condition, int predict, double dbyt);
-
-    void ideal_gas_kernel(int predict);
 
     void generate_chunk_kernel(const int number_of_states, 
         const double* state_density, const double* state_energy,
@@ -357,20 +333,7 @@ public:
     const int* chunk_neighbours,
     int depth);
 
-    void accelerate_kernel(double dbyt);
-
-    void advec_mom_kernel(int which_vel, int sweep_number, int direction);
-
-    void flux_calc_kernel(double dbyt);
-
-    void advec_cell_kernel(int dr, int swp_nmbr);
-
-    void revert_kernel();
-
     void set_field_kernel();
-    void reset_field_kernel();
-
-    void viscosity_kernel();
 
     // Tea leaf
     void tea_leaf_init_jacobi(int, double, double*, double*);

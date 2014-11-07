@@ -32,28 +32,9 @@ void CloverChunk::initBuffers
     #define BUF2D_ALLOC(name, x_e, y_e) \
         BUF_ALLOC(name, (x_max+4+x_e) * (y_max+4+y_e) * sizeof(double))
 
-    BUF2D_ALLOC(density0, 0, 0);
-    BUF2D_ALLOC(density1, 0, 0);
+    BUF2D_ALLOC(density, 0, 0);
     BUF2D_ALLOC(energy0, 0, 0);
     BUF2D_ALLOC(energy1, 0, 0);
-
-    BUF2D_ALLOC(pressure, 0, 0);
-    BUF2D_ALLOC(soundspeed, 0, 0);
-    BUF2D_ALLOC(viscosity, 0, 0);
-    BUF2D_ALLOC(volume, 0, 0);
-
-    BUF2D_ALLOC(xvel0, 1, 1);
-    BUF2D_ALLOC(xvel1, 1, 1);
-    BUF2D_ALLOC(yvel0, 1, 1);
-    BUF2D_ALLOC(yvel1, 1, 1);
-
-    BUF2D_ALLOC(xarea, 1, 0);
-    BUF2D_ALLOC(vol_flux_x, 1, 0);
-    BUF2D_ALLOC(mass_flux_x, 1, 0);
-
-    BUF2D_ALLOC(yarea, 0, 1);
-    BUF2D_ALLOC(vol_flux_y, 0, 1);
-    BUF2D_ALLOC(mass_flux_y, 0, 1);
 
     BUF1DX_ALLOC(cellx, 0);
     BUF1DX_ALLOC(celldx, 0);
@@ -71,13 +52,13 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(work_array_3, 1, 1);
     BUF2D_ALLOC(work_array_4, 1, 1);
     BUF2D_ALLOC(work_array_5, 1, 1);
+    BUF2D_ALLOC(work_array_6, 1, 1);
+    BUF2D_ALLOC(work_array_8, 1, 1);
 
     // tealeaf
     BUF2D_ALLOC(u, 0, 0);
     BUF2D_ALLOC(u0, 0, 0);
     BUF2D_ALLOC(z, 1, 1);
-    BUF2D_ALLOC(work_array_6, 1, 1);
-    BUF2D_ALLOC(work_array_8, 1, 1);
 
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
@@ -107,11 +88,6 @@ void CloverChunk::initBuffers
     #undef BUF_ALLOC
 
  #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
-    ADD_BUFFER_DBG_MAP(volume);
-    ADD_BUFFER_DBG_MAP(soundspeed);
-    ADD_BUFFER_DBG_MAP(pressure);
-    ADD_BUFFER_DBG_MAP(viscosity);
-
     ADD_BUFFER_DBG_MAP(u);
     arr_names["p"] = work_array_1;
 
@@ -121,20 +97,9 @@ void CloverChunk::initBuffers
     ADD_BUFFER_DBG_MAP(work_array_5);
     ADD_BUFFER_DBG_MAP(work_array_6);
 
-    ADD_BUFFER_DBG_MAP(density0);
-    ADD_BUFFER_DBG_MAP(density1);
+    ADD_BUFFER_DBG_MAP(density);
     ADD_BUFFER_DBG_MAP(energy0);
     ADD_BUFFER_DBG_MAP(energy1);
-    ADD_BUFFER_DBG_MAP(xvel0);
-    ADD_BUFFER_DBG_MAP(xvel1);
-    ADD_BUFFER_DBG_MAP(yvel0);
-    ADD_BUFFER_DBG_MAP(yvel1);
-    ADD_BUFFER_DBG_MAP(xarea);
-    ADD_BUFFER_DBG_MAP(yarea);
-    ADD_BUFFER_DBG_MAP(vol_flux_x);
-    ADD_BUFFER_DBG_MAP(vol_flux_y);
-    ADD_BUFFER_DBG_MAP(mass_flux_x);
-    ADD_BUFFER_DBG_MAP(mass_flux_y);
 
     ADD_BUFFER_DBG_MAP(cellx);
     ADD_BUFFER_DBG_MAP(celly);
