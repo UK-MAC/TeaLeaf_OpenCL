@@ -25,7 +25,7 @@ CONTAINS
 
 SUBROUTINE set_field()
 
-  USE clover_module
+  USE tea_module
   USE set_field_kernel_module
 
   IMPLICIT NONE
@@ -40,25 +40,14 @@ SUBROUTINE set_field()
     IF(chunks(c)%task.EQ.parallel%task) THEN
 
       IF(use_fortran_kernels)THEN
-        CALL set_field_kernel(chunks(c)%field%x_min,   &
+        CALL set_field_kernel(chunks(c)%field%x_min,     &
                               chunks(c)%field%x_max,     &
                               chunks(c)%field%y_min,     &
                               chunks(c)%field%y_max,     &
-                              chunks(c)%field%density0,  &
-                              chunks(c)%field%density1,  &
                               chunks(c)%field%energy0,   &
                               chunks(c)%field%energy1)
       ELSEIF(use_opencl_kernels)THEN
         CALL set_field_kernel_ocl()
-      ELSEIF(use_C_kernels)THEN
-        CALL set_field_kernel_c(chunks(c)%field%x_min,   &
-                              chunks(c)%field%x_max,     &
-                              chunks(c)%field%y_min,     &
-                              chunks(c)%field%y_max,     &
-                              chunks(c)%field%density0,  &
-                              chunks(c)%field%density1,  &
-                              chunks(c)%field%energy0,   &
-                              chunks(c)%field%energy1)
       ENDIF
     ENDIF
 

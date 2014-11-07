@@ -1,19 +1,19 @@
-!Crown Copyright 2012 AWE.
+!Crown Copyright 2014 AWE.
 !
-! This file is part of CloverLeaf.
+! This file is part of TeaLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
+! TeaLeaf is free software: you can redistribute it and/or modify it under 
 ! the terms of the GNU General Public License as published by the 
 ! Free Software Foundation, either version 3 of the License, or (at your option) 
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
+! TeaLeaf is distributed in the hope that it will be useful, but 
 ! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
 ! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
 ! details.
 !
 ! You should have received a copy of the GNU General Public License along with 
-! CloverLeaf. If not, see http://www.gnu.org/licenses/.
+! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Fortran mpi buffer packing kernel
 !>  @author Wayne Gaudin
@@ -23,11 +23,11 @@ MODULE pack_kernel_module
 
 CONTAINS
 
-SUBROUTINE clover_pack_message_left(x_min,x_max,y_min,y_max,field,                &
-                                    left_snd_buffer,                              &
-                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                    depth,field_type,                             &
-                                    buffer_offset)
+SUBROUTINE tea_pack_message_left(x_min,x_max,y_min,y_max,field,                &
+                                 left_snd_buffer,                              &
+                                 CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                 depth,field_type,                             &
+                                 buffer_offset)
 
   IMPLICIT NONE
 
@@ -67,13 +67,13 @@ SUBROUTINE clover_pack_message_left(x_min,x_max,y_min,y_max,field,              
   ENDDO
 !$OMP END PARALLEL DO
 
-END SUBROUTINE clover_pack_message_left
+END SUBROUTINE tea_pack_message_left
 
-SUBROUTINE clover_unpack_message_left(x_min,x_max,y_min,y_max,field,                &
-                                      left_rcv_buffer,                              &
-                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                      depth,field_type,                             &
-                                      buffer_offset)
+SUBROUTINE tea_unpack_message_left(x_min,x_max,y_min,y_max,field,                &
+                                   left_rcv_buffer,                              &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth,field_type,                             &
+                                   buffer_offset)
 
   IMPLICIT NONE
 
@@ -113,13 +113,13 @@ SUBROUTINE clover_unpack_message_left(x_min,x_max,y_min,y_max,field,            
   ENDDO
 !$OMP END PARALLEL DO
 
-END SUBROUTINE clover_unpack_message_left
+END SUBROUTINE tea_unpack_message_left
 
-SUBROUTINE clover_pack_message_right(x_min,x_max,y_min,y_max,field,                &
-                                     right_snd_buffer,                             &
-                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                     depth,field_type,                             &
-                                     buffer_offset)
+SUBROUTINE tea_pack_message_right(x_min,x_max,y_min,y_max,field,                &
+                                  right_snd_buffer,                             &
+                                  CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                  depth,field_type,                             &
+                                  buffer_offset)
 
   IMPLICIT NONE
 
@@ -159,13 +159,13 @@ SUBROUTINE clover_pack_message_right(x_min,x_max,y_min,y_max,field,             
   ENDDO
 !$OMP END PARALLEL DO
 
-END SUBROUTINE clover_pack_message_right
+END SUBROUTINE tea_pack_message_right
 
-SUBROUTINE clover_unpack_message_right(x_min,x_max,y_min,y_max,field,                &
-                                       right_rcv_buffer,                             &
-                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                       depth,field_type,                             &
-                                       buffer_offset)
+SUBROUTINE tea_unpack_message_right(x_min,x_max,y_min,y_max,field,                &
+                                    right_rcv_buffer,                             &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth,field_type,                             &
+                                    buffer_offset)
 
   IMPLICIT NONE
 
@@ -205,13 +205,13 @@ SUBROUTINE clover_unpack_message_right(x_min,x_max,y_min,y_max,field,           
   ENDDO
 !$OMP END PARALLEL DO
 
-END SUBROUTINE clover_unpack_message_right
+END SUBROUTINE tea_unpack_message_right
 
-SUBROUTINE clover_pack_message_top(x_min,x_max,y_min,y_max,field,                &
-                                   top_snd_buffer,                               &
-                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                   depth,field_type,                             &
-                                   buffer_offset)
+SUBROUTINE tea_pack_message_top(x_min,x_max,y_min,y_max,field,                &
+                                top_snd_buffer,                               &
+                                CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                depth,field_type,                             &
+                                buffer_offset)
 
   IMPLICIT NONE
 
@@ -251,13 +251,13 @@ SUBROUTINE clover_pack_message_top(x_min,x_max,y_min,y_max,field,               
 !$OMP END PARALLEL DO
   ENDDO
 
-END SUBROUTINE clover_pack_message_top
+END SUBROUTINE tea_pack_message_top
 
-SUBROUTINE clover_unpack_message_top(x_min,x_max,y_min,y_max,field,                &
-                                     top_rcv_buffer,                               &
-                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                     depth,field_type,                             &
-                                     buffer_offset)
+SUBROUTINE tea_unpack_message_top(x_min,x_max,y_min,y_max,field,                &
+                                  top_rcv_buffer,                               &
+                                  CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                  depth,field_type,                             &
+                                  buffer_offset)
 
   IMPLICIT NONE
 
@@ -297,13 +297,13 @@ SUBROUTINE clover_unpack_message_top(x_min,x_max,y_min,y_max,field,             
 !$OMP END PARALLEL DO
   ENDDO
 
-END SUBROUTINE clover_unpack_message_top
+END SUBROUTINE tea_unpack_message_top
 
-SUBROUTINE clover_pack_message_bottom(x_min,x_max,y_min,y_max,field,                &
-                                      bottom_snd_buffer,                            &
-                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                      depth,field_type,                             &
-                                      buffer_offset)
+SUBROUTINE tea_pack_message_bottom(x_min,x_max,y_min,y_max,field,                &
+                                   bottom_snd_buffer,                            &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth,field_type,                             &
+                                   buffer_offset)
 
   IMPLICIT NONE
 
@@ -343,13 +343,13 @@ SUBROUTINE clover_pack_message_bottom(x_min,x_max,y_min,y_max,field,            
   ENDDO
 !$OMP END PARALLEL DO
 
-END SUBROUTINE clover_pack_message_bottom
+END SUBROUTINE tea_pack_message_bottom
 
-SUBROUTINE clover_unpack_message_bottom(x_min,x_max,y_min,y_max,field,                &
-                                        bottom_rcv_buffer,                            &
-                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
-                                        depth,field_type,                             &
-                                        buffer_offset)
+SUBROUTINE tea_unpack_message_bottom(x_min,x_max,y_min,y_max,field,                &
+                                     bottom_rcv_buffer,                            &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth,field_type,                             &
+                                     buffer_offset)
 
   IMPLICIT NONE
 
@@ -389,6 +389,6 @@ SUBROUTINE clover_unpack_message_bottom(x_min,x_max,y_min,y_max,field,          
 !$OMP END PARALLEL DO
   ENDDO
 
-END SUBROUTINE clover_unpack_message_bottom
+END SUBROUTINE tea_unpack_message_bottom
 
 END MODULE pack_kernel_module

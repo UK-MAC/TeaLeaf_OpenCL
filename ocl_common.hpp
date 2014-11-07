@@ -91,13 +91,6 @@ class CloverChunk
 {
 private:
     // kernels
-    cl::Kernel ideal_gas_device;
-    cl::Kernel accelerate_device;
-    cl::Kernel flux_calc_y_device;
-    cl::Kernel flux_calc_x_device;
-    cl::Kernel viscosity_device;
-    cl::Kernel revert_device;
-    cl::Kernel reset_field_device;
     cl::Kernel set_field_device;
     cl::Kernel field_summary_device;
     cl::Kernel calc_dt_device;
@@ -107,28 +100,6 @@ private:
 
     cl::Kernel initialise_chunk_first_device;
     cl::Kernel initialise_chunk_second_device;
-
-    cl::Kernel PdV_predict_device;
-    cl::Kernel PdV_not_predict_device;
-
-    cl::Kernel advec_mom_vol_device;
-    cl::Kernel advec_mom_node_flux_post_x_1_device;
-    cl::Kernel advec_mom_node_flux_post_x_2_device;
-    cl::Kernel advec_mom_node_pre_x_device;
-    cl::Kernel advec_mom_flux_x_device;
-    cl::Kernel advec_mom_xvel_device;
-    cl::Kernel advec_mom_node_flux_post_y_1_device;
-    cl::Kernel advec_mom_node_flux_post_y_2_device;
-    cl::Kernel advec_mom_node_pre_y_device;
-    cl::Kernel advec_mom_flux_y_device;
-    cl::Kernel advec_mom_yvel_device;
-
-    cl::Kernel advec_cell_pre_vol_x_device;
-    cl::Kernel advec_cell_ener_flux_x_device;
-    cl::Kernel advec_cell_x_device;
-    cl::Kernel advec_cell_pre_vol_y_device;
-    cl::Kernel advec_cell_ener_flux_y_device;
-    cl::Kernel advec_cell_y_device;
 
     // halo updates
     cl::Kernel update_halo_top_device;

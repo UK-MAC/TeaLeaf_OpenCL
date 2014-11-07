@@ -15,845 +15,1320 @@
 ! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
-!>  @brief Driver for the heat conduction kernel
+!>  @brief Communication Utilities
 !>  @author David Beckingsale, Wayne Gaudin
-!>  @details Invokes the user specified kernel for the heat conduction
+!>  @details Contains all utilities required to run TeaLeaf in a distributed
+!>  environment, including initialisation, mesh decompostion, reductions and
+!>  halo exchange using explicit buffers.
+!>
+!>  Note the halo exchange is currently coded as simply as possible and no
+!>  optimisations have been implemented, such as post receives before sends or packing
+!>  buffers with multiple data fields. This is intentional so the effect of these
+!>  optimisations can be measured on large systems, as and when they are added.
+!>
+!>  Even without these modifications TeaLeaf weak scales well on moderately sized
+!>  systems of the order of 10K cores.
 
-MODULE tea_leaf_module
+MODULE tea_module
 
-  USE report_module
   USE data_module
-  USE tea_leaf_kernel_module
-  USE tea_leaf_kernel_cg_module
-  USE tea_leaf_kernel_ppcg_module
-  USE tea_leaf_kernel_cheby_module
-  USE update_halo_module
+  USE definitions_module
+  !USE MPI
 
   IMPLICIT NONE
-
-  interface
-    subroutine tea_leaf_kernel_cheby_copy_u_ocl()
-    end subroutine
-
-    subroutine tea_leaf_calc_residual_ocl()
-    end subroutine
-
-    subroutine tea_leaf_calc_2norm_kernel_ocl(initial, norm)
-      integer :: initial
-      real(kind=8) :: norm
-    end subroutine
-
-    subroutine tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, n_coefs, &
-        rx, ry, theta, error)
-      real(kind=8) :: rx, ry, theta, error
-      integer :: n_coefs
-      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
-    end subroutine
-
-    subroutine tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-        theta, n_coefs)
-      integer :: n_coefs
-      real(kind=8) :: theta
-      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
-    end subroutine
-
-    subroutine tea_leaf_kernel_ppcg_init_p_ocl(rro)
-      real(kind=8) :: rro
-    end subroutine
-
-    subroutine tea_leaf_kernel_ppcg_init_sd_ocl()
-    end subroutine
-
-    subroutine tea_leaf_kernel_ppcg_inner_ocl(n)
-      integer :: n
-    end subroutine
-
-    subroutine tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, n_coefs, &
-        rx, ry, cheby_calc_step)
-      real(kind=8) :: rx, ry
-      integer :: cheby_calc_step
-      integer :: n_coefs
-      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
-    end subroutine
-  end interface
+  include "mpif.h"
 
 CONTAINS
 
-SUBROUTINE tea_leaf()
+SUBROUTINE tea_barrier
+
+  INTEGER :: err
+
+  CALL MPI_BARRIER(MPI_COMM_WORLD,err)
+
+END SUBROUTINE tea_barrier
+
+SUBROUTINE tea_abort
+
+  INTEGER :: ierr,err
+
+  CALL MPI_ABORT(MPI_COMM_WORLD,ierr,err)
+
+END SUBROUTINE tea_abort
+
+SUBROUTINE tea_finalize
+
+  INTEGER :: err
+
+  CLOSE(g_out)
+  CALL FLUSH(0)
+  CALL FLUSH(6)
+  CALL FLUSH(g_out)
+  CALL MPI_FINALIZE(err)
+
+END SUBROUTINE tea_finalize
+
+SUBROUTINE tea_init_comms
 
   IMPLICIT NONE
 
-!$ INTEGER :: OMP_GET_THREAD_NUM
-  INTEGER :: c, n
-  REAL(KIND=8) :: ry,rx, error, exact_error
+  INTEGER :: err,rank,size
 
-  INTEGER :: fields(NUM_FIELDS)
+  rank=0
+  size=1
 
-  REAL(KIND=8) :: kernel_time,timer
+  CALL MPI_INIT(err)
 
-  ! For CG solver
-  REAL(KIND=8) :: rro, pw, rrn, alpha, beta
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err)
 
-  ! For chebyshev solver
-  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
-  REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
-  REAL(KIND=8) :: eigmin, eigmax, theta, cn
-  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
-  LOGICAL :: ch_switch_check
+  parallel%parallel=.TRUE.
+  parallel%task=rank
 
-  INTEGER :: cg_calc_steps
-
-  REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
-
-  cg_time = 0.0_8
-  ch_time = 0.0_8
-  cg_calc_steps = 0
-  total_solve_time = 0.0_8
-
-  IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
-    CALL report_error('tea_leaf', 'unknown coefficient option')
-  endif
-
-  error = 1e10
-  cheby_calc_steps = 0
-
-  DO c=1,chunks_per_task
-
-    IF(chunks(c)%task.EQ.parallel%task) THEN
-
-      fields=0
-      fields(FIELD_ENERGY1) = 1
-      fields(FIELD_DENSITY1) = 1
-      CALL update_halo(fields,2)
-
-      ! INIT
-      IF(profiler_on) kernel_time=timer()
-
-      if (use_fortran_kernels .or. use_c_kernels) then
-        ! Calculated in C++ code if OpenCL is being used
-        rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2)
-        ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2)
-      endif
-
-      IF(tl_use_cg .or. tl_use_chebyshev .or. tl_use_ppcg) then
-        ! All 3 of these solvers use the CG kernels
-        IF(use_fortran_kernels) THEN
-          CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%density1,                    &
-              chunks(c)%field%energy1,                     &
-              chunks(c)%field%u,                           &
-              chunks(c)%field%work_array1,                 &
-              chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array3,                 &
-              chunks(c)%field%work_array4,                 &
-              chunks(c)%field%work_array5,                 &
-              chunks(c)%field%work_array6,                 &
-              chunks(c)%field%work_array7,                 &
-              rx, ry, rro, coefficient)
-        ELSEIF(use_opencl_kernels) THEN
-          CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
-        ELSEIF(use_C_kernels) THEN
-          CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%density1,                    &
-              chunks(c)%field%energy1,                     &
-              chunks(c)%field%u,                           &
-              chunks(c)%field%work_array1,                 &
-              chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array3,                 &
-              chunks(c)%field%work_array4,                 &
-              chunks(c)%field%work_array5,                 &
-              chunks(c)%field%work_array6,                 &
-              chunks(c)%field%work_array7,                 &
-              rx, ry, rro, coefficient)
-        ENDIF
-
-        ! need to update p when using CG due to matrix/vector multiplication
-        fields=0
-        fields(FIELD_P) = 1
-        CALL update_halo(fields,1)
-
-        ! and globally sum rro
-        call clover_allsum(rro)
-      ELSE
-        IF (use_fortran_kernels) THEN
-          CALL tea_leaf_kernel_init(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%celldx,                      &
-              chunks(c)%field%celldy,                      &
-              chunks(c)%field%volume,                      &
-              chunks(c)%field%density1,                    &
-              chunks(c)%field%energy1,                     &
-              chunks(c)%field%work_array1,                 &
-              chunks(c)%field%u,                           &
-              chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array3,                 &
-              chunks(c)%field%work_array4,                 &
-              chunks(c)%field%work_array5,                 &
-              chunks(c)%field%work_array6,                 &
-              chunks(c)%field%work_array7,                 &
-              coefficient)
-        ELSEIF(use_opencl_kernels) THEN
-          CALL tea_leaf_kernel_init_ocl(coefficient, dt, rx, ry)
-        ELSEIF(use_C_kernels) THEN
-          CALL tea_leaf_kernel_init_c(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%celldx,                      &
-              chunks(c)%field%celldy,                      &
-              chunks(c)%field%volume,                      &
-              chunks(c)%field%density1,                    &
-              chunks(c)%field%energy1,                     &
-              chunks(c)%field%work_array1,                 &
-              chunks(c)%field%u,                           &
-              chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array3,                 &
-              chunks(c)%field%work_array4,                 &
-              chunks(c)%field%work_array5,                 &
-              chunks(c)%field%work_array6,                 &
-              chunks(c)%field%work_array7,                 &
-              coefficient)
-        ENDIF
-      ENDIF
-
-      fields=0
-      fields(FIELD_U) = 1
-
-      IF(use_fortran_kernels) then
-        call tea_leaf_kernel_cheby_copy_u(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          chunks(c)%field%u0,                &
-          chunks(c)%field%u)
-      elseif(use_opencl_kernels) then
-        call tea_leaf_kernel_cheby_copy_u_ocl()
-      endif
-
-      DO n=1,max_iters
-
-        if (profile_solver) solve_timer=timer()
-
-        IF (tl_ch_cg_errswitch) then
-            ! either the error has got below tolerance, or it's already going
-            ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
-        ELSE
-            ! enough steps have passed and error < 1, otherwise it's nowhere near converging on eigenvalues
-            ch_switch_check = (n .ge. tl_ch_cg_presteps) .and. (error .le. 1.0_8)
-        ENDIF
-
-        IF ((tl_use_chebyshev .or. tl_use_ppcg) .and. ch_switch_check) then
-          ! don't need to update p any more
-          fields = 0
-          fields(FIELD_u) = 0
-
-          ! on the first chebyshev steps, find the eigenvalues, coefficients,
-          ! and expected number of iterations
-          IF (cheby_calc_steps .eq. 0) then
-            ! maximum number of iterations in chebyshev solver
-            max_cheby_iters = max_iters - n + 2
-            rro = error
-
-            ! calculate eigenvalues
-            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-                max_iters, n-1, info)
-
-            eigmin = eigmin*0.95
-            eigmax = eigmax*1.05
-
-            if (info .ne. 0) CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
-
-            if (tl_use_chebyshev) then
-              ! calculate chebyshev coefficients
-              call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                  theta, max_cheby_iters)
-            else if (tl_use_ppcg) then
-              ! also calculate chebyshev coefficients
-              ! TODO least squares
-              call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                  theta, tl_ppcg_inner_steps)
-            endif
-
-            cn = eigmax/eigmin
-
-            if (parallel%boss) then
-              write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-              write(g_out,'(4a11)')"eigmin", "eigmax", "cn", "error"
-              write(g_out,'(2f11.5,2e11.4)')eigmin, eigmax, cn, error
-              write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-              write(0,'(4a11)')"eigmin", "eigmax", "cn", "error"
-              write(0,'(2f11.5,2e11.4)')eigmin, eigmax, cn, error
-            endif
-          endif
-
-          if (tl_use_chebyshev) then
-              ! don't need to update p any more
-              fields(FIELD_P) = 0
-
-              if (cheby_calc_steps .eq. 0) then
-                call tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
-                    error, rx, ry, theta, cn, max_cheby_iters)
-
-                cheby_calc_steps = 2
-
-                switch_step = n
-              else
-                  IF(use_fortran_kernels) THEN
-                      call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-                          chunks(c)%field%x_max,                       &
-                          chunks(c)%field%y_min,                       &
-                          chunks(c)%field%y_max,                       &
-                          chunks(c)%field%u,                           &
-                          chunks(c)%field%u0,                          &
-                          chunks(c)%field%work_array1,                 &
-                          chunks(c)%field%work_array2,                 &
-                          chunks(c)%field%work_array3,                 &
-                          chunks(c)%field%work_array4,                 &
-                          chunks(c)%field%work_array5,                 &
-                          chunks(c)%field%work_array6,                 &
-                          chunks(c)%field%work_array7,                 &
-                          ch_alphas, ch_betas, max_cheby_iters,        &
-                          rx, ry, cheby_calc_steps)
-                  ELSEIF(use_opencl_kernels) THEN
-                      call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-                        rx, ry, cheby_calc_steps)
-                  ENDIF
-
-                  ! after estimated number of iterations has passed, calc resid.
-                  ! Leaving 10 iterations between each global reduction won't affect
-                  ! total time spent much if at all (number of steps spent in
-                  ! chebyshev is typically O(300+)) but will greatly reduce global
-                  ! synchronisations needed
-                  if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
-                    IF(use_fortran_kernels) THEN
-                      call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                            chunks(c)%field%x_max,                       &
-                            chunks(c)%field%y_min,                       &
-                            chunks(c)%field%y_max,                       &
-                            chunks(c)%field%work_array2,                 &
-                            error)
-                    ELSEIF(use_opencl_kernels) THEN
-                      call tea_leaf_calc_2norm_kernel_ocl(1, error)
-                    ENDIF
-
-                    call clover_allsum(error)
-                  endif
-              endif
-          else if (tl_use_ppcg) then
-            if (cheby_calc_steps .eq. 0) then
-              cheby_calc_steps = 1
-
-              IF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                    theta, tl_ppcg_inner_steps)
-              ENDIF
-
-              IF(use_fortran_kernels) THEN
-                CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%u,                           &
-                    chunks(c)%field%u0,                 &
-                    chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%work_array6,                 &
-                    chunks(c)%field%work_array7,                 &
-                    rx, ry)
-              ELSEIF(use_opencl_kernels) THEN
-                CALL tea_leaf_calc_residual_ocl()
-              ENDIF
-
-              call tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
-                  rx, ry, tl_ppcg_inner_steps, c)
-
-              IF(use_fortran_kernels) THEN
-                call tea_leaf_kernel_ppcg_init_p(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array1,                 &
-                    chunks(c)%field%work_array2,                 &
-                    rro)
-              ELSEIF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_ppcg_init_p_ocl(rro)
-              ENDIF
-
-              ! update p
-              CALL update_halo(fields,1)
-
-              CALL clover_allsum(rro)
-            endif
-
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  chunks(c)%field%work_array1,                 &
-                  chunks(c)%field%work_array4,                 &
-                  chunks(c)%field%work_array6,                 &
-                  chunks(c)%field%work_array7,                 &
-                  rx, ry, pw)
-            ELSEIF(use_opencl_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
-            ENDIF
-
-            CALL clover_allsum(pw)
-            alpha = rro/pw
-
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  chunks(c)%field%u,                           &
-                  chunks(c)%field%work_array1,                 &
-                  chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%work_array3,                 &
-                  chunks(c)%field%work_array4,                 &
-                  chunks(c)%field%work_array5,                 &
-                  alpha, rrn)
-            ELSEIF(use_opencl_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
-            ENDIF
-
-            ! not using rrn, so don't do a clover_allsum
-
-            call tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
-                rx, ry, tl_ppcg_inner_steps, c)
-
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array2,                 &
-                    rrn)
-            ELSEIF(use_opencl_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_ocl(1, rrn)
-            ENDIF
-
-            CALL clover_allsum(rrn)
-
-            beta = rrn/rro
-
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  chunks(c)%field%work_array1,                 &
-                  chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%work_array5,                 &
-                  beta)
-            ELSEIF(use_opencl_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
-            ENDIF
-
-            error = rrn
-            rro = rrn
-          endif
-
-          cheby_calc_steps = cheby_calc_steps + 1
-        ELSEIF(tl_use_cg .or. tl_use_chebyshev .or. tl_use_ppcg) then
-          fields(FIELD_P) = 1
-          cg_calc_steps = cg_calc_steps + 1
-
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array4,                 &
-                chunks(c)%field%work_array6,                 &
-                chunks(c)%field%work_array7,                 &
-                rx, ry, pw)
-          ELSEIF(use_opencl_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
-          ELSEIF(use_c_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_c_calc_w(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array4,                 &
-                chunks(c)%field%work_array6,                 &
-                chunks(c)%field%work_array7,                 &
-                rx, ry, pw)
-          ENDIF
-
-          CALL clover_allsum(pw)
-          alpha = rro/pw
-          if(tl_use_chebyshev .or. tl_use_ppcg) cg_alphas(n) = alpha
-
-          IF(use_fortran_kernels) THEN
-            call tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%u,                           &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array3,                 &
-                chunks(c)%field%work_array4,                 &
-                chunks(c)%field%work_array5,                 &
-                alpha, rrn)
-          ELSEIF(use_opencl_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
-          ELSEIF(use_c_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_c_calc_ur(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%u,                           &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array3,                 &
-                chunks(c)%field%work_array4,                 &
-                chunks(c)%field%work_array5,                 &
-                alpha, rrn)
-          ENDIF
-
-          CALL clover_allsum(rrn)
-          beta = rrn/rro
-          if(tl_use_chebyshev .or. tl_use_ppcg) cg_betas(n) = beta
-
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array5,                 &
-                beta)
-          ELSEIF(use_opencl_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
-          ELSEIF(use_c_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_c_calc_p(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%work_array2,                 &
-                chunks(c)%field%work_array5,                 &
-                beta)
-          ENDIF
-
-          error = rrn
-          rro = rrn
-        ELSE
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                rx,                                          &
-                ry,                                          &
-                chunks(c)%field%work_array6,                 &
-                chunks(c)%field%work_array7,                 &
-                error,                                       &
-                chunks(c)%field%work_array1,                 &
-                chunks(c)%field%u,                           &
-                chunks(c)%field%work_array2)
-          ELSEIF(use_opencl_kernels) THEN
-              CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
-          ELSEIF(use_C_kernels) THEN
-              CALL tea_leaf_kernel_solve_c(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  rx,                                          &
-                  ry,                                          &
-                  chunks(c)%field%work_array6,                 &
-                  chunks(c)%field%work_array7,                 &
-                  error,                                       &
-                  chunks(c)%field%work_array1,                 &
-                  chunks(c)%field%u,                           &
-                  chunks(c)%field%work_array2)
-          ENDIF
-
-          CALL clover_allsum(error)
-        ENDIF
-
-        ! updates u and possibly p
-        CALL update_halo(fields,1)
-
-        if (profile_solver) then
-          IF (tl_use_chebyshev .and. ch_switch_check) then
-              ch_time=ch_time+(timer()-solve_timer)
-          else
-              cg_time=cg_time+(timer()-solve_timer)
-          endif
-          total_solve_time = total_solve_time + (timer() - solve_timer)
-        endif
-
-        IF (abs(error) .LT. eps) EXIT
-
-      ENDDO
-
-      if (tl_check_result) then
-        IF(use_fortran_kernels) THEN
-          CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%u,                           &
-              chunks(c)%field%u0,                 &
-              chunks(c)%field%work_array2,                 &
-              chunks(c)%field%work_array6,                 &
-              chunks(c)%field%work_array7,                 &
-              rx, ry)
-          call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-              chunks(c)%field%x_max,                       &
-              chunks(c)%field%y_min,                       &
-              chunks(c)%field%y_max,                       &
-              chunks(c)%field%work_array2,                 &
-              exact_error)
-        ELSEIF(use_opencl_kernels) THEN
-          CALL tea_leaf_calc_residual_ocl()
-          call tea_leaf_calc_2norm_kernel_ocl(1, exact_error)
-        ENDIF
-
-        call clover_allsum(exact_error)
-      endif
-
-      IF (parallel%boss) THEN
-!$      IF(OMP_GET_THREAD_NUM().EQ.0) THEN
-          WRITE(g_out,"('Conduction error ',e14.7)") error
-          WRITE(0,"('Conduction error ',e14.7)") error
-
-          if (tl_check_result) then
-            write(0,"('EXACT error calculated as', e14.7)") exact_error
-            write(g_out,"('EXACT error calculated as', e14.7)") exact_error
-          endif
-
-          WRITE(g_out,"('Iteration count ',i8)") n-1
-          WRITE(0,"('Iteration count ', i8)") n-1
-!$      ENDIF
-      ENDIF
-
-      ! RESET
-      IF(use_fortran_kernels) THEN
-          CALL tea_leaf_kernel_finalise(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                           &
-              chunks(c)%field%y_min,                           &
-              chunks(c)%field%y_max,                           &
-              chunks(c)%field%energy1,                         &
-              chunks(c)%field%density1,                        &
-              chunks(c)%field%u)
-      ELSEIF(use_opencl_kernels) THEN
-          CALL tea_leaf_kernel_finalise_ocl()
-      ELSEIF(use_C_kernels) THEN
-          CALL tea_leaf_kernel_finalise_c(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                           &
-              chunks(c)%field%y_min,                           &
-              chunks(c)%field%y_max,                           &
-              chunks(c)%field%energy1,                         &
-              chunks(c)%field%density1,                        &
-              chunks(c)%field%u)
-      ENDIF
-
-      fields=0
-      fields(FIELD_ENERGY1) = 1
-      CALL update_halo(fields,1)
-
-    ENDIF
-
-  ENDDO
-  IF(profile_solver) profiler%tea=profiler%tea+(timer()-kernel_time)
-
-  IF (profile_solver .and. parallel%boss) then
-    write(0, "(a16, a7, a16)") "Time", "Steps", "Per it"
-    write(0, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
-    write(g_out, "(a16, a7, a16)") "Time", "Steps", "Per it"
-    write(g_out, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
-  endif
-
-  IF (profile_solver .and. tl_use_chebyshev) THEN
-    call clover_sum(ch_time)
-    call clover_sum(cg_time)
-    if (parallel%boss) then
-      cg_per_it = merge((cg_time/cg_calc_steps)/parallel%max_task, 0.0_8, cg_calc_steps .gt. 0)
-      ch_per_it = merge((ch_time/cheby_calc_steps)/parallel%max_task, 0.0_8, cheby_calc_steps .gt. 0)
-
-      write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
-      write(0, "(a3, f16.10, i7, f16.10, f7.2)") &
-          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
-      write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
-          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
-      write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-          cheby_calc_steps, cheby_calc_steps-est_itc
-
-      write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
-      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") &
-          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
-      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
-          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
-      write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-          cheby_calc_steps, cheby_calc_steps-est_itc
-    endif
-  endif
-
-END SUBROUTINE tea_leaf
-
-subroutine tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
-    rx, ry, tl_ppcg_inner_steps, c)
-
-  INTEGER :: fields(NUM_FIELDS)
-  INTEGER :: c, tl_ppcg_inner_steps, ppcg_cur_step
-  REAL(KIND=8) :: rx, ry, theta
-  REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
-
-  IF(use_fortran_kernels) THEN
-    call tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&
-        chunks(c)%field%x_max,                       &
-        chunks(c)%field%y_min,                       &
-        chunks(c)%field%y_max,                       &
-        chunks(c)%field%work_array2,                 &
-        chunks(c)%field%work_array8,                 &
-        theta)
-  ELSEIF(use_opencl_kernels) THEN
-    CALL tea_leaf_kernel_ppcg_init_sd_ocl()
+  IF(rank.EQ.0) THEN
+    parallel%boss=.TRUE.
   ENDIF
 
-  fields = 0
-  fields(FIELD_SD) = 1
+  parallel%boss_task=0
+  parallel%max_task=size
 
-  ! inner steps
-  DO ppcg_cur_step=1,tl_ppcg_inner_steps
-    CALL update_halo(fields,1)
+END SUBROUTINE tea_init_comms
 
+SUBROUTINE tea_get_num_chunks(count)
+
+  IMPLICIT NONE
+
+  INTEGER :: count
+
+! Should be changed so there can be more than one chunk per mpi task
+
+  count=parallel%max_task
+
+END SUBROUTINE tea_get_num_chunks
+
+SUBROUTINE tea_decompose(x_cells,y_cells,left,right,bottom,top)
+
+  ! This decomposes the mesh into a number of chunks.
+  ! The number of chunks may be a multiple of the number of mpi tasks
+  ! Doesn't always return the best split if there are few factors
+  ! All factors need to be stored and the best picked. But its ok for now
+
+  IMPLICIT NONE
+
+  INTEGER :: x_cells,y_cells,left(:),right(:),top(:),bottom(:)
+  INTEGER :: c,delta_x,delta_y
+
+  REAL(KIND=8) :: mesh_ratio,factor_x,factor_y
+  INTEGER  :: chunk_x,chunk_y,mod_x,mod_y,split_found
+
+  INTEGER  :: cx,cy,chunk,add_x,add_y,add_x_prev,add_y_prev
+
+  ! 2D Decomposition of the mesh
+
+  mesh_ratio=real(x_cells)/real(y_cells)
+
+  chunk_x=number_of_chunks
+  chunk_y=1
+
+  split_found=0 ! Used to detect 1D decomposition
+  DO c=1,number_of_chunks
+    IF (MOD(number_of_chunks,c).EQ.0) THEN
+      factor_x=number_of_chunks/real(c)
+      factor_y=c
+      !Compare the factor ratio with the mesh ratio
+      IF(factor_x/factor_y.LE.mesh_ratio) THEN
+        chunk_y=c
+        chunk_x=number_of_chunks/c
+        split_found=1
+        EXIT
+      ENDIF
+    ENDIF
+  ENDDO
+
+  IF(split_found.EQ.0.OR.chunk_y.EQ.number_of_chunks) THEN ! Prime number or 1D decomp detected
+    IF(mesh_ratio.GE.1.0) THEN
+      chunk_x=number_of_chunks
+      chunk_y=1
+    ELSE
+      chunk_x=1
+      chunk_y=number_of_chunks
+    ENDIF
+  ENDIF
+
+  delta_x=x_cells/chunk_x
+  delta_y=y_cells/chunk_y
+  mod_x=MOD(x_cells,chunk_x)
+  mod_y=MOD(y_cells,chunk_y)
+
+  ! Set up chunk mesh ranges and chunk connectivity
+
+    add_x_prev=0
+    add_y_prev=0
+    chunk=1
+    DO cy=1,chunk_y
+        DO cx=1,chunk_x
+            add_x=0
+            add_y=0
+            IF(cx.LE.mod_x)add_x=1
+            IF(cy.LE.mod_y)add_y=1
+
+            IF (chunk .EQ. parallel%task+1) THEN
+                left(1)   = (cx-1)*delta_x+1+add_x_prev
+                right(1)  = left(1)+delta_x-1+add_x
+                bottom(1) = (cy-1)*delta_y+1+add_y_prev
+                top(1)    = bottom(1)+delta_y-1+add_y
+
+                chunks(1)%chunk_neighbours(chunk_left)=chunk_x*(cy-1)+cx-1
+                chunks(1)%chunk_neighbours(chunk_right)=chunk_x*(cy-1)+cx+1
+                chunks(1)%chunk_neighbours(chunk_bottom)=chunk_x*(cy-2)+cx
+                chunks(1)%chunk_neighbours(chunk_top)=chunk_x*(cy)+cx
+
+                IF(cx.EQ.1)       chunks(1)%chunk_neighbours(chunk_left)=external_face
+                IF(cx.EQ.chunk_x) chunks(1)%chunk_neighbours(chunk_right)=external_face
+                IF(cy.EQ.1)       chunks(1)%chunk_neighbours(chunk_bottom)=external_face
+                IF(cy.EQ.chunk_y) chunks(1)%chunk_neighbours(chunk_top)=external_face
+            ENDIF
+
+            IF(cx.LE.mod_x)add_x_prev=add_x_prev+1
+            chunk=chunk+1
+        ENDDO
+        add_x_prev=0
+        IF(cy.LE.mod_y)add_y_prev=add_y_prev+1
+    ENDDO
+
+  IF(parallel%boss)THEN
+    WRITE(g_out,*)
+    WRITE(g_out,*)"Mesh ratio of ",mesh_ratio
+    WRITE(g_out,*)"Decomposing the mesh into ",chunk_x," by ",chunk_y," chunks"
+    WRITE(g_out,*)
+  ENDIF
+
+END SUBROUTINE tea_decompose
+
+SUBROUTINE tea_allocate_buffers(chunk)
+
+  IMPLICIT NONE
+
+  INTEGER      :: chunk
+
+  lr_pack_buffer_size = (chunks(chunk)%field%y_max+5)
+  bt_pack_buffer_size = (chunks(chunk)%field%x_max+5)
+
+  ! Unallocated buffers for external boundaries caused issues on some systems so they are now
+  !  all allocated
+  IF(parallel%task.EQ.chunks(chunk)%task)THEN
+    !IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      ALLOCATE(chunks(chunk)%left_snd_buffer(6*(chunks(chunk)%field%y_max+5)))
+      ALLOCATE(chunks(chunk)%left_rcv_buffer(6*(chunks(chunk)%field%y_max+5)))
+    !ENDIF
+    !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      ALLOCATE(chunks(chunk)%right_snd_buffer(6*(chunks(chunk)%field%y_max+5)))
+      ALLOCATE(chunks(chunk)%right_rcv_buffer(6*(chunks(chunk)%field%y_max+5)))
+    !ENDIF
+    !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+      ALLOCATE(chunks(chunk)%bottom_snd_buffer(6*(chunks(chunk)%field%x_max+5)))
+      ALLOCATE(chunks(chunk)%bottom_rcv_buffer(6*(chunks(chunk)%field%x_max+5)))
+    !ENDIF
+    !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+      ALLOCATE(chunks(chunk)%top_snd_buffer(6*(chunks(chunk)%field%x_max+5)))
+      ALLOCATE(chunks(chunk)%top_rcv_buffer(6*(chunks(chunk)%field%x_max+5)))
+    !ENDIF
+  ENDIF
+
+END SUBROUTINE tea_allocate_buffers
+
+SUBROUTINE tea_exchange(fields,depth)
+
+  IMPLICIT NONE
+
+    INTEGER      :: fields(NUM_FIELDS),depth, chunk
+    INTEGER      :: left_right_offset(NUM_FIELDS),bottom_top_offset(NUM_FIELDS)
+    INTEGER      :: request(4)
+    INTEGER      :: message_count,err
+    INTEGER      :: status(MPI_STATUS_SIZE,4)
+    INTEGER      :: end_pack_index_left_right, end_pack_index_bottom_top,field
+
+    ! Assuming 1 patch per task, this will be changed
+
+    request=0
+    message_count=0
+
+    chunk = 1
+
+    end_pack_index_left_right=0
+    end_pack_index_bottom_top=0
+    left_right_offset = 0
+    bottom_top_offset = 0
+    DO field=1,NUM_FIELDS
+      IF(fields(field).EQ.1) THEN
+        left_right_offset(field)=end_pack_index_left_right
+        bottom_top_offset(field)=end_pack_index_bottom_top
+        end_pack_index_left_right=end_pack_index_left_right + depth*lr_pack_buffer_size
+        end_pack_index_bottom_top=end_pack_index_bottom_top + depth*bt_pack_buffer_size
+      ENDIF
+    ENDDO
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      ! do left exchanges
+      if (use_opencl_kernels) then
+        call ocl_pack_buffers(fields, left_right_offset, depth, &
+            CHUNK_LEFT, chunks(chunk)%left_snd_buffer)
+      else
+        CALL clover_pack_left(chunk, fields, depth, left_right_offset)
+      endif
+
+      !send and recv messagse to the left
+      CALL tea_send_recv_message_left(chunks(chunk)%left_snd_buffer,                      &
+                                         chunks(chunk)%left_rcv_buffer,                      &
+                                         chunk,end_pack_index_left_right,                    &
+                                         1, 2,                                               &
+                                         request(message_count+1), request(message_count+2))
+      message_count = message_count + 2
+    ENDIF
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      ! do right exchanges
+      if (use_opencl_kernels) then
+        call ocl_pack_buffers(fields, left_right_offset, depth, &
+            CHUNK_RIGHT, chunks(chunk)%right_snd_buffer)
+      else
+        CALL clover_pack_right(chunk, fields, depth, left_right_offset)
+      endif
+
+      !send message to the right
+      CALL tea_send_recv_message_right(chunks(chunk)%right_snd_buffer,                     &
+                                          chunks(chunk)%right_rcv_buffer,                     &
+                                          chunk,end_pack_index_left_right,                    &
+                                          2, 1,                                               &
+                                          request(message_count+1), request(message_count+2))
+      message_count = message_count + 2
+    ENDIF
+
+    !make a call to wait / sync
+    CALL MPI_WAITALL(message_count,request,status,err)
+
+    !unpack in left direction
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      if (use_opencl_kernels) then
+        call ocl_unpack_buffers(fields, left_right_offset, depth, &
+            CHUNK_LEFT, chunks(chunk)%left_rcv_buffer)
+      else
+        CALL clover_unpack_left(fields, chunk, depth,                      &
+                                chunks(chunk)%left_rcv_buffer,             &
+                                left_right_offset)                  
+      endif
+    ENDIF
+
+
+    !unpack in right direction
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      if (use_opencl_kernels) then
+        call ocl_unpack_buffers(fields, left_right_offset, depth, &
+            CHUNK_RIGHT, chunks(chunk)%right_rcv_buffer)
+      else
+        CALL clover_unpack_right(fields, chunk, depth,                     &
+                                 chunks(chunk)%right_rcv_buffer,           &
+                                 left_right_offset)
+      endif
+    ENDIF
+
+    message_count = 0
+    request = 0
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+      ! do bottom exchanges
+      if (use_opencl_kernels) then
+        call ocl_pack_buffers(fields, bottom_top_offset, depth, &
+            CHUNK_BOTTOM, chunks(chunk)%bottom_snd_buffer)
+      else
+        CALL clover_pack_bottom(chunk, fields, depth, bottom_top_offset)
+      endif
+
+      !send message downwards
+      CALL tea_send_recv_message_bottom(chunks(chunk)%bottom_snd_buffer,                     &
+                                           chunks(chunk)%bottom_rcv_buffer,                     &
+                                           chunk,end_pack_index_bottom_top,                     &
+                                           3, 4,                                                &
+                                           request(message_count+1), request(message_count+2))
+      message_count = message_count + 2
+    ENDIF
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+      ! do top exchanges
+      if (use_opencl_kernels) then
+        call ocl_pack_buffers(fields, bottom_top_offset, depth, &
+            CHUNK_TOP, chunks(chunk)%top_snd_buffer)
+      else
+        CALL clover_pack_top(chunk, fields, depth, bottom_top_offset)
+      endif
+
+      !send message upwards
+      CALL tea_send_recv_message_top(chunks(chunk)%top_snd_buffer,                           &
+                                        chunks(chunk)%top_rcv_buffer,                           &
+                                        chunk,end_pack_index_bottom_top,                        &
+                                        4, 3,                                                   &
+                                        request(message_count+1), request(message_count+2))
+      message_count = message_count + 2
+    ENDIF
+
+    !need to make a call to wait / sync
+    CALL MPI_WAITALL(message_count,request,status,err)
+
+    !unpack in top direction
+    IF( chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face ) THEN
+      if (use_opencl_kernels) then
+        call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
+            CHUNK_TOP, chunks(chunk)%top_rcv_buffer)
+      else
+        CALL clover_unpack_top(fields, chunk, depth,                       &
+                               chunks(chunk)%top_rcv_buffer,               &
+                               bottom_top_offset)
+      endif
+    ENDIF
+
+    !unpack in bottom direction
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+      if (use_opencl_kernels) then
+        call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
+            CHUNK_BOTTOM, chunks(chunk)%bottom_rcv_buffer)
+      else
+        CALL clover_unpack_bottom(fields, chunk, depth,                   &
+                                 chunks(chunk)%bottom_rcv_buffer,         &
+                                 bottom_top_offset)
+      endif
+    ENDIF
+
+END SUBROUTINE tea_exchange
+
+SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER      :: fields(:),depth, chunk
+  INTEGER      :: left_right_offset(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
-      call tea_leaf_kernel_ppcg_inner(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          ppcg_cur_step, &
-          ch_alphas, ch_betas, &
-          rx, ry, &
-          chunks(c)%field%u,                           &
-          chunks(c)%field%work_array2,                 &
-          chunks(c)%field%work_array6,                 &
-          chunks(c)%field%work_array7,                 &
-          chunks(c)%field%work_array8)
-    ELSEIF(use_opencl_kernels) THEN
-      CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%density,                 &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_DENSITY))
     ENDIF
-  ENDDO
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%energy0,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%energy1,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%vector_p,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%u,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%vector_sd,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_SD))
+    ENDIF
+  ENDIF
 
-  fields = 0
-  fields(FIELD_P) = 1
-end subroutine
+END SUBROUTINE tea_pack_left
 
-subroutine tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
-    error, rx, ry, theta, cn, max_cheby_iters)
+SUBROUTINE tea_send_recv_message_left(left_snd_buffer, left_rcv_buffer,      &
+                                         chunk, total_size,                     &
+                                         tag_send, tag_recv,                    &
+                                         req_send, req_recv)
+
+  REAL(KIND=8)    :: left_snd_buffer(:), left_rcv_buffer(:)
+  INTEGER         :: left_task
+  INTEGER         :: chunk
+  INTEGER         :: total_size, tag_send, tag_recv, err
+  INTEGER         :: req_send, req_recv
+
+  left_task =chunks(chunk)%chunk_neighbours(chunk_left) - 1
+
+  CALL MPI_ISEND(left_snd_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_send &
+                ,MPI_COMM_WORLD,req_send,err)
+
+  CALL MPI_IRECV(left_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_recv &
+                ,MPI_COMM_WORLD,req_recv,err)
+
+END SUBROUTINE tea_send_recv_message_left
+
+SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
+                              left_rcv_buffer,                              &
+                              left_right_offset)
+
+  USE pack_kernel_module
 
   IMPLICIT NONE
 
-  integer :: c, est_itc, max_cheby_iters
-  integer, dimension(:) :: fields
-  REAL(KIND=8) :: it_alpha, cn, gamm, bb, error, rx, ry, theta
-  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+  INTEGER         :: fields(:), chunk, depth
+  INTEGER         :: left_right_offset(:)
+  REAL(KIND=8)    :: left_rcv_buffer(:)
 
-  ! calculate 2 norm of u0
-  IF(use_fortran_kernels) THEN
-    call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          chunks(c)%field%u0,                 &
-          bb)
-  ELSEIF(use_opencl_kernels) THEN
-    call tea_leaf_calc_2norm_kernel_ocl(0, bb)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%density,                 &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%energy0,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%energy1,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%vector_p,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%u,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%vector_sd,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_SD))
+    ENDIF
   ENDIF
 
-  call clover_allsum(bb)
+END SUBROUTINE tea_unpack_left
 
-  ! initialise 'p' array
-  IF(use_fortran_kernels) THEN
-    call tea_leaf_kernel_cheby_init(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          chunks(c)%field%u,                           &
-          chunks(c)%field%u0,                 &
-          chunks(c)%field%work_array1,                 &
-          chunks(c)%field%work_array2,                 &
-          chunks(c)%field%work_array3,                 &
-          chunks(c)%field%work_array4,                 &
-          chunks(c)%field%work_array5,                 &
-          chunks(c)%field%work_array6,                 &
-          chunks(c)%field%work_array7,                 &
-          ch_alphas, ch_betas, max_cheby_iters, &
-          rx, ry, theta, error)
-  ELSEIF(use_opencl_kernels) THEN
-    call tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
-      max_cheby_iters, rx, ry, theta, error)
+SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER        :: chunk, fields(:), depth, tot_packr, left_right_offset(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%density,                 &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%energy0,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%energy1,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%vector_p,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%u,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%vector_sd,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_SD))
+    ENDIF
   ENDIF
 
-  CALL update_halo(fields,1)
+END SUBROUTINE tea_pack_right
 
-  IF(use_fortran_kernels) THEN
-      call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          chunks(c)%field%u,                           &
-          chunks(c)%field%u0,                          &
-          chunks(c)%field%work_array1,                 &
-          chunks(c)%field%work_array2,                 &
-          chunks(c)%field%work_array3,                 &
-          chunks(c)%field%work_array4,                 &
-          chunks(c)%field%work_array5,                 &
-          chunks(c)%field%work_array6,                 &
-          chunks(c)%field%work_array7,                 &
-          ch_alphas, ch_betas, max_cheby_iters,        &
-          rx, ry, 1)
-  ELSEIF(use_opencl_kernels) THEN
-      call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-        rx, ry, 1)
+SUBROUTINE tea_send_recv_message_right(right_snd_buffer, right_rcv_buffer,   &
+                                          chunk, total_size,                    &
+                                          tag_send, tag_recv,                   &
+                                          req_send, req_recv)
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: right_snd_buffer(:), right_rcv_buffer(:)
+  INTEGER      :: right_task
+  INTEGER      :: chunk
+  INTEGER      :: total_size, tag_send, tag_recv, err
+  INTEGER      :: req_send, req_recv
+
+  right_task=chunks(chunk)%chunk_neighbours(chunk_right) - 1
+
+  CALL MPI_ISEND(right_snd_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_send, &
+                 MPI_COMM_WORLD,req_send,err)
+
+  CALL MPI_IRECV(right_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_recv, &
+                 MPI_COMM_WORLD,req_recv,err)
+
+END SUBROUTINE tea_send_recv_message_right
+
+SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
+                               right_rcv_buffer,                              &
+                               left_right_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER         :: fields(:), chunk, total_in_right_buff, depth, left_right_offset(:)
+  REAL(KIND=8)    :: right_rcv_buffer(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%density,                 &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%energy0,                  &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%energy1,                  &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%vector_p,                  &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%u,                  &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
+                                       chunks(chunk)%field%x_max,                    &
+                                       chunks(chunk)%field%y_min,                    &
+                                       chunks(chunk)%field%y_max,                    &
+                                       chunks(chunk)%field%vector_sd,                  &
+                                       chunks(chunk)%right_rcv_buffer,               &
+                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                       depth, CELL_DATA,                             &
+                                       left_right_offset(FIELD_SD))
+    ENDIF
   ENDIF
 
-  IF(use_fortran_kernels) THEN
-    call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-          chunks(c)%field%x_max,                       &
-          chunks(c)%field%y_min,                       &
-          chunks(c)%field%y_max,                       &
-          chunks(c)%field%work_array2,                 &
-          error)
-  ELSEIF(use_opencl_kernels) THEN
-    call tea_leaf_calc_2norm_kernel_ocl(1, error)
+END SUBROUTINE tea_unpack_right
+
+SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER        :: chunk, fields(:), depth, bottom_top_offset(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%density,                 &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%energy0,                  &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%energy1,                  &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%vector_p,                  &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%u,                  &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
+                                   chunks(chunk)%field%x_max,                    &
+                                   chunks(chunk)%field%y_min,                    &
+                                   chunks(chunk)%field%y_max,                    &
+                                   chunks(chunk)%field%vector_sd,                  &
+                                   chunks(chunk)%top_snd_buffer,                 &
+                                   CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                   depth, CELL_DATA,                             &
+                                   bottom_top_offset(FIELD_SD))
+    ENDIF
   ENDIF
 
-  call clover_allsum(error)
+END SUBROUTINE tea_pack_top
 
-  it_alpha = eps*bb/(4.0_8*error)
-  gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
-  est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
+SUBROUTINE tea_send_recv_message_top(top_snd_buffer, top_rcv_buffer,     &
+                                        chunk, total_size,                  &
+                                        tag_send, tag_recv,                 &
+                                        req_send, req_recv)
 
-  ! This will never really give a super accurate answer due to the fact that the
-  ! eigenvalues will not be completely accurate - overestimating the estimated
-  ! iteration count is better than underestimating it because it reduces the
-  ! amount of global synchronisation needed, so multiply by 2.5
-  est_itc = int(est_itc * 2.5)
+    IMPLICIT NONE
 
-  if (parallel%boss) then
-      write(g_out,'(a11)')"est itc"
-      write(g_out,'(11i11)')est_itc
-      write(0,'(a11)')"est itc"
-      write(0,'(11i11)')est_itc
-  endif
+    REAL(KIND=8) :: top_snd_buffer(:), top_rcv_buffer(:)
+    INTEGER      :: top_task
+    INTEGER      :: chunk
+    INTEGER      :: total_size, tag_send, tag_recv, err
+    INTEGER      :: req_send, req_recv
 
-end subroutine tea_leaf_cheby_first_step
+    top_task=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
-END MODULE tea_leaf_module
+    CALL MPI_ISEND(top_snd_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_send, &
+                   MPI_COMM_WORLD,req_send,err)
+
+    CALL MPI_IRECV(top_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_recv, &
+                   MPI_COMM_WORLD,req_recv,err)
+
+END SUBROUTINE tea_send_recv_message_top
+
+SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
+                             top_rcv_buffer,                              &
+                             bottom_top_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER         :: fields(:), chunk, total_in_top_buff, depth, bottom_top_offset(:)
+  REAL(KIND=8)    :: top_rcv_buffer(:)
+
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%density,                 &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%energy0,                  &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%energy1,                  &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%vector_p,                  &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%u,                  &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%vector_sd,                  &
+                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     bottom_top_offset(FIELD_SD))
+    ENDIF
+  ENDIF
+
+END SUBROUTINE tea_unpack_top
+
+SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER        :: chunk, fields(:), depth, tot_packb, bottom_top_offset(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%density,                 &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%energy0,                  &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%energy1,                  &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%vector_p,                  &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%u,                  &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%vector_sd,                  &
+                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      bottom_top_offset(FIELD_SD))
+    ENDIF
+  ENDIF
+
+END SUBROUTINE tea_pack_bottom
+
+SUBROUTINE tea_send_recv_message_bottom(bottom_snd_buffer, bottom_rcv_buffer,        &
+                                           chunk, total_size,                           &
+                                           tag_send, tag_recv,                          &
+                                           req_send, req_recv)
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: bottom_snd_buffer(:), bottom_rcv_buffer(:)
+  INTEGER      :: bottom_task
+  INTEGER      :: chunk
+  INTEGER      :: total_size, tag_send, tag_recv, err
+  INTEGER      :: req_send, req_recv
+
+  bottom_task=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
+
+  CALL MPI_ISEND(bottom_snd_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_send &
+                ,MPI_COMM_WORLD,req_send,err)
+
+  CALL MPI_IRECV(bottom_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_recv &
+                ,MPI_COMM_WORLD,req_recv,err)
+
+END SUBROUTINE tea_send_recv_message_bottom
+
+SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
+                             bottom_rcv_buffer,                              &
+                             bottom_top_offset)
+
+  USE pack_kernel_module
+
+  IMPLICIT NONE
+
+  INTEGER         :: fields(:), chunk, depth, bottom_top_offset(:)
+  REAL(KIND=8)    :: bottom_rcv_buffer(:)
+
+  IF(fields(FIELD_DENSITY).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%density,                 &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_DENSITY))
+    ENDIF
+  ENDIF
+
+  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%energy0,                  &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_ENERGY0))
+    ENDIF
+  ENDIF
+
+  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%energy1,                  &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_ENERGY1))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_P).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%vector_p,                  &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_P))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%u,                  &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_U))
+    ENDIF
+  ENDIF
+  IF(fields(FIELD_SD).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
+                                        chunks(chunk)%field%x_max,                    &
+                                        chunks(chunk)%field%y_min,                    &
+                                        chunks(chunk)%field%y_max,                    &
+                                        chunks(chunk)%field%vector_sd,                  &
+                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                        depth, CELL_DATA,                             &
+                                        bottom_top_offset(FIELD_SD))
+    ENDIF
+  ENDIF
+
+END SUBROUTINE tea_unpack_bottom
+
+SUBROUTINE tea_sum(value)
+
+  ! Only sums to the master
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: value
+
+  REAL(KIND=8) :: total
+
+  INTEGER :: err
+
+  total=value
+
+  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,err)
+
+  value=total
+
+END SUBROUTINE tea_sum
+
+SUBROUTINE tea_allsum(value)
+
+  ! Global reduction for CG solver
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: value
+
+  REAL(KIND=8) :: total
+
+  INTEGER :: err
+
+  total=value
+
+  CALL MPI_ALLREDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,err)
+
+  value=total
+
+END SUBROUTINE tea_allsum
+
+SUBROUTINE tea_min(value)
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: value
+
+  REAL(KIND=8) :: minimum
+
+  INTEGER :: err
+
+  minimum=value
+
+  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,err)
+
+  value=minimum
+
+END SUBROUTINE tea_min
+
+SUBROUTINE tea_max(value)
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: value
+
+  REAL(KIND=8) :: maximum
+
+  INTEGER :: err
+
+  maximum=value
+
+  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,MPI_COMM_WORLD,err)
+
+  value=maximum
+
+END SUBROUTINE tea_max
+
+SUBROUTINE tea_allgather(value,values)
+
+  IMPLICIT NONE
+
+  REAL(KIND=8) :: value
+
+  REAL(KIND=8) :: values(parallel%max_task)
+
+  INTEGER :: err
+
+  values(1)=value ! Just to ensure it will work in serial
+
+  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,err)
+
+END SUBROUTINE tea_allgather
+
+SUBROUTINE tea_check_error(error)
+
+  IMPLICIT NONE
+
+  INTEGER :: error
+
+  INTEGER :: maximum
+
+  INTEGER :: err
+
+  maximum=error
+
+  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,MPI_COMM_WORLD,err)
+
+  error=maximum
+
+END SUBROUTINE tea_check_error
+
+
+END MODULE tea_module
