@@ -149,6 +149,9 @@ void CloverChunk::initOcl
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
+    // using preconditioner or not
+    preconditioner_on = paramEnabled(input, "tl_preconditioner_on");
+
     // find out which solver to use
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
@@ -347,5 +350,4 @@ void CloverChunk::initOcl
         queue = cl::CommandQueue(context, device);
     }
 }
-
 

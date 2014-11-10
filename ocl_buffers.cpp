@@ -36,6 +36,10 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(energy0, 0, 0);
     BUF2D_ALLOC(energy1, 0, 0);
 
+    BUF2D_ALLOC(volume, 0, 0);
+    BUF2D_ALLOC(xarea, 1, 0);
+    BUF2D_ALLOC(yarea, 0, 1);
+
     BUF1DX_ALLOC(cellx, 0);
     BUF1DX_ALLOC(celldx, 0);
     BUF1DX_ALLOC(vertexx, 1);

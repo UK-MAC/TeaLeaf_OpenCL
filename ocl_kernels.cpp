@@ -44,9 +44,12 @@ void CloverChunk::initProgram
 
     const std::string options_str = options.str();
 
-    fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
-    fprintf(stdout, "Compiling kernels (may take some time)...");
-    fflush(stdout);
+    if (!rank)
+    {
+        fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
+        fprintf(stdout, "Compiling kernels (may take some time)...");
+        fflush(stdout);
+    }
 
     compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device);
     compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device);
@@ -108,8 +111,11 @@ void CloverChunk::initProgram
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_calc_2norm", tea_leaf_cheby_calc_2norm_device);
 
-    fprintf(stdout, "done.\n");
-    fprintf(DBGOUT, "All kernels compiled\n");
+    if (!rank)
+    {
+        fprintf(stdout, "done.\n");
+        fprintf(DBGOUT, "All kernels compiled\n");
+    }
 }
 
 void CloverChunk::compileKernel
@@ -441,8 +447,6 @@ void CloverChunk::initArgs
     // generate chunk
     generate_chunk_init_device.setArg(0, density);
     generate_chunk_init_device.setArg(1, energy0);
-    generate_chunk_init_device.setArg(2, xvel0);
-    generate_chunk_init_device.setArg(3, yvel0);
 
     generate_chunk_device.setArg(0, vertexx);
     generate_chunk_device.setArg(1, vertexy);
@@ -450,9 +454,7 @@ void CloverChunk::initArgs
     generate_chunk_device.setArg(3, celly);
     generate_chunk_device.setArg(4, density);
     generate_chunk_device.setArg(5, energy0);
-    generate_chunk_device.setArg(6, xvel0);
-    generate_chunk_device.setArg(7, yvel0);
-    generate_chunk_device.setArg(8, u);
+    generate_chunk_device.setArg(6, u);
 
     // field summary
     field_summary_device.setArg(0, volume);
@@ -460,12 +462,10 @@ void CloverChunk::initArgs
     field_summary_device.setArg(2, energy0);
     field_summary_device.setArg(3, u);
 
-    field_summary_device.setArg(7, reduce_buf_1);
-    field_summary_device.setArg(8, reduce_buf_2);
-    field_summary_device.setArg(9, reduce_buf_3);
-    field_summary_device.setArg(10, reduce_buf_4);
-    field_summary_device.setArg(11, reduce_buf_5);
-    field_summary_device.setArg(12, reduce_buf_6);
+    field_summary_device.setArg(4, reduce_buf_1);
+    field_summary_device.setArg(5, reduce_buf_2);
+    field_summary_device.setArg(6, reduce_buf_3);
+    field_summary_device.setArg(7, reduce_buf_4);
 
     // no parameters set for update_halo here
 

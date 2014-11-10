@@ -312,11 +312,10 @@ private:
 
 public:
     void field_summary_kernel(double* vol, double* mass,
-        double* ie, double* ke, double* press, double* temp);
+        double* ie, double* temp);
 
     void generate_chunk_kernel(const int number_of_states, 
         const double* state_density, const double* state_energy,
-        const double* state_xvel, const double* state_yvel,
         const double* state_xmin, const double* state_xmax,
         const double* state_ymin, const double* state_ymax,
         const double* state_radius, const int* state_geometry,

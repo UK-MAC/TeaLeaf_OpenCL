@@ -57,7 +57,7 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
 #if defined(USE_PRECONDITIONER)
-#error Preconditioner does not yet work with ppcg solver - please recompile program withhout the PRECONDITION flag set
+#error Preconditioner does not yet work with ppcg solver - disable preconditioner in input file to run
                             + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 #else
                             + beta[step]*r[THARR2D(0, 0, 0)];

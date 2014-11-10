@@ -5,8 +5,6 @@ extern "C" void generate_chunk_kernel_ocl_
 
 const double* state_density,
 const double* state_energy,
-const double* state_xvel,
-const double* state_yvel,
 const double* state_xmin,
 const double* state_xmax,
 const double* state_ymin,
@@ -19,15 +17,14 @@ const int* g_circ,
 const int* g_point)
 {
     chunk.generate_chunk_kernel(
-        * number_of_states, state_density, state_energy, state_xvel,
-        state_yvel, state_xmin, state_xmax, state_ymin, state_ymax,
+        * number_of_states, state_density, state_energy,
+        state_xmin, state_xmax, state_ymin, state_ymax,
         state_radius, state_geometry, * g_rect, * g_circ, *g_point);
 }
 
 void CloverChunk::generate_chunk_kernel
 (const int number_of_states, 
 const double* state_density, const double* state_energy,
-const double* state_xvel, const double* state_yvel,
 const double* state_xmin, const double* state_xmax,
 const double* state_ymin, const double* state_ymax,
 const double* state_radius, const int* state_geometry,
@@ -53,8 +50,6 @@ const int g_rect, const int g_circ, const int g_point)
 
     TEMP_ALLOC(density);
     TEMP_ALLOC(energy);
-    TEMP_ALLOC(xvel);
-    TEMP_ALLOC(yvel);
     TEMP_ALLOC(xmin);
     TEMP_ALLOC(xmax);
     TEMP_ALLOC(ymin);
@@ -64,32 +59,28 @@ const int g_rect, const int g_circ, const int g_point)
 
     #undef TEMP_ALLOC
 
-    generate_chunk_init_device.setArg(4, tmp_state_density);
-    generate_chunk_init_device.setArg(5, tmp_state_energy);
-    generate_chunk_init_device.setArg(6, tmp_state_xvel);
-    generate_chunk_init_device.setArg(7, tmp_state_yvel);
+    generate_chunk_init_device.setArg(2, tmp_state_density);
+    generate_chunk_init_device.setArg(3, tmp_state_energy);
 
     //ENQUEUE(generate_chunk_init_device);
     ENQUEUE_OFFSET(generate_chunk_init_device);
 
-    generate_chunk_device.setArg(9, tmp_state_density);
-    generate_chunk_device.setArg(10, tmp_state_energy);
-    generate_chunk_device.setArg(11, tmp_state_xvel);
-    generate_chunk_device.setArg(12, tmp_state_yvel);
-    generate_chunk_device.setArg(13, tmp_state_xmin);
-    generate_chunk_device.setArg(14, tmp_state_xmax);
-    generate_chunk_device.setArg(15, tmp_state_ymin);
-    generate_chunk_device.setArg(16, tmp_state_ymax);
-    generate_chunk_device.setArg(17, tmp_state_radius);
-    generate_chunk_device.setArg(18, tmp_state_geometry);
+    generate_chunk_device.setArg(7, tmp_state_density);
+    generate_chunk_device.setArg(8, tmp_state_energy);
+    generate_chunk_device.setArg(9, tmp_state_xmin);
+    generate_chunk_device.setArg(10, tmp_state_xmax);
+    generate_chunk_device.setArg(11, tmp_state_ymin);
+    generate_chunk_device.setArg(12, tmp_state_ymax);
+    generate_chunk_device.setArg(13, tmp_state_radius);
+    generate_chunk_device.setArg(14, tmp_state_geometry);
 
-    generate_chunk_device.setArg(19, g_rect);
-    generate_chunk_device.setArg(20, g_circ);
-    generate_chunk_device.setArg(21, g_point);
+    generate_chunk_device.setArg(15, g_rect);
+    generate_chunk_device.setArg(16, g_circ);
+    generate_chunk_device.setArg(17, g_point);
 
     for (int state = 1; state < number_of_states; state++)
     {
-        generate_chunk_device.setArg(22, state);
+        generate_chunk_device.setArg(18, state);
 
         //ENQUEUE(generate_chunk_device);
         ENQUEUE_OFFSET(generate_chunk_device);

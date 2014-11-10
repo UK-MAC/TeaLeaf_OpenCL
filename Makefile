@@ -209,7 +209,7 @@ include make.deps
 
 %.o: %.cpp Makefile make.deps
 	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $*.o
-%.mod: %.f90 %.o
+%_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile make.deps
 	$(MPI_COMPILER) $(FLAGS) -c $< -o $*.o

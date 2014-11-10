@@ -26,5 +26,6 @@ void CloverChunk::initialise_chunk_kernel
     initialise_chunk_second_device.setArg(2, d_dx);
     initialise_chunk_second_device.setArg(3, d_dy);
     ENQUEUE(initialise_chunk_second_device)
+    queue.finish();
 }
 
