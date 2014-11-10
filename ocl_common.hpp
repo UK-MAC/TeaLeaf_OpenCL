@@ -81,7 +81,6 @@ private:
     // kernels
     cl::Kernel set_field_device;
     cl::Kernel field_summary_device;
-    cl::Kernel calc_dt_device;
 
     cl::Kernel generate_chunk_device;
     cl::Kernel generate_chunk_init_device;

@@ -166,7 +166,6 @@ FORTRAN_FILES=\
 	initialise.o			\
 	field_summary_kernel.o	\
 	field_summary.o		\
-	calc_dt_kernel.o		\
 	calc_dt.o			\
 	timestep.o			\
 	set_field_kernel.o            \
