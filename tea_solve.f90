@@ -254,7 +254,7 @@ SUBROUTINE tea_leaf()
                                   ch_alphas, ch_betas, max_cheby_iters,        &
                                   rx, ry, cheby_calc_steps, tl_preconditioner_on)
                   ELSEIF(use_opencl_kernels) THEN
-                      call tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+                      CALL tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
                         rx, ry, cheby_calc_steps)
                   ENDIF
 

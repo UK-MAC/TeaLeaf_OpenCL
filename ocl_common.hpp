@@ -187,11 +187,6 @@ private:
     cl::Buffer energy1;
     cl::Buffer volume;
 
-    cl::Buffer vol_flux_x;
-    cl::Buffer vol_flux_y;
-    cl::Buffer mass_flux_x;
-    cl::Buffer mass_flux_y;
-
     cl::Buffer cellx;
     cl::Buffer celly;
     cl::Buffer celldx;
@@ -203,11 +198,6 @@ private:
 
     cl::Buffer xarea;
     cl::Buffer yarea;
-
-    cl::Buffer xvel0;
-    cl::Buffer xvel1;
-    cl::Buffer yvel0;
-    cl::Buffer yvel1;
 
     // generic work arrays
     cl::Buffer work_array_1;
