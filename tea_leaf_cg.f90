@@ -64,7 +64,6 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp
-  REAL(KIND=8) :: a, b, c
 
   INTEGER(KIND=4) :: coef
   INTEGER(KIND=4) :: j,k,n
@@ -133,28 +132,21 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
     ENDDO
 !$OMP END DO
 
+#define COEF_A (-Kx(j, k)*rx)
+#define COEF_B (1.0_8 + ry*(Ky(j, k+1) + Ky(j, k)) + rx*(Kx(j+1, k) + Kx(j, k)))
+#define COEF_C (-Kx(j+1, k)*rx)
+
   IF (preconditioner_on) then
 !$OMP DO
     DO k=y_min,y_max
         j = x_min
 
-        a = -Ky(j, k)
-        b = (1.0_8                          &
-            + ry*(Ky(j, k+1) + Ky(j, k))    &
-            + rx*(Kx(j+1, k) + Kx(j, k)))
-        c = -Ky(j, k+1)
-
-        cp(x_min,k) = c/b
+        cp(x_min,k) = COEF_C/COEF_B
 
         DO j=x_min+1,x_max
-            a = -Ky(j, k)
-            b = (1.0_8                          &
-                + ry*(Ky(j, k+1) + Ky(j, k))    &
-                + rx*(Kx(j+1, k) + Kx(j, k)))
-            c = -Ky(j, k+1)
-
-            cp(j, k) = c/(b - a*cp(j-1, k))
-            bfp(j, k) = b - a*cp(j-1, k)
+            cp(j, k) = COEF_C/ &
+        (COEF_B - COEF_A*cp(j-1, k))
+            bfp(j, k) = COEF_B - COEF_A*cp(j-1, k)
         ENDDO
     ENDDO
 !$OMP END DO
@@ -250,22 +242,16 @@ subroutine tea_block_solve(x_min,             &
   INTEGER(KIND=4):: j, k
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky, r, z
-  REAL(KIND=8) :: a, b, c, rx, ry
+  REAL(KIND=8) :: rx, ry
 
 !$OMP DO
     DO k=y_min,y_max
         j = x_min
 
-        a = -Ky(j, k)
-        b = (1.0_8                          &
-            + ry*(Ky(j, k+1) + Ky(j, k))    &
-            + rx*(Kx(j+1, k) + Kx(j, k)))
-        c = -Ky(j, k+1)
-
-        dp(j, k) = r(j, k)/b
+        dp(j, k) = r(j, k)/COEF_B
 
         DO j=x_min+1,x_max
-            dp(j, k) = (r(j, k) - a*dp(j-1, k))/bfp(j, k)
+            dp(j, k) = (r(j, k) - COEF_A*dp(j-1, k))/bfp(j, k)
         ENDDO
 
         j = x_max
@@ -309,7 +295,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky
-  REAL(KIND=8) :: a, b, c, rx, ry
+  REAL(KIND=8) :: rx, ry
 
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: alpha, rrn
