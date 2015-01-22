@@ -39,6 +39,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
                            z,                      &
                            Kx,                     &
                            Ky,                     &
+                           cp,                     &
+                           bfp,                     &
+                           dp,                     &
                            rx,                     &
                            ry,                     &
                            rro,                    &
@@ -60,6 +63,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
 
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp
+  REAL(KIND=8) :: a, b, c
+
   INTEGER(KIND=4) :: coef
   INTEGER(KIND=4) :: j,k,n
 
@@ -72,6 +78,9 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   rro = 0.0_8
   p = 0.0_8
   r = 0.0_8
+  cp = 0.0_8
+  dp = 0.0_8
+  bfp = 0.0_8
 
 !$OMP PARALLEL
 !$OMP DO 
@@ -125,22 +134,48 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
 !$OMP END DO
 
   IF (preconditioner_on) then
+!$OMP DO
+    DO k=y_min,y_max
+        j = x_min
+
+        a = -Ky(j, k)
+        b = (1.0_8                          &
+            + ry*(Ky(j, k+1) + Ky(j, k))    &
+            + rx*(Kx(j+1, k) + Kx(j, k)))
+        c = -Ky(j, k+1)
+
+        cp(x_min,k) = c/b
+
+        DO j=x_min+1,x_max
+            a = -Ky(j, k)
+            b = (1.0_8                          &
+                + ry*(Ky(j, k+1) + Ky(j, k))    &
+                + rx*(Kx(j+1, k) + Kx(j, k)))
+            c = -Ky(j, k+1)
+
+            cp(j, k) = c/(b - a*cp(j-1, k))
+            bfp(j, k) = b - a*cp(j-1, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+
+    call tea_block_solve(x_min, x_max, y_min, y_max,             &
+                        r, z,                 &
+                           cp,                     &
+                           bfp,                     &
+                           dp,                     &
+                           Kx, Ky, rx, ry)
+
 !$OMP DO REDUCTION(+:rro)
     DO k=y_min,y_max
         DO j=x_min,x_max
-            ! inverse diagonal used as preconditioner
-            Mi(j, k) = (1.0_8                                     &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))
-            Mi(j, k) = 1.0_8/Mi(j, k)
-
-            z(j, k) = Mi(j, k)*r(j, k)
             p(j, k) = z(j, k)
 
             rro = rro + r(j, k)*p(j, k);
         ENDDO
     ENDDO
 !$OMP END DO
+
   ELSE
 !$OMP DO REDUCTION(+:rro)
     DO k=y_min,y_max
@@ -201,6 +236,49 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
 
+subroutine tea_block_solve(x_min,             &
+                                                    x_max,             &
+                                                    y_min,             &
+                                                    y_max,             &
+                                                    r,                 &
+                                                    z,                 &
+                           cp,                     &
+                           bfp,                     &
+                           dp,                     &
+                           Kx, Ky, rx, ry)
+
+  INTEGER(KIND=4):: j, k
+  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky, r, z
+  REAL(KIND=8) :: a, b, c, rx, ry
+
+!$OMP DO
+    DO k=y_min,y_max
+        j = x_min
+
+        a = -Ky(j, k)
+        b = (1.0_8                          &
+            + ry*(Ky(j, k+1) + Ky(j, k))    &
+            + rx*(Kx(j+1, k) + Kx(j, k)))
+        c = -Ky(j, k+1)
+
+        dp(j, k) = r(j, k)/b
+
+        DO j=x_min+1,x_max
+            dp(j, k) = (r(j, k) - a*dp(j-1, k))/bfp(j, k)
+        ENDDO
+
+        j = x_max
+        z(j, k) = dp(j, k)
+
+        DO j=x_max-1, x_min, -1
+            z(j, k) = dp(j, k) - cp(j, k)*z(j+1, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+
+end subroutine
+
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
                                                     x_max,             &
                                                     y_min,             &
@@ -211,6 +289,10 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
                                                     Mi,                &
                                                     w,                 &
                                                     z,                 &
+                           cp,                     &
+                           bfp,                     &
+                           dp,                     &
+                           Kx, Ky, rx, ry, &
                                                     alpha,             &
                                                     rrn,               &
                                                     preconditioner_on)
@@ -226,29 +308,46 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
 
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky
+  REAL(KIND=8) :: a, b, c, rx, ry
+
     INTEGER(KIND=4) :: j,k,n
     REAL(kind=8) :: alpha, rrn
 
     rrn = 0.0_08
 
 !$OMP PARALLEL
-  IF (preconditioner_on) THEN
-!$OMP DO REDUCTION(+:rrn)
+!$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
             u(j, k) = u(j, k) + alpha*p(j, k)
             r(j, k) = r(j, k) - alpha*w(j, k)
-            z(j, k) = Mi(j, k)*r(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+
+  IF (preconditioner_on) THEN
+
+    call tea_block_solve(x_min, x_max, y_min, y_max,             &
+                        r, z,                 &
+                           cp,                     &
+                           bfp,                     &
+                           dp,                     &
+                           Kx, Ky, rx, ry)
+
+!$OMP DO REDUCTION(+:rrn)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
             rrn = rrn + r(j, k)*z(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
+
   ELSE
+
 !$OMP DO REDUCTION(+:rrn)
     DO k=y_min,y_max
         DO j=x_min,x_max
-            u(j, k) = u(j, k) + alpha*p(j, k)
-            r(j, k) = r(j, k) - alpha*w(j, k)
             rrn = rrn + r(j, k)*r(j, k)
         ENDDO
     ENDDO

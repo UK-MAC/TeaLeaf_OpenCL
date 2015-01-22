@@ -115,6 +115,9 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%vector_z,                               &
               chunks(c)%field%vector_Kx,                              &
               chunks(c)%field%vector_Ky,                              &
+              chunks(c)%field%tri_cp,   &
+              chunks(c)%field%tri_bfp,    &
+              chunks(c)%field%tri_dp,                              &
               rx, ry, rro, coefficient, tl_preconditioner_on)
         ELSEIF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
@@ -339,6 +342,12 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%vector_Mi,                                      &
                   chunks(c)%field%vector_w,                                       &
                   chunks(c)%field%vector_z,                                       &
+              chunks(c)%field%tri_cp,   &
+              chunks(c)%field%tri_bfp,    &
+              chunks(c)%field%tri_dp,                              &
+              chunks(c)%field%vector_Kx,                              &
+              chunks(c)%field%vector_Ky,                              &
+              rx, ry, &
                   alpha, rrn, tl_preconditioner_on)
             ELSEIF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
@@ -415,6 +424,12 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%vector_Mi,                                      &
                 chunks(c)%field%vector_w,                                       &
                 chunks(c)%field%vector_z,                                       &
+              chunks(c)%field%tri_cp,   &
+              chunks(c)%field%tri_bfp,    &
+              chunks(c)%field%tri_dp,                              &
+              chunks(c)%field%vector_Kx,                              &
+              chunks(c)%field%vector_Ky,                              &
+              rx, ry, &
                 alpha, rrn, tl_preconditioner_on)
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)

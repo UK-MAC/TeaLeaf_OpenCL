@@ -19,7 +19,7 @@
   end_time=15.0
   end_step=50
 
-  use_opencl_kernels
+  use_fortran_kernels
   opencl_vendor=nvidia
   opencl_type=gpu
 
@@ -43,7 +43,6 @@
   hydro_off
   tea_leaf_on
 
-  !profiler_on
-  !profile_solver
+  tl_preconditioner_on
 
 *endtea
