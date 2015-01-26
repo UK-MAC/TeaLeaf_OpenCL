@@ -10,7 +10,7 @@
 #define COEF_B (1.0 + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]) + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))
 #define COEF_C (-Kx[THARR2D(0+1, 0, 0)])
 
-void block_solve
+void block_solve_f
 (__global       double * __restrict const r,
  __global       double * __restrict const z,
  __global       double * __restrict const cp,
@@ -65,7 +65,19 @@ __kernel void block_init
         cp[THARR2D(j, 0, 0)] = COEF_C/bfp[THARR2D(j, 0, 0)];
     }
 
-    block_solve(r, z, cp, bfp, dp, Kx, Ky);
+    block_solve_f(r, z, cp, bfp, dp, Kx, Ky);
+}
+
+__kernel void block_solve
+(__global       double * __restrict const r,
+ __global       double * __restrict const z,
+ __global       double * __restrict const cp,
+ __global       double * __restrict const bfp,
+ __global       double * __restrict const dp,
+ __global       double * __restrict const Kx,
+ __global       double * __restrict const Ky)
+{
+    block_solve_f(r, z, cp, bfp, dp, Kx, Ky);
 }
 
 __kernel void tea_leaf_cg_init_u

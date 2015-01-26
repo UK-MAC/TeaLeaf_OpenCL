@@ -85,6 +85,7 @@ void CloverChunk::initProgram
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_init_others", tea_leaf_cg_init_others_device);
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
+        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_rrn", tea_leaf_cg_solve_calc_rrn_device);
         compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
@@ -114,6 +115,7 @@ void CloverChunk::initProgram
     compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_calc_2norm", tea_leaf_cheby_calc_2norm_device);
 
     compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "block_init", tea_leaf_block_init);
+    compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "block_solve", tea_leaf_block_solve);
 
     if (!rank)
     {
@@ -384,6 +386,7 @@ void CloverChunk::initSizes
         FIND_PADDING_SIZE(tea_leaf_cg_init_others, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
+        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_rrn, 0, 0, 0, 0);
         FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
@@ -501,7 +504,7 @@ void CloverChunk::initArgs
         tea_leaf_cg_init_others_device.setArg(1, vector_p);
         tea_leaf_cg_init_others_device.setArg(2, vector_r);
         // used when preconditioner is used
-        tea_leaf_cg_init_others_device.setArg(3, z);
+        tea_leaf_cg_init_others_device.setArg(3, vector_z);
 
         tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
         tea_leaf_cg_solve_calc_w_device.setArg(1, vector_p);
@@ -514,14 +517,14 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_ur_device.setArg(3, vector_r);
         tea_leaf_cg_solve_calc_ur_device.setArg(4, vector_w);
 
-        tea_leaf_cg_solve_calc_rrn_device.setArg(1, reduce_buf_4);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(2, vector_r);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(3, vector_w);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(3, z);
+        tea_leaf_cg_solve_calc_rrn_device.setArg(0, reduce_buf_4);
+        tea_leaf_cg_solve_calc_rrn_device.setArg(1, vector_r);
+        tea_leaf_cg_solve_calc_rrn_device.setArg(2, vector_w);
+        tea_leaf_cg_solve_calc_rrn_device.setArg(3, vector_z);
 
         tea_leaf_cg_solve_calc_p_device.setArg(1, vector_p);
         tea_leaf_cg_solve_calc_p_device.setArg(2, vector_r);
-        tea_leaf_cg_solve_calc_p_device.setArg(3, z);
+        tea_leaf_cg_solve_calc_p_device.setArg(3, vector_z);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
@@ -606,12 +609,20 @@ void CloverChunk::initArgs
 
     // block
     tea_leaf_block_init.setArg(0, vector_r);
-    tea_leaf_block_init.setArg(1, z);
+    tea_leaf_block_init.setArg(1, vector_z);
     tea_leaf_block_init.setArg(2, cp);
     tea_leaf_block_init.setArg(3, bfp);
     tea_leaf_block_init.setArg(4, dp);
     tea_leaf_block_init.setArg(5, vector_Kx);
     tea_leaf_block_init.setArg(6, vector_Ky);
+
+    tea_leaf_block_solve.setArg(0, vector_r);
+    tea_leaf_block_solve.setArg(1, vector_z);
+    tea_leaf_block_solve.setArg(2, cp);
+    tea_leaf_block_solve.setArg(3, bfp);
+    tea_leaf_block_solve.setArg(4, dp);
+    tea_leaf_block_solve.setArg(5, vector_Kx);
+    tea_leaf_block_solve.setArg(6, vector_Ky);
 
     fprintf(DBGOUT, "Kernel arguments set\n");
 }

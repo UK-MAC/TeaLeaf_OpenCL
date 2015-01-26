@@ -139,7 +139,7 @@ void CloverChunk::packUnpackAllBuffers
 
             int x_inc = 0, y_inc = 0;
 
-            // set x/y/z inc for array
+            // set x/y/vector_z inc for array
             switch (which_field)
             {
             case FIELD_density:

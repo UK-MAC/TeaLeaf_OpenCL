@@ -61,7 +61,6 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    //ENQUEUE(tea_leaf_cheby_calc_2norm_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_calc_2norm_device);
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
@@ -86,10 +85,8 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_init_p_device.setArg(9, rx);
     tea_leaf_cheby_solve_init_p_device.setArg(10, ry);
 
-    //ENQUEUE(tea_leaf_cheby_solve_init_p_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_init_p_device);
 
-    //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
 }
 
@@ -99,9 +96,7 @@ void CloverChunk::tea_leaf_kernel_cheby_iterate
 {
     tea_leaf_cheby_solve_calc_p_device.setArg(12, cheby_calc_step-1);
 
-    //ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
-    //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
 }
 
@@ -186,19 +181,15 @@ void CloverChunk::tea_leaf_init_cg
 
     // copy u, get density value modified by coefficient
     tea_leaf_cg_init_u_device.setArg(6, coefficient);
-    //ENQUEUE(tea_leaf_cg_init_u_device);
     ENQUEUE_OFFSET(tea_leaf_cg_init_u_device);
 
     // init Kx, Ky
-    //ENQUEUE(tea_leaf_cg_init_directions_device);
     ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
 
     // premultiply Kx/Ky
-    //ENQUEUE(tea_leaf_init_diag_device);
     ENQUEUE_OFFSET(tea_leaf_init_diag_device);
 
     // get initial guess in w, r, etc
-    //ENQUEUE(tea_leaf_cg_init_others_device);
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
 
     enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
@@ -214,7 +205,6 @@ void CloverChunk::tea_leaf_init_cg
 void CloverChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
-    //ENQUEUE(tea_leaf_cg_solve_calc_w_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 }
@@ -224,8 +214,15 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
+
+    enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+                  cl::NDRange(1, 1),
+                  cl::NDRange(y_max, x_max/8),
+                  cl::NullRange);
+
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_rrn_device);
+
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 }
 
@@ -234,7 +231,6 @@ void CloverChunk::tea_leaf_kernel_cg_calc_p
 {
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
 
-    //ENQUEUE(tea_leaf_cg_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
 }
 
@@ -265,7 +261,6 @@ void CloverChunk::tea_leaf_init_jacobi
     calcrxry(dt, rx, ry);
 
     tea_leaf_jacobi_init_device.setArg(6, coefficient);
-    //ENQUEUE(tea_leaf_jacobi_init_device);
     ENQUEUE_OFFSET(tea_leaf_jacobi_init_device);
 
     tea_leaf_jacobi_solve_device.setArg(0, *rx);
@@ -275,9 +270,7 @@ void CloverChunk::tea_leaf_init_jacobi
 void CloverChunk::tea_leaf_kernel_jacobi
 (double rx, double ry, double* error)
 {
-    //ENQUEUE(tea_leaf_jacobi_copy_u_device);
     ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
-    //ENQUEUE(tea_leaf_jacobi_solve_device);
     ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
 
     *error = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
@@ -302,7 +295,6 @@ extern "C" void tea_leaf_calc_residual_ocl_
 void CloverChunk::tea_leaf_finalise
 (void)
 {
-    //ENQUEUE(tea_leaf_finalise_device);
     ENQUEUE_OFFSET(tea_leaf_finalise_device);
 }
 

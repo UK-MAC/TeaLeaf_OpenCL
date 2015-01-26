@@ -121,8 +121,9 @@ private:
     cl::Kernel tea_leaf_cg_init_others_device;
     cl::Kernel tea_leaf_cg_solve_calc_w_device;
     cl::Kernel tea_leaf_cg_solve_calc_ur_device;
+    cl::Kernel tea_leaf_cg_solve_calc_rrn_device;
     cl::Kernel tea_leaf_cg_solve_calc_p_device;
-    cl::Buffer z;
+    cl::Buffer vector_z;
 
     // chebyshev solver
     cl::Kernel tea_leaf_cheby_solve_init_p_device;
@@ -143,7 +144,8 @@ private:
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
 
-    cl::Kernel tea_leaf_block_init;;
+    cl::Kernel tea_leaf_block_init;
+    cl::Kernel tea_leaf_block_solve;
     cl::Buffer cp, bfp, dp;
 
     cl::Buffer u, u0;
