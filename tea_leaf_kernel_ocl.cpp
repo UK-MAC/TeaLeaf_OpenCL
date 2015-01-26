@@ -192,10 +192,18 @@ void CloverChunk::tea_leaf_init_cg
     // get initial guess in w, r, etc
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
 
-    enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                  cl::NDRange(2, 2),
-                  cl::NDRange(x_max/8, y_max),
-                  cl::NullRange);
+    if (preconditioner_on)
+    {
+        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+                      cl::NDRange(2, 2),
+                      cl::NDRange(x_max/8, y_max),
+                      cl::NullRange);
+
+        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+                      cl::NDRange(2, 2),
+                      cl::NDRange(x_max/8, y_max),
+                      cl::NullRange);
+    }
 
     ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 

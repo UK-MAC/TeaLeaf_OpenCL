@@ -6,9 +6,10 @@
 
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
+
 #define COEF_A (-Kx[THARR2D(0, 0, 0)])
 #define COEF_B (1.0 + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]) + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))
-#define COEF_C (-Kx[THARR2D(0+1, 0, 0)])
+#define COEF_C (-Kx[THARR2D(1, 0, 0)])
 
 void block_solve_f
 (__global       double * __restrict const r,
@@ -64,8 +65,6 @@ __kernel void block_init
         bfp[THARR2D(j, 0, 0)] = COEF_B - COEF_A*cp[THARR2D(j - 1, 0, 0)];
         cp[THARR2D(j, 0, 0)] = COEF_C/bfp[THARR2D(j, 0, 0)];
     }
-
-    block_solve_f(r, z, cp, bfp, dp, Kx, Ky);
 }
 
 __kernel void block_solve
