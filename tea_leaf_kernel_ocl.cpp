@@ -193,7 +193,7 @@ void CloverChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
 
     enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                  cl::NDRange(1, 1),
+                  cl::NDRange(2, 2),
                   cl::NDRange(x_max/8, y_max),
                   cl::NullRange);
 
@@ -219,7 +219,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
     if (preconditioner_on)
     {
         enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                      cl::NDRange(1, 1),
+                      cl::NDRange(2, 2),
                       cl::NDRange(x_max/8, y_max),
                       cl::NullRange);
 
