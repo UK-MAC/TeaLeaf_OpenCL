@@ -51,13 +51,13 @@ void CloverChunk::initBuffers
     BUF1DY_ALLOC(vertexdy, 1);
 
     // work arrays used in various kernels (post_vol, pre_vol, mom_flux, etc)
-    BUF2D_ALLOC(work_array_1, 1, 1);
-    BUF2D_ALLOC(work_array_2, 1, 1);
-    BUF2D_ALLOC(work_array_3, 1, 1);
-    BUF2D_ALLOC(work_array_4, 1, 1);
-    BUF2D_ALLOC(work_array_5, 1, 1);
-    BUF2D_ALLOC(work_array_6, 1, 1);
-    BUF2D_ALLOC(work_array_8, 1, 1);
+    BUF2D_ALLOC(vector_p, 1, 1);
+    BUF2D_ALLOC(vector_r, 1, 1);
+    BUF2D_ALLOC(vector_w, 1, 1);
+    BUF2D_ALLOC(vector_Mi, 1, 1);
+    BUF2D_ALLOC(vector_Kx, 1, 1);
+    BUF2D_ALLOC(vector_Ky, 1, 1);
+    BUF2D_ALLOC(vector_sd, 1, 1);
 
     // tealeaf
     BUF2D_ALLOC(u, 0, 0);
@@ -97,13 +97,13 @@ void CloverChunk::initBuffers
 
  #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
     ADD_BUFFER_DBG_MAP(u);
-    arr_names["p"] = work_array_1;
+    arr_names["p"] = vector_p;
 
-    ADD_BUFFER_DBG_MAP(work_array_2);
-    ADD_BUFFER_DBG_MAP(work_array_3);
-    ADD_BUFFER_DBG_MAP(work_array_4);
-    ADD_BUFFER_DBG_MAP(work_array_5);
-    ADD_BUFFER_DBG_MAP(work_array_6);
+    ADD_BUFFER_DBG_MAP(vector_r);
+    ADD_BUFFER_DBG_MAP(vector_w);
+    ADD_BUFFER_DBG_MAP(vector_Mi);
+    ADD_BUFFER_DBG_MAP(vector_Kx);
+    ADD_BUFFER_DBG_MAP(vector_Ky);
 
     ADD_BUFFER_DBG_MAP(density);
     ADD_BUFFER_DBG_MAP(energy0);

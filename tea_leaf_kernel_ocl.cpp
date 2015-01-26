@@ -54,7 +54,7 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     else if (norm_array == 1)
     {
         // norm of r
-        tea_leaf_cheby_calc_2norm_device.setArg(0, work_array_2);
+        tea_leaf_cheby_calc_2norm_device.setArg(0, vector_r);
     }
     else
     {

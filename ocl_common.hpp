@@ -20,8 +20,8 @@ const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 #define FIELD_p             5
 #define FIELD_sd            6
 #define NUM_FIELDS          6
-#define FIELD_work_array_1 FIELD_p
-#define FIELD_work_array_8 FIELD_sd
+#define FIELD_vector_p FIELD_p
+#define FIELD_vector_sd FIELD_sd
 
 #define NUM_BUFFERED_FIELDS 3
 
@@ -203,13 +203,13 @@ private:
     cl::Buffer yarea;
 
     // generic work arrays
-    cl::Buffer work_array_1;
-    cl::Buffer work_array_2;
-    cl::Buffer work_array_3;
-    cl::Buffer work_array_4;
-    cl::Buffer work_array_5;
-    cl::Buffer work_array_6;
-    cl::Buffer work_array_8;
+    cl::Buffer vector_p;
+    cl::Buffer vector_r;
+    cl::Buffer vector_w;
+    cl::Buffer vector_Mi;
+    cl::Buffer vector_Kx;
+    cl::Buffer vector_Ky;
+    cl::Buffer vector_sd;
 
     // for reduction in PdV
     cl::Buffer PdV_reduce_buf;

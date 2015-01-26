@@ -167,8 +167,8 @@ void CloverChunk::packUnpackAllBuffers
             CASE_BUF(energy0); break;
             CASE_BUF(energy1); break;
             CASE_BUF(u); break;
-            CASE_BUF(work_array_1); break;
-            CASE_BUF(work_array_8); break;
+            CASE_BUF(vector_p); break;
+            CASE_BUF(vector_sd); break;
             default:
                 DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
             }
