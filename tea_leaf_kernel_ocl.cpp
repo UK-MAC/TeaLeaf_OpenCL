@@ -178,16 +178,9 @@ void CloverChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
-    enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                  cl::NDRange(1, 1),
-                  cl::NDRange(y_max, x_max/8),
-                  cl::NullRange);
-
     // only needs to be set once
     tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
     tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
-    tea_leaf_cg_init_others_device.setArg(8, *rx);
-    tea_leaf_cg_init_others_device.setArg(9, *ry);
     tea_leaf_init_diag_device.setArg(2, *rx);
     tea_leaf_init_diag_device.setArg(3, *ry);
 
@@ -206,6 +199,13 @@ void CloverChunk::tea_leaf_init_cg
 
     // get initial guess in w, r, etc
     //ENQUEUE(tea_leaf_cg_init_others_device);
+    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+
+    enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+                  cl::NDRange(1, 1),
+                  cl::NDRange(y_max, x_max/8),
+                  cl::NullRange);
+
     ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);

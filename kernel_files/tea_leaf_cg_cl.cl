@@ -117,14 +117,8 @@ __kernel void tea_leaf_cg_init_directions
 
 __kernel void tea_leaf_cg_init_others
 (__global       double * __restrict const rro,
- __global const double * __restrict const u,
  __global       double * __restrict const p,
  __global       double * __restrict const r,
- __global       double * __restrict const w,
- __global       double * __restrict const Mi,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky,
- double rx, double ry,
  __global       double * __restrict const z)
 {
     __kernel_indexes;
@@ -138,27 +132,12 @@ __kernel void tea_leaf_cg_init_others
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-        w[THARR2D(0, 0, 0)] = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
-            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
-            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
-
-        r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
-
 #if defined(USE_PRECONDITIONER)
-        Mi[THARR2D(0, 0, 0)] = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
-        Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
-
-        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
-        rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
 #else
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-        rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
 #endif
+        rro_val = r[THARR2D(0, 0, 0)]*p[THARR2D(0, 0, 0)];
 
         rro_shared[lid] = rro_val;
     }
@@ -200,13 +179,26 @@ __kernel void tea_leaf_cg_solve_calc_w
 
 __kernel void tea_leaf_cg_solve_calc_ur
 (double alpha,
- __global       double * __restrict const rrn,
  __global       double * __restrict const u,
  __global const double * __restrict const p,
  __global       double * __restrict const r,
+ __global const double * __restrict const w)
+{
+    __kernel_indexes;
+
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    {
+        u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
+        r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
+    }
+}
+
+__kernel void tea_leaf_cg_solve_calc_rrn
+(__global       double * __restrict const rrn,
+ __global       double * __restrict const r,
  __global const double * __restrict const w,
- __global       double * __restrict const z,
- __global const double * __restrict const Mi)
+ __global       double * __restrict const z)
 {
     __kernel_indexes;
 
@@ -219,10 +211,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-        u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
-        r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
 #if defined(USE_PRECONDITIONER)
-        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
 #else
         rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
