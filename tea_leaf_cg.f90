@@ -23,6 +23,8 @@ MODULE tea_leaf_kernel_cg_module
 
 IMPLICIT NONE
 
+    integer::stride
+
 CONTAINS
 
 SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
@@ -66,7 +68,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp
 
   INTEGER(KIND=4) :: coef
-  INTEGER(KIND=4) :: j,k,n
+  INTEGER(KIND=4) :: j,k,n,s
 
   REAL(kind=8) :: rro
   REAL(KIND=8) ::  rx, ry
@@ -80,6 +82,16 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   cp = 0.0_8
   dp = 0.0_8
   bfp = 0.0_8
+
+  stride = 64
+
+  do
+    if (mod(x_max, stride) .eq. 0) then
+        exit
+    endif
+    stride = stride/2
+  enddo
+  if (stride .lt. 4) preconditioner_on = .false.
 
 !$OMP PARALLEL
 !$OMP DO 
@@ -137,17 +149,21 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
 #define COEF_C (-Kx(j+1, k)*rx)
 
   IF (preconditioner_on) then
-!$OMP DO
+!$OMP DO private(s, j)
     DO k=y_min,y_max
-        j = x_min
+        do s=0,x_max/stride - 1
+          bottom = s*stride + 1
+          top = (s+1)*stride
 
-        cp(x_min,k) = COEF_C/COEF_B
+          j = bottom
 
-        DO j=x_min+1,x_max
-            cp(j, k) = COEF_C/ &
-        (COEF_B - COEF_A*cp(j-1, k))
-            bfp(j, k) = COEF_B - COEF_A*cp(j-1, k)
-        ENDDO
+          cp(j,k) = COEF_C/COEF_B
+
+          DO j=bottom+1,top
+              bfp(j, k) = COEF_B - COEF_A*cp(j-1, k)
+              cp(j, k) = COEF_C/bfp(j, k)
+          ENDDO
+        enddo
     ENDDO
 !$OMP END DO
 
@@ -239,27 +255,33 @@ subroutine tea_block_solve(x_min,             &
                            dp,                     &
                            Kx, Ky, rx, ry)
 
-  INTEGER(KIND=4):: j, k
+  INTEGER(KIND=4):: j, k, s, bottom, top
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky, r, z
   REAL(KIND=8) :: rx, ry
 
 !$OMP DO
     DO k=y_min,y_max
-        j = x_min
+      do s=0,x_max/stride - 1
+        bottom = s*stride + 1
+        top = (s+1)*stride
+
+        j = bottom
 
         dp(j, k) = r(j, k)/COEF_B
 
-        DO j=x_min+1,x_max
+        DO j=bottom+1,top
             dp(j, k) = (r(j, k) - COEF_A*dp(j-1, k))/bfp(j, k)
         ENDDO
 
-        j = x_max
+        !j = j - 1
+        j = top
         z(j, k) = dp(j, k)
 
-        DO j=x_max-1, x_min, -1
+        DO j=top-1, bottom, -1
             z(j, k) = dp(j, k) - cp(j, k)*z(j+1, k)
         ENDDO
+      enddo
     ENDDO
 !$OMP END DO
 
