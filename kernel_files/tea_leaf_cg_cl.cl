@@ -138,9 +138,6 @@ __kernel void tea_leaf_cg_init_others
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    // used to make ifdefs for reductions less messy
-    double rro_val;
-
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
@@ -149,9 +146,8 @@ __kernel void tea_leaf_cg_init_others
 #else
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
 #endif
-        rro_val = r[THARR2D(0, 0, 0)]*p[THARR2D(0, 0, 0)];
 
-        rro_shared[lid] = rro_val;
+        rro_shared[lid] = r[THARR2D(0, 0, 0)]*p[THARR2D(0, 0, 0)];
     }
 
     REDUCTION(rro_shared, rro, SUM)
@@ -217,7 +213,6 @@ __kernel void tea_leaf_cg_solve_calc_rrn
     __local double rrn_shared[BLOCK_SZ];
     rrn_shared[lid] = 0.0;
 
-    // as above
     double rrn_val;
 
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0

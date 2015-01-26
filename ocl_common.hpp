@@ -129,7 +129,7 @@ private:
     cl::Kernel tea_leaf_cheby_solve_init_p_device;
     cl::Kernel tea_leaf_cheby_solve_calc_u_device;
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
-    cl::Kernel tea_leaf_cheby_calc_2norm_device;
+    cl::Kernel tea_leaf_calc_2norm_device;
 
     cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;

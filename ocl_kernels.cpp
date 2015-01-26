@@ -112,7 +112,7 @@ void CloverChunk::initProgram
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_diag", tea_leaf_init_diag_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device);
-    compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_calc_2norm", tea_leaf_cheby_calc_2norm_device);
+    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_2norm", tea_leaf_calc_2norm_device);
 
     compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "block_init", tea_leaf_block_init);
     compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "block_solve", tea_leaf_block_solve);
@@ -413,7 +413,7 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(tea_leaf_init_diag, -1, 1, -1, 1);
     FIND_PADDING_SIZE(tea_leaf_finalise, 0, 0, 0, 0);
     FIND_PADDING_SIZE(tea_leaf_calc_residual, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_cheby_calc_2norm, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_calc_2norm, 0, 0, 0, 0);
 }
 
 void CloverChunk::initArgs
@@ -503,7 +503,6 @@ void CloverChunk::initArgs
         tea_leaf_cg_init_others_device.setArg(0, reduce_buf_2);
         tea_leaf_cg_init_others_device.setArg(1, vector_p);
         tea_leaf_cg_init_others_device.setArg(2, vector_r);
-        // used when preconditioner is used
         tea_leaf_cg_init_others_device.setArg(3, vector_z);
 
         tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
@@ -600,7 +599,7 @@ void CloverChunk::initArgs
     tea_leaf_calc_residual_device.setArg(3, vector_Kx);
     tea_leaf_calc_residual_device.setArg(4, vector_Ky);
 
-    tea_leaf_cheby_calc_2norm_device.setArg(1, reduce_buf_1);
+    tea_leaf_calc_2norm_device.setArg(1, reduce_buf_1);
 
     // both finalise the same
     tea_leaf_finalise_device.setArg(0, density);

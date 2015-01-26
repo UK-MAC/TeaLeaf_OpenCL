@@ -49,19 +49,19 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        tea_leaf_cheby_calc_2norm_device.setArg(0, u0);
+        tea_leaf_calc_2norm_device.setArg(0, u0);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        tea_leaf_cheby_calc_2norm_device.setArg(0, vector_r);
+        tea_leaf_calc_2norm_device.setArg(0, vector_r);
     }
     else
     {
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    ENQUEUE_OFFSET(tea_leaf_cheby_calc_2norm_device);
+    ENQUEUE_OFFSET(tea_leaf_calc_2norm_device);
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
@@ -194,7 +194,7 @@ void CloverChunk::tea_leaf_init_cg
 
     enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
                   cl::NDRange(1, 1),
-                  cl::NDRange(y_max, x_max/8),
+                  cl::NDRange(x_max/8, y_max),
                   cl::NullRange);
 
     ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
@@ -216,14 +216,21 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
 
-    enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                  cl::NDRange(1, 1),
-                  cl::NDRange(y_max, x_max/8),
-                  cl::NullRange);
+    if (preconditioner_on)
+    {
+        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+                      cl::NDRange(1, 1),
+                      cl::NDRange(x_max/8, y_max),
+                      cl::NullRange);
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_rrn_device);
+        ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_rrn_device);
 
-    *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
+        *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
+    }
+    else
+    {
+        tea_leaf_calc_2norm_kernel(1, rrn);
+    }
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_p

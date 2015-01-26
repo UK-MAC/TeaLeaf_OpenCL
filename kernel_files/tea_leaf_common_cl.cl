@@ -50,3 +50,22 @@ __kernel void tea_leaf_calc_residual
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
     }
 }
+
+__kernel void tea_leaf_calc_2norm
+(__global const double * __restrict const r,
+ __global       double * __restrict const rro)
+{
+    __kernel_indexes;
+
+    __local double rro_shared[BLOCK_SZ];
+    rro_shared[lid] = 0.0;
+
+    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
+    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    {
+        rro_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+    }
+
+    REDUCTION(rro_shared, rro, SUM)
+}
+
