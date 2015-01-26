@@ -178,6 +178,11 @@ void CloverChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
+    enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+                  cl::NDRange(1, 1),
+                  cl::NDRange(y_max, x_max/8),
+                  cl::NullRange);
+
     // only needs to be set once
     tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
     tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);

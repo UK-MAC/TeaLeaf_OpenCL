@@ -6,6 +6,67 @@
 
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
+#define COEF_A (-Kx[THARR2D(0, 0, 0)])
+#define COEF_B (1.0 + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]) + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))
+#define COEF_C (-Kx[THARR2D(0+1, 0, 0)])
+
+void block_solve
+(__global       double * __restrict const r,
+ __global       double * __restrict const z,
+ __global       double * __restrict const cp,
+ __global       double * __restrict const bfp,
+ __global       double * __restrict const dp,
+ __global       double * __restrict const Kx,
+ __global       double * __restrict const Ky)
+{
+    const size_t column = get_global_id(0)*BLOCK_STRIDE;
+    const size_t row = get_global_id(1);
+
+    int j = 0;
+
+    dp[THARR2D(j, 0, 0)] = r[THARR2D(j, 0, 0)]/COEF_B;
+
+    for (j = 1; j < BLOCK_STRIDE; j++)
+    {
+        dp[THARR2D(j, 0, 0)] =
+            (r[THARR2D(j, 0, 0)] - COEF_A*dp[THARR2D(j - 1, 0, 0)])/bfp[THARR2D(j, 0, 0)];
+    }
+
+    j = BLOCK_STRIDE - 1;
+
+    z[THARR2D(j, 0, 0)] = dp[THARR2D(j, 0, 0)];
+
+    for (j = 1; j < BLOCK_STRIDE; j++)
+    {
+        z[THARR2D(j, 0, 0)] =
+            dp[THARR2D(j, 0, 0)] - cp[THARR2D(j, 0, 0)]*z[THARR2D(j + 1, 0, 0)];
+    }
+}
+
+__kernel void block_init
+(__global       double * __restrict const r,
+ __global       double * __restrict const z,
+ __global       double * __restrict const cp,
+ __global       double * __restrict const bfp,
+ __global       double * __restrict const dp,
+ __global       double * __restrict const Kx,
+ __global       double * __restrict const Ky)
+{
+    const size_t column = get_global_id(0)*BLOCK_STRIDE;
+    const size_t row = get_global_id(1);
+
+    int j = 0;
+
+    cp[THARR2D(j, 0, 0)] = COEF_C/COEF_B;
+
+    for (j = 1; j < BLOCK_STRIDE; j++)
+    {
+        bfp[THARR2D(j, 0, 0)] = COEF_B - COEF_A*cp[THARR2D(j - 1, 0, 0)];
+        cp[THARR2D(j, 0, 0)] = COEF_C/bfp[THARR2D(j, 0, 0)];
+    }
+
+    block_solve(r, z, cp, bfp, dp, Kx, Ky);
+}
 
 __kernel void tea_leaf_cg_init_u
 (__global const double * __restrict const density1,

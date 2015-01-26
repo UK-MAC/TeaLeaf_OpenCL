@@ -143,6 +143,9 @@ private:
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
 
+    cl::Kernel tea_leaf_block_init;;
+    cl::Buffer cp, bfp, dp;
+
     cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky

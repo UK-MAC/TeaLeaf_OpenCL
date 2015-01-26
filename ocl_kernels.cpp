@@ -25,6 +25,8 @@ void CloverChunk::initProgram
     options << "-Dy_min=" << y_min << " ";
     options << "-Dy_max=" << y_max << " ";
 
+    options << "-DBLOCK_STRIDE=" << 8 << " ";
+
     // local sizes
     options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
     options << "-DLOCAL_X=" << LOCAL_X << " ";
@@ -110,6 +112,8 @@ void CloverChunk::initProgram
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device);
     compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_calc_2norm", tea_leaf_cheby_calc_2norm_device);
+
+    compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "block_init", tea_leaf_block_init);
 
     if (!rank)
     {
@@ -611,6 +615,15 @@ void CloverChunk::initArgs
     tea_leaf_finalise_device.setArg(0, density);
     tea_leaf_finalise_device.setArg(1, u);
     tea_leaf_finalise_device.setArg(2, energy1);
+
+    // block
+    tea_leaf_block_init.setArg(0, work_array_2);
+    tea_leaf_block_init.setArg(1, z);
+    tea_leaf_block_init.setArg(2, cp);
+    tea_leaf_block_init.setArg(3, bfp);
+    tea_leaf_block_init.setArg(4, dp);
+    tea_leaf_block_init.setArg(5, work_array_5);
+    tea_leaf_block_init.setArg(6, work_array_6);
 
     fprintf(DBGOUT, "Kernel arguments set\n");
 }

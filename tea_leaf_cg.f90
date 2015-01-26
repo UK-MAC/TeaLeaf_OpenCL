@@ -68,7 +68,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp
 
   INTEGER(KIND=4) :: coef
-  INTEGER(KIND=4) :: j,k,n,s
+  INTEGER(KIND=4) :: j,k,n,s,bottom,top
 
   REAL(kind=8) :: rro
   REAL(KIND=8) ::  rx, ry
