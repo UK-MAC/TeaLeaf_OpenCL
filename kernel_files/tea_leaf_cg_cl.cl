@@ -31,8 +31,8 @@ __kernel void block_init
 
     for (j = 1; j < BLOCK_STRIDE; j++)
     {
-        bfp[THARR2D(j, 0, 0)] = COEF_B - COEF_A*cp[THARR2D(j - 1, 0, 0)];
-        cp[THARR2D(j, 0, 0)] = COEF_C/bfp[THARR2D(j, 0, 0)];
+        bfp[THARR2D(j, 0, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(j - 1, 0, 0)]);
+        cp[THARR2D(j, 0, 0)] = COEF_C*bfp[THARR2D(j, 0, 0)];
     }
 }
 
@@ -51,22 +51,28 @@ __kernel void block_solve
 
     int j = 0;
 
-    dp[THARR2D(j, 0, 0)] = r[THARR2D(j, 0, 0)]/COEF_B;
+    __private double dp_l[BLOCK_STRIDE];
+
+    dp_l[j] = r[THARR2D(j, 0, 0)]/COEF_B;
 
     for (j = 1; j < BLOCK_STRIDE; j++)
     {
-        dp[THARR2D(j, 0, 0)] =
-            (r[THARR2D(j, 0, 0)] - COEF_A*dp[THARR2D(j - 1, 0, 0)])/bfp[THARR2D(j, 0, 0)];
+        dp_l[j] = (r[THARR2D(j, 0, 0)] - COEF_A*dp_l[j - 1])*bfp[THARR2D(j, 0, 0)];
     }
 
     j = BLOCK_STRIDE - 1;
 
-    z[THARR2D(j, 0, 0)] = dp[THARR2D(j, 0, 0)];
+    __private double z_l[BLOCK_STRIDE];
+    z_l[j] = dp_l[j];
 
     for (j = BLOCK_STRIDE - 2; j >= 0; j--)
     {
-        z[THARR2D(j, 0, 0)] =
-            dp[THARR2D(j, 0, 0)] - cp[THARR2D(j, 0, 0)]*z[THARR2D(j + 1, 0, 0)];
+        z_l[j] = dp_l[j] - cp[THARR2D(j, 0, 0)]*z_l[j + 1];
+    }
+
+    for (j = 0; j < BLOCK_STRIDE; j++)
+    {
+        z[THARR2D(j, 0, 0)] = z_l[j];
     }
 }
 
