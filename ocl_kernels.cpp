@@ -25,7 +25,7 @@ void CloverChunk::initProgram
     options << "-Dy_min=" << y_min << " ";
     options << "-Dy_max=" << y_max << " ";
 
-    options << "-DBLOCK_STRIDE=" << 8 << " ";
+    options << "-DBLOCK_STRIDE=" << BLOCK_STRIDE << " ";
 
     // local sizes
     options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";

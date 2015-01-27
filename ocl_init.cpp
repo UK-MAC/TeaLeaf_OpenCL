@@ -406,5 +406,7 @@ void CloverChunk::initOcl
     {
         queue = cl::CommandQueue(context, device);
     }
+        ud_queue = cl::CommandQueue(context, device);
+        lr_queue = cl::CommandQueue(context, device);
 }
 

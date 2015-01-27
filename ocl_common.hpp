@@ -11,6 +11,7 @@
 const static size_t LOCAL_X = 128;
 const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
+static int BLOCK_STRIDE = 8;
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1
@@ -147,6 +148,9 @@ private:
     cl::Kernel tea_leaf_block_init;
     cl::Kernel tea_leaf_block_solve;
     cl::Buffer cp, bfp, dp;
+    cl::NDRange block_jacobi_global;
+    cl::NDRange block_jacobi_offset;
+    cl::NDRange block_jacobi_local;
 
     cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;

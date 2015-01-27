@@ -1,5 +1,8 @@
 #include "ocl_common.hpp"
 
+#include <cassert>
+#include <cmath>
+
 extern CloverChunk chunk;
 
 // same as in fortran
@@ -159,7 +162,6 @@ void CloverChunk::calcrxry
 }
 
 /********************/
-#include <cassert>
 
 void CloverChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry, double * rro)
@@ -190,19 +192,30 @@ void CloverChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_init_diag_device);
 
     // get initial guess in w, r, etc
+    // XXX copy to u0 before this?
+    tea_leaf_calc_residual_device.setArg(1, u);
     ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+    tea_leaf_calc_residual_device.setArg(1, u0);
 
     if (preconditioner_on)
     {
+        block_jacobi_offset = cl::NDRange(0, 2);
+        int ceild = std::ceil((1.0*x_max)/BLOCK_STRIDE);
+        int floord = x_max/BLOCK_STRIDE;
+        // FIXME choose a smart one based on x_max, or tea.in flag?
+        assert(ceild == floord);
+        block_jacobi_global = cl::NDRange(floord, y_max);
+        block_jacobi_local = cl::NullRange;
+
         enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                      cl::NDRange(2, 2),
-                      cl::NDRange(x_max/8, y_max),
-                      cl::NullRange);
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
 
         enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                      cl::NDRange(2, 2),
-                      cl::NDRange(x_max/8, y_max),
-                      cl::NullRange);
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
     }
 
     ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
@@ -227,9 +240,9 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
     if (preconditioner_on)
     {
         enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                      cl::NDRange(2, 2),
-                      cl::NDRange(x_max/8, y_max),
-                      cl::NullRange);
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
 
         ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_rrn_device);
 
