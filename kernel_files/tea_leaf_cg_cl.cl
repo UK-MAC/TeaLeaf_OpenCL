@@ -7,21 +7,23 @@
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 
-#define COEF_A (-Kx[THARR2D(0, 0, 0)])
-#define COEF_B (1.0 + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]) + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))
-#define COEF_C (-Kx[THARR2D(1, 0, 0)])
+#define COEF_A (-Kx[THARR2D(j+0, 0, 0)])
+#define COEF_B (1.0 + (Ky[THARR2D(j+0, 1, 0)] + Ky[THARR2D(j+0, 0, 0)]) + (Kx[THARR2D(j+1, 0, 0)] + Kx[THARR2D(j+0, 0, 0)]))
+#define COEF_C (-Kx[THARR2D(j+1, 0, 0)])
 
 __kernel void block_init
-(__global       double * __restrict const r,
- __global       double * __restrict const z,
+(__global const double * __restrict const r,
+ __global const double * __restrict const z,
  __global       double * __restrict const cp,
  __global       double * __restrict const bfp,
- __global       double * __restrict const dp,
- __global       double * __restrict const Kx,
- __global       double * __restrict const Ky)
+ __global const double * __restrict const dp,
+ __global const double * __restrict const Kx,
+ __global const double * __restrict const Ky)
 {
     const size_t column = get_global_id(0)*BLOCK_STRIDE + 2;
     const size_t row = get_global_id(1);
+
+    if (row > y_max || column > x_max) return;
 
     int j = 0;
 
@@ -35,16 +37,17 @@ __kernel void block_init
 }
 
 __kernel void block_solve
-(__global       double * __restrict const r,
+(__global const double * __restrict const r,
  __global       double * __restrict const z,
- __global       double * __restrict const cp,
- __global       double * __restrict const bfp,
+ __global const double * __restrict const cp,
+ __global const double * __restrict const bfp,
  __global       double * __restrict const dp,
- __global       double * __restrict const Kx,
- __global       double * __restrict const Ky)
+ __global const double * __restrict const Kx,
+ __global const double * __restrict const Ky)
 {
     const size_t column = get_global_id(0)*BLOCK_STRIDE + 2;
     const size_t row = get_global_id(1);
+    if (row > y_max || column > x_max) return;
 
     int j = 0;
 

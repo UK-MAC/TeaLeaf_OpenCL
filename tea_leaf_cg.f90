@@ -83,7 +83,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
   dp = 0.0_8
   bfp = 0.0_8
 
-  stride = 64
+  stride = 8
 
   do
     if (mod(x_max, stride) .eq. 0) then

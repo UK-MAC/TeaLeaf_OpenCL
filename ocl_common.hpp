@@ -11,7 +11,7 @@
 const static size_t LOCAL_X = 128;
 const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-static int BLOCK_STRIDE = 8;
+static int BLOCK_STRIDE = 4;
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1

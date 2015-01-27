@@ -97,6 +97,7 @@ void CloverChunk::initBuffers
 
  #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
     ADD_BUFFER_DBG_MAP(u);
+    ADD_BUFFER_DBG_MAP(bfp);
     arr_names["p"] = vector_p;
 
     ADD_BUFFER_DBG_MAP(vector_r);
