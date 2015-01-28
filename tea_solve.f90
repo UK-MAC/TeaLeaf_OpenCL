@@ -187,6 +187,18 @@ SUBROUTINE tea_leaf()
             ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (error .le. 1.0_8)
         ENDIF
 
+        if ((error .lt. eps*5) .and. &
+        (cheby_calc_steps .eq. 0) .and. &
+        .not. (tl_use_chebyshev .OR. tl_use_ppcg)) then
+            ! calculate eigenvalues
+            CALL tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+                max_iters, n-1, info)
+              cn = eigmax/eigmin
+              WRITE(0,'(4a12)')"eigmin", "eigmax", "cn", "error"
+              WRITE(0,'(3f12.5,1e12.4)')eigmin, eigmax, cn, error
+            cheby_calc_steps = cheby_calc_steps +1
+        endif
+
         IF ((tl_use_chebyshev .OR. tl_use_ppcg) .AND. ch_switch_check) THEN
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
@@ -411,7 +423,7 @@ SUBROUTINE tea_leaf()
 
           CALL tea_allsum(pw)
           alpha = rro/pw
-          IF(tl_use_chebyshev .OR. tl_use_ppcg) cg_alphas(n) = alpha
+          cg_alphas(n) = alpha
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
@@ -437,7 +449,7 @@ SUBROUTINE tea_leaf()
 
           CALL tea_allsum(rrn)
           beta = rrn/rro
-          IF(tl_use_chebyshev .OR. tl_use_ppcg) cg_betas(n) = beta
+          cg_betas(n) = beta
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&

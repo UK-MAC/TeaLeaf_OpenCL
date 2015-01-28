@@ -205,7 +205,20 @@ void CloverChunk::tea_leaf_init_cg
         // FIXME choose a smart one based on x_max, or tea.in flag?
         assert(ceild == floord);
         block_jacobi_global = cl::NDRange(x_max, floord);
-        block_jacobi_local = cl::NullRange;
+
+        switch (x_max % 32)
+        {
+        case 0:
+            block_jacobi_local = cl::NDRange(32, 1);
+            break;
+        case 16:
+            block_jacobi_local = cl::NDRange(16, 2);
+            break;
+        default:
+            block_jacobi_local =  cl::NullRange;
+            break;
+        }
+
 
         enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
                       block_jacobi_offset,
