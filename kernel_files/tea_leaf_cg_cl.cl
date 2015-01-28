@@ -7,9 +7,9 @@
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 
-#define COEF_A (-Kx[THARR2D(j+0, 0, 0)])
-#define COEF_B (1.0 + (Ky[THARR2D(j+0, 1, 0)] + Ky[THARR2D(j+0, 0, 0)]) + (Kx[THARR2D(j+1, 0, 0)] + Kx[THARR2D(j+0, 0, 0)]))
-#define COEF_C (-Kx[THARR2D(j+1, 0, 0)])
+#define COEF_A (-Ky[THARR2D(0,j+ 0, 0)])
+#define COEF_B (1.0 + (Ky[THARR2D(0,j+ 1, 0)] + Ky[THARR2D(0,j+ 0, 0)]) + (Kx[THARR2D(1,j+ 0, 0)] + Kx[THARR2D(0,j+ 0, 0)]))
+#define COEF_C (-Ky[THARR2D(0,j+ 1, 0)])
 
 __kernel void block_init
 (__global const double * __restrict const r,
@@ -20,19 +20,17 @@ __kernel void block_init
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky)
 {
-    const size_t column = get_global_id(0)*BLOCK_STRIDE + 2;
-    const size_t row = get_global_id(1);
-
-    if (row > y_max || column > x_max) return;
+    const size_t column = get_global_id(0);
+    const size_t row = get_global_id(1)*BLOCK_STRIDE + 2;
 
     int j = 0;
 
-    cp[THARR2D(j, 0, 0)] = COEF_C/COEF_B;
+    cp[THARR2D(0, j, 0)] = COEF_C/COEF_B;
 
     for (j = 1; j < BLOCK_STRIDE; j++)
     {
-        bfp[THARR2D(j, 0, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(j - 1, 0, 0)]);
-        cp[THARR2D(j, 0, 0)] = COEF_C*bfp[THARR2D(j, 0, 0)];
+        bfp[THARR2D(0, j, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(0, j - 1, 0)]);
+        cp[THARR2D(0, j, 0)] = COEF_C*bfp[THARR2D(0, j, 0)];
     }
 }
 
@@ -45,19 +43,18 @@ __kernel void block_solve
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky)
 {
-    const size_t column = get_global_id(0)*BLOCK_STRIDE + 2;
-    const size_t row = get_global_id(1);
-    if (row > y_max || column > x_max) return;
+    const size_t column = get_global_id(0);
+    const size_t row = get_global_id(1)*BLOCK_STRIDE + 2;
 
     int j = 0;
 
     __private double dp_l[BLOCK_STRIDE];
 
-    dp_l[j] = r[THARR2D(j, 0, 0)]/COEF_B;
+    dp_l[j] = r[THARR2D(0, j, 0)]/COEF_B;
 
     for (j = 1; j < BLOCK_STRIDE; j++)
     {
-        dp_l[j] = (r[THARR2D(j, 0, 0)] - COEF_A*dp_l[j - 1])*bfp[THARR2D(j, 0, 0)];
+        dp_l[j] = (r[THARR2D(0, j, 0)] - COEF_A*dp_l[j - 1])*bfp[THARR2D(0, j, 0)];
     }
 
     j = BLOCK_STRIDE - 1;
@@ -67,12 +64,13 @@ __kernel void block_solve
 
     for (j = BLOCK_STRIDE - 2; j >= 0; j--)
     {
-        z_l[j] = dp_l[j] - cp[THARR2D(j, 0, 0)]*z_l[j + 1];
+        z_l[j] = dp_l[j] - cp[THARR2D(0, j, 0)]*z_l[j + 1];
     }
+    barrier(CLK_GLOBAL_MEM_FENCE);
 
     for (j = 0; j < BLOCK_STRIDE; j++)
     {
-        z[THARR2D(j, 0, 0)] = z_l[j];
+        z[THARR2D(0, j, 0)] = z_l[j];
     }
 }
 

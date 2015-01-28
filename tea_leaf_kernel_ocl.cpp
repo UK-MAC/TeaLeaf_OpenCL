@@ -199,12 +199,12 @@ void CloverChunk::tea_leaf_init_cg
 
     if (preconditioner_on)
     {
-        block_jacobi_offset = cl::NDRange(0, 2);
-        int ceild = std::ceil((1.0*x_max)/BLOCK_STRIDE);
-        int floord = x_max/BLOCK_STRIDE;
+        block_jacobi_offset = cl::NDRange(2, 0);
+        int ceild = std::ceil((1.0*y_max)/BLOCK_STRIDE);
+        int floord = y_max/BLOCK_STRIDE;
         // FIXME choose a smart one based on x_max, or tea.in flag?
         assert(ceild == floord);
-        block_jacobi_global = cl::NDRange(floord, y_max);
+        block_jacobi_global = cl::NDRange(x_max, floord);
         block_jacobi_local = cl::NullRange;
 
         enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
