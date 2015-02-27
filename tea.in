@@ -19,17 +19,17 @@
   x_cells=400
   y_cells=400
 
-  use_fortran_kernels
+  !use_fortran_kernels
   opencl_vendor=any
   opencl_type=gpu
 
   tl_max_iters=2000
   tl_eps=0.0000000001
 
-  tl_use_jacobi
+  tl_use_cg
 
   tl_check_result
 
-  !tl_preconditioner_on
+  tl_preconditioner_on
 
 *endtea

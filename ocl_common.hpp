@@ -171,6 +171,9 @@ private:
     } launch_specs_t;
     std::map< std::string, launch_specs_t > launch_specs;
 
+    launch_specs_t findPaddingSize
+    (int vmin, int vmax, int hmin, int hmax);
+
     // reduction kernels - need multiple levels
     reduce_info_vec_t min_red_kernels_double;
     reduce_info_vec_t max_red_kernels_double;

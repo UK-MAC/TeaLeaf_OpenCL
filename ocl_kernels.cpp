@@ -255,6 +255,19 @@ cl::Program CloverChunk::compileProgram
     return program;
 }
 
+CloverChunk::launch_specs_t CloverChunk::findPaddingSize
+(int vmin, int vmax, int hmin, int hmax)
+{
+    size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
+    while (global_horz_size % LOCAL_X) global_horz_size++;
+    size_t global_vert_size = (-(vmin)) + (vmax) + y_max;
+    while (global_vert_size % LOCAL_Y) global_vert_size++;
+    launch_specs_t cur_specs;
+    cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
+    cur_specs.offset = cl::NDRange((x_min + 1) + (hmin), (y_min + 1) + (vmin));
+    return cur_specs;
+}
+
 void CloverChunk::initSizes
 (void)
 {
@@ -351,61 +364,50 @@ void CloverChunk::initSizes
      *  figure out offset launch sizes for the various kernels
      *  no 'smart' way to do this?
      */
-    #define FIND_PADDING_SIZE(knl, vmin, vmax, hmin, hmax)                      \
-    {                                                                           \
-        size_t global_horz_size = (-(hmin)) + (hmax) + x_max;                   \
-        while (global_horz_size % LOCAL_X) global_horz_size++;                  \
-        size_t global_vert_size = (-(vmin)) + (vmax) + y_max;                   \
-        while (global_vert_size % LOCAL_Y) global_vert_size++;                  \
-        launch_specs_t cur_specs;                                               \
-        cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);     \
-        cur_specs.offset = cl::NDRange((x_min + 1) + (hmin), (y_min + 1) + (vmin)); \
-        launch_specs[#knl"_device"] = cur_specs;                                \
-    }
 
-    FIND_PADDING_SIZE(set_field, 0, 1, 0, 1);
-    FIND_PADDING_SIZE(field_summary, 0, 0, 0, 0);
+    launch_specs["set_field_device"] = findPaddingSize(0, 1, 0, 1);
+    launch_specs["field_summary_device"] = findPaddingSize(0, 0, 0, 0);
 
-    FIND_PADDING_SIZE(initialise_chunk_first, 0, 3, 0, 3);
-    FIND_PADDING_SIZE(initialise_chunk_second, -2, 2, -2, 2);
-    FIND_PADDING_SIZE(generate_chunk_init, -2, 2, -2, 2);
-    FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
+    launch_specs["initialise_chunk_first_device"] = findPaddingSize(0, 3, 0, 3);
+    launch_specs["initialise_chunk_second_device"] = findPaddingSize(-2, 2, -2, 2);
+    launch_specs["generate_chunk_init_device"] = findPaddingSize(-2, 2, -2, 2);
+    launch_specs["generate_chunk_device"] = findPaddingSize(-2, 2, -2, 2);
 
-    FIND_PADDING_SIZE(generate_chunk, -2, 2, -2, 2);
+    launch_specs["generate_chunk_device"] = findPaddingSize(-2, 2, -2, 2);
 
     if (tea_solver == TEA_ENUM_CG ||
     tea_solver == TEA_ENUM_CHEBYSHEV ||
     tea_solver == TEA_ENUM_PPCG)
     {
-        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_w, 0, 0, 0, 0);
-        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_ur, 0, 0, 0, 0);
-        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_rrn, 0, 0, 0, 0);
-        FIND_PADDING_SIZE(tea_leaf_cg_solve_calc_p, 0, 0, 0, 0);
-        FIND_PADDING_SIZE(tea_leaf_cg_solve_init_p, 0, 0, 0, 0);
+        launch_specs["tea_leaf_cg_solve_calc_w_device"] = findPaddingSize(0, 0, 0, 0);
+        launch_specs["tea_leaf_cg_solve_calc_ur_device"] = findPaddingSize(0, 0, 0, 0);
+        launch_specs["tea_leaf_cg_solve_calc_rrn_device"] = findPaddingSize(0, 0, 0, 0);
+        launch_specs["tea_leaf_cg_solve_calc_p_device"] = findPaddingSize(0, 0, 0, 0);
+        launch_specs["tea_leaf_cg_solve_init_p_device"] = findPaddingSize(0, 0, 0, 0);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
-            FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_u, 0, 0, 0, 0);
-            FIND_PADDING_SIZE(tea_leaf_cheby_solve_calc_p, 0, 0, 0, 0);
-            FIND_PADDING_SIZE(tea_leaf_cheby_solve_init_p, 0, 0, 0, 0);
+            launch_specs["tea_leaf_cheby_solve_calc_u_device"] = findPaddingSize(0, 0, 0, 0);
+            launch_specs["tea_leaf_cheby_solve_calc_p_device"] = findPaddingSize(0, 0, 0, 0);
+            launch_specs["tea_leaf_cheby_solve_init_p_device"] = findPaddingSize(0, 0, 0, 0);
         }
         else if (tea_solver == TEA_ENUM_PPCG)
         {
-            FIND_PADDING_SIZE(tea_leaf_ppcg_solve_init_sd, 0, 0, 0, 0);
-            FIND_PADDING_SIZE(tea_leaf_ppcg_solve_calc_sd, 0, 0, 0, 0);
-            FIND_PADDING_SIZE(tea_leaf_ppcg_solve_update_r, 0, 0, 0, 0);
+            launch_specs["tea_leaf_ppcg_solve_init_sd_device"] = findPaddingSize(0, 0, 0, 0);
+            launch_specs["tea_leaf_ppcg_solve_calc_sd_device"] = findPaddingSize(0, 0, 0, 0);
+            launch_specs["tea_leaf_ppcg_solve_update_r_device"] = findPaddingSize(0, 0, 0, 0);
         }
     }
     else
     {
-        FIND_PADDING_SIZE(tea_leaf_jacobi_copy_u, -1, 1, -1, 1);
-        FIND_PADDING_SIZE(tea_leaf_jacobi_solve, 0, 0, 0, 0);
+        launch_specs["tea_leaf_jacobi_copy_u_device"] = findPaddingSize(-1, 1, -1, 1);
+        launch_specs["tea_leaf_jacobi_solve_device"] = findPaddingSize(0, 0, 0, 0);
     }
 
-    FIND_PADDING_SIZE(tea_leaf_finalise, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_calc_residual, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_calc_2norm, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_init_common, -1, 1, -1, 1);
+    launch_specs["tea_leaf_finalise_device"] = findPaddingSize(0, 0, 0, 0);
+    launch_specs["tea_leaf_calc_residual_device"] = findPaddingSize(0, 0, 0, 0);
+    launch_specs["tea_leaf_calc_2norm_device"] = findPaddingSize(0, 0, 0, 0);
+    launch_specs["tea_leaf_init_common_device"] = findPaddingSize(-1, 1, -1, 1);
 }
 
 void CloverChunk::initArgs
