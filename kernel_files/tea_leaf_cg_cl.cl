@@ -4,7 +4,9 @@
  *  Kernels used for conjugate gradient method
  */
 
-__kernel void tea_leaf_cg_init_p
+//if\s*(\/\?\*\?row >= ([^)]\+) [-+] \(\w\) &&\*\?\/\? row <= ([^)]\+) [+-] \(\w\)\n\s\+&& \/\?\*\?column >= ([^)]\+) [-+] \(\w\) &&\*\?\/\? column <= ([^)]\+) [+-] \(\w\))
+
+__kernel void tea_leaf_cg_solve_init_p
 (__global       double * __restrict const p,
  __global       double * __restrict const r,
  __global       double * __restrict const z,
@@ -15,8 +17,7 @@ __kernel void tea_leaf_cg_init_p
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
 #if defined(USE_PRECONDITIONER)
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
@@ -44,8 +45,7 @@ __kernel void tea_leaf_cg_solve_calc_w
     __local double pw_shared[BLOCK_SZ];
     pw_shared[lid] = 0.0;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -70,8 +70,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
@@ -91,8 +90,7 @@ __kernel void tea_leaf_cg_solve_calc_rrn
 
     double rrn_val;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
 #if defined(USE_PRECONDITIONER)
         rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
@@ -116,8 +114,7 @@ __kernel void tea_leaf_cg_solve_calc_p
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
 #if defined(USE_PRECONDITIONER)
         p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];

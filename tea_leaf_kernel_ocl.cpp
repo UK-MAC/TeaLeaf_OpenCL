@@ -175,12 +175,12 @@ void CloverChunk::tea_leaf_init_cg
             break;
         }
 
-        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+        enqueueKernel(tea_leaf_block_init_device, __LINE__, __FILE__,
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);
 
-        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);
@@ -205,7 +205,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 
     if (preconditioner_on)
     {
-        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);

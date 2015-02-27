@@ -142,8 +142,8 @@ private:
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
 
-    cl::Kernel tea_leaf_block_init;
-    cl::Kernel tea_leaf_block_solve;
+    cl::Kernel tea_leaf_block_init_device;
+    cl::Kernel tea_leaf_block_solve_device;
     cl::Buffer cp, bfp, dp;
     cl::NDRange block_jacobi_global;
     cl::NDRange block_jacobi_offset;
@@ -267,10 +267,12 @@ private:
 
     // compile a file and the contained kernels, and check for errors
     void compileKernel
-    (const std::string& options,
+    (std::stringstream& options,
      const std::string& source_name,
      const char* kernel_name,
-     cl::Kernel& kernel);
+     cl::Kernel& kernel,
+     int launch_x_min, int launch_x_max,
+     int launch_y_min, int launch_y_max);
     cl::Program compileProgram
     (const std::string& source,
      const std::string& options);

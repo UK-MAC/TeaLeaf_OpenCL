@@ -44,74 +44,71 @@ void CloverChunk::initProgram
     // device type in the form "-D..."
     options << device_type_prepro;
 
-    const std::string options_str = options.str();
-
     if (!rank)
     {
-        fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options_str.c_str());
+        fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
         fprintf(stdout, "Compiling kernels (may take some time)...");
         fflush(stdout);
     }
 
-    compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device);
-    compileKernel(options_str, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device);
-    compileKernel(options_str, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device);
-    compileKernel(options_str, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, 0, 3, 0, 3);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
+    compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -2, 2, -2, 2);
+    compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device, -2, 2, -2, 2);
 
-    compileKernel(options_str, "./kernel_files/set_field_cl.cl", "set_field", set_field_device);
+    compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 1, 0, 1);
+    compileKernel(options, "./kernel_files/field_summary_cl.cl", "field_summary", field_summary_device, -2, 2, -2, 2);
 
-    compileKernel(options_str, "./kernel_files/field_summary_cl.cl", "field_summary", field_summary_device);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_bottom", update_halo_bottom_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_left", update_halo_left_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_right", update_halo_right_device, 0, 0, 0, 0);
 
-    compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device);
-    compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_bottom", update_halo_bottom_device);
-    compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_left", update_halo_left_device);
-    compileKernel(options_str, "./kernel_files/update_halo_cl.cl", "update_halo_right", update_halo_right_device);
-
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "pack_left_buffer", pack_left_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "unpack_left_buffer", unpack_left_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "pack_right_buffer", pack_right_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "unpack_right_buffer", unpack_right_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "pack_bottom_buffer", pack_bottom_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "unpack_bottom_buffer", unpack_bottom_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "pack_top_buffer", pack_top_buffer_device);
-    compileKernel(options_str, "./kernel_files/pack_kernel_cl.cl", "unpack_top_buffer", unpack_top_buffer_device);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_left_buffer", pack_left_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_left_buffer", unpack_left_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_right_buffer", pack_right_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_right_buffer", unpack_right_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_bottom_buffer", pack_bottom_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_bottom_buffer", unpack_bottom_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_top_buffer", pack_top_buffer_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_top_buffer", unpack_top_buffer_device, 0, 0, 0, 0);
 
     if (tea_solver == TEA_ENUM_CG ||
     tea_solver == TEA_ENUM_CHEBYSHEV ||
     tea_solver == TEA_ENUM_PPCG)
     {
-        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device);
-        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device);
-        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_rrn", tea_leaf_cg_solve_calc_rrn_device);
-        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device);
-        compileKernel(options_str, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_init_p", tea_leaf_cg_solve_init_p_device);
+        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device, 0, 0, 0, 0);
+        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device, 0, 0, 0, 0);
+        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_rrn", tea_leaf_cg_solve_calc_rrn_device, 0, 0, 0, 0);
+        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device, 0, 0, 0, 0);
+        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_init_p", tea_leaf_cg_solve_init_p_device, 0, 0, 0, 0);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
-            compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_init_p", tea_leaf_cheby_solve_init_p_device);
-            compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device);
-            compileKernel(options_str, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device);
+            compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_init_p", tea_leaf_cheby_solve_init_p_device, 0, 0, 0, 0);
+            compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device, 0, 0, 0, 0);
+            compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device, 0, 0, 0, 0);
         }
         else if (tea_solver == TEA_ENUM_PPCG)
         {
-            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_sd", tea_leaf_ppcg_solve_init_sd_device);
-            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device);
-            compileKernel(options_str, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device);
+            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_sd", tea_leaf_ppcg_solve_init_sd_device, 0, 0, 0, 0);
+            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device, 0, 0, 0, 0);
+            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device, 0, 0, 0, 0);
         }
     }
     else
     {
-        compileKernel(options_str, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device);
-        compileKernel(options_str, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device);
+        compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device, -1, 1, -1, 1);
+        compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device, 0, 0, 0, 0);
     }
 
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device);
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device);
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_2norm", tea_leaf_calc_2norm_device);
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_2norm", tea_leaf_calc_2norm_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, -1, 1, -1, 0);
 
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "block_init", tea_leaf_block_init);
-    compileKernel(options_str, "./kernel_files/tea_leaf_common_cl.cl", "block_solve", tea_leaf_block_solve);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
 
     if (!rank)
     {
@@ -120,11 +117,26 @@ void CloverChunk::initProgram
     }
 }
 
+CloverChunk::launch_specs_t CloverChunk::findPaddingSize
+(int vmin, int vmax, int hmin, int hmax)
+{
+    size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
+    while (global_horz_size % LOCAL_X) global_horz_size++;
+    size_t global_vert_size = (-(vmin)) + (vmax) + y_max;
+    while (global_vert_size % LOCAL_Y) global_vert_size++;
+    launch_specs_t cur_specs;
+    cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
+    cur_specs.offset = cl::NDRange((x_min + 1) + (hmin), (y_min + 1) + (vmin));
+    return cur_specs;
+}
+
 void CloverChunk::compileKernel
-(const std::string& options_orig,
+(std::stringstream& options_orig,
  const std::string& source_name,
  const char* kernel_name,
- cl::Kernel& kernel)
+ cl::Kernel& kernel,
+ int launch_x_min, int launch_x_max,
+ int launch_y_min, int launch_y_max)
 {
     std::string source_str;
 
@@ -134,6 +146,14 @@ void CloverChunk::compileKernel
             (std::istreambuf_iterator<char>(ifile)),
             (std::istreambuf_iterator<char>()));
     }
+
+    options_orig << "-D KERNEL_X_MIN=" << launch_x_min << " ";
+    options_orig << "-D KERNEL_X_MAX=" << launch_x_max << " ";
+    options_orig << "-D KERNEL_Y_MIN=" << launch_y_min << " ";
+    options_orig << "-D KERNEL_Y_MAX=" << launch_y_max << " ";
+
+    std::string kernel_additional = std::string(kernel_name) + std::string("_device");
+    launch_specs[kernel_additional] = findPaddingSize(launch_x_min, launch_x_max, launch_y_min, launch_y_max);
 
     fprintf(DBGOUT, "Compiling %s...", kernel_name);
     cl::Program program;
@@ -149,7 +169,7 @@ void CloverChunk::compileKernel
     plusprof << options_orig;
     std::string options(plusprof.str());
 #else
-    std::string options(options_orig);
+    std::string options(options_orig.str());
 #endif
 
     if (built_programs.find(source_name + options) == built_programs.end())
@@ -255,19 +275,6 @@ cl::Program CloverChunk::compileProgram
     return program;
 }
 
-CloverChunk::launch_specs_t CloverChunk::findPaddingSize
-(int vmin, int vmax, int hmin, int hmax)
-{
-    size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
-    while (global_horz_size % LOCAL_X) global_horz_size++;
-    size_t global_vert_size = (-(vmin)) + (vmax) + y_max;
-    while (global_vert_size % LOCAL_Y) global_vert_size++;
-    launch_specs_t cur_specs;
-    cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((x_min + 1) + (hmin), (y_min + 1) + (vmin));
-    return cur_specs;
-}
-
 void CloverChunk::initSizes
 (void)
 {
@@ -359,55 +366,6 @@ void CloverChunk::initSizes
     }
 
     fprintf(DBGOUT, "Update halo parameters calculated\n");
-
-    /*
-     *  figure out offset launch sizes for the various kernels
-     *  no 'smart' way to do this?
-     */
-
-    launch_specs["set_field_device"] = findPaddingSize(0, 1, 0, 1);
-    launch_specs["field_summary_device"] = findPaddingSize(0, 0, 0, 0);
-
-    launch_specs["initialise_chunk_first_device"] = findPaddingSize(0, 3, 0, 3);
-    launch_specs["initialise_chunk_second_device"] = findPaddingSize(-2, 2, -2, 2);
-    launch_specs["generate_chunk_init_device"] = findPaddingSize(-2, 2, -2, 2);
-    launch_specs["generate_chunk_device"] = findPaddingSize(-2, 2, -2, 2);
-
-    launch_specs["generate_chunk_device"] = findPaddingSize(-2, 2, -2, 2);
-
-    if (tea_solver == TEA_ENUM_CG ||
-    tea_solver == TEA_ENUM_CHEBYSHEV ||
-    tea_solver == TEA_ENUM_PPCG)
-    {
-        launch_specs["tea_leaf_cg_solve_calc_w_device"] = findPaddingSize(0, 0, 0, 0);
-        launch_specs["tea_leaf_cg_solve_calc_ur_device"] = findPaddingSize(0, 0, 0, 0);
-        launch_specs["tea_leaf_cg_solve_calc_rrn_device"] = findPaddingSize(0, 0, 0, 0);
-        launch_specs["tea_leaf_cg_solve_calc_p_device"] = findPaddingSize(0, 0, 0, 0);
-        launch_specs["tea_leaf_cg_solve_init_p_device"] = findPaddingSize(0, 0, 0, 0);
-
-        if (tea_solver == TEA_ENUM_CHEBYSHEV)
-        {
-            launch_specs["tea_leaf_cheby_solve_calc_u_device"] = findPaddingSize(0, 0, 0, 0);
-            launch_specs["tea_leaf_cheby_solve_calc_p_device"] = findPaddingSize(0, 0, 0, 0);
-            launch_specs["tea_leaf_cheby_solve_init_p_device"] = findPaddingSize(0, 0, 0, 0);
-        }
-        else if (tea_solver == TEA_ENUM_PPCG)
-        {
-            launch_specs["tea_leaf_ppcg_solve_init_sd_device"] = findPaddingSize(0, 0, 0, 0);
-            launch_specs["tea_leaf_ppcg_solve_calc_sd_device"] = findPaddingSize(0, 0, 0, 0);
-            launch_specs["tea_leaf_ppcg_solve_update_r_device"] = findPaddingSize(0, 0, 0, 0);
-        }
-    }
-    else
-    {
-        launch_specs["tea_leaf_jacobi_copy_u_device"] = findPaddingSize(-1, 1, -1, 1);
-        launch_specs["tea_leaf_jacobi_solve_device"] = findPaddingSize(0, 0, 0, 0);
-    }
-
-    launch_specs["tea_leaf_finalise_device"] = findPaddingSize(0, 0, 0, 0);
-    launch_specs["tea_leaf_calc_residual_device"] = findPaddingSize(0, 0, 0, 0);
-    launch_specs["tea_leaf_calc_2norm_device"] = findPaddingSize(0, 0, 0, 0);
-    launch_specs["tea_leaf_init_common_device"] = findPaddingSize(-1, 1, -1, 1);
 }
 
 void CloverChunk::initArgs
@@ -583,21 +541,21 @@ void CloverChunk::initArgs
     tea_leaf_init_common_device.setArg(5, u);
 
     // block
-    tea_leaf_block_init.setArg(0, vector_r);
-    tea_leaf_block_init.setArg(1, vector_z);
-    tea_leaf_block_init.setArg(2, cp);
-    tea_leaf_block_init.setArg(3, bfp);
-    tea_leaf_block_init.setArg(4, dp);
-    tea_leaf_block_init.setArg(5, vector_Kx);
-    tea_leaf_block_init.setArg(6, vector_Ky);
+    tea_leaf_block_init_device.setArg(0, vector_r);
+    tea_leaf_block_init_device.setArg(1, vector_z);
+    tea_leaf_block_init_device.setArg(2, cp);
+    tea_leaf_block_init_device.setArg(3, bfp);
+    tea_leaf_block_init_device.setArg(4, dp);
+    tea_leaf_block_init_device.setArg(5, vector_Kx);
+    tea_leaf_block_init_device.setArg(6, vector_Ky);
 
-    tea_leaf_block_solve.setArg(0, vector_r);
-    tea_leaf_block_solve.setArg(1, vector_z);
-    tea_leaf_block_solve.setArg(2, cp);
-    tea_leaf_block_solve.setArg(3, bfp);
-    tea_leaf_block_solve.setArg(4, dp);
-    tea_leaf_block_solve.setArg(5, vector_Kx);
-    tea_leaf_block_solve.setArg(6, vector_Ky);
+    tea_leaf_block_solve_device.setArg(0, vector_r);
+    tea_leaf_block_solve_device.setArg(1, vector_z);
+    tea_leaf_block_solve_device.setArg(2, cp);
+    tea_leaf_block_solve_device.setArg(3, bfp);
+    tea_leaf_block_solve_device.setArg(4, dp);
+    tea_leaf_block_solve_device.setArg(5, vector_Kx);
+    tea_leaf_block_solve_device.setArg(6, vector_Ky);
 
     fprintf(DBGOUT, "Kernel arguments set\n");
 }

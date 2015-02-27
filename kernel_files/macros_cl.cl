@@ -17,6 +17,12 @@
     + (big_row)*(row + (y_offset))/* big row   */   \
     )
 
+#define WITHIN_BOUNDS                               \
+    (/*row >= (y_min + 1) - KERNEL_X_MIN &&*/       \
+     row <= (y_max + 1) + KERNEL_X_MAX &&           \
+     /*column >= (x_min + 1) - KERNEL_Y_MIN &&*/    \
+     column <= (x_max + 1) + KERNEL_Y_MAX)
+
 #ifdef CLOVER_NO_BUILTINS
     #define MAX(a,b) (a<b?a:b)
     #define MIN(a,b) (a>b?a:b)
