@@ -153,9 +153,38 @@ void CloverChunk::tea_leaf_init_cg
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
-    // only needs to be set once
-    tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
-    tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
+    if (preconditioner_on)
+    {
+        block_jacobi_offset = cl::NDRange(2, 0);
+        int ceild = std::ceil((1.0*y_max)/BLOCK_SIZE);
+        int floord = y_max/BLOCK_SIZE;
+        // FIXME choose a smart one based on x_max, or tea.in flag?
+        assert(ceild == floord);
+        block_jacobi_global = cl::NDRange(x_max, floord);
+
+        switch (x_max % 64)
+        {
+        case 0:
+            block_jacobi_local = cl::NDRange(64, 1);
+            break;
+        case 32:
+            block_jacobi_local = cl::NDRange(32, 2);
+            break;
+        default:
+            block_jacobi_local =  cl::NullRange;
+            break;
+        }
+
+        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+
+        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+    }
 
     ppcg_init_p(rro);
 }
@@ -251,42 +280,6 @@ void CloverChunk::tea_leaf_init_common
     tea_leaf_init_common_device.setArg(7, *ry);
     tea_leaf_init_common_device.setArg(8, coefficient);
     ENQUEUE_OFFSET(tea_leaf_init_common_device);
-
-    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
-
-    if (preconditioner_on)
-    {
-        block_jacobi_offset = cl::NDRange(2, 0);
-        int ceild = std::ceil((1.0*y_max)/BLOCK_SIZE);
-        int floord = y_max/BLOCK_SIZE;
-        // FIXME choose a smart one based on x_max, or tea.in flag?
-        assert(ceild == floord);
-        block_jacobi_global = cl::NDRange(x_max, floord);
-
-        switch (x_max % 64)
-        {
-        case 0:
-            block_jacobi_local = cl::NDRange(64, 1);
-            break;
-        case 32:
-            block_jacobi_local = cl::NDRange(32, 2);
-            break;
-        default:
-            block_jacobi_local =  cl::NullRange;
-            break;
-        }
-
-
-        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-
-        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-    }
 }
 
 // both

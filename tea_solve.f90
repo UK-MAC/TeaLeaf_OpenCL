@@ -117,6 +117,40 @@ SUBROUTINE tea_leaf()
           CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry)
       ENDIF
 
+      fields=0
+      fields(FIELD_U) = 1
+      IF (profiler_on) halo_time=timer()
+      CALL update_halo(fields,1)
+      IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
+      halo_time=init_time+(timer()-halo_time)
+
+      IF(use_fortran_kernels) THEN
+        CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
+            chunks(c)%field%x_max,                        &
+            chunks(c)%field%y_min,                        &
+            chunks(c)%field%y_max,                        &
+            chunks(c)%field%u,                            &
+            chunks(c)%field%u0,                           &
+            chunks(c)%field%vector_r,                     &
+            chunks(c)%field%vector_Kx,                    &
+            chunks(c)%field%vector_Ky,                    &
+            rx, ry)
+        CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+            chunks(c)%field%x_max,                                    &
+            chunks(c)%field%y_min,                                    &
+            chunks(c)%field%y_max,                                    &
+            chunks(c)%field%vector_r,                                 &
+            initial_residual)
+      ELSEIF(use_opencl_kernels) THEN
+        CALL tea_leaf_calc_residual_ocl()
+        CALL tea_leaf_calc_2norm_kernel_ocl(1, initial_residual)
+      ENDIF
+
+      IF (profiler_on) dot_product_time=timer()
+      CALL tea_allsum(initial_residual)
+      IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
+      IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
+
       IF(tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
         ! All 3 of these solvers use the CG kernels
         IF(use_fortran_kernels) THEN
@@ -159,28 +193,6 @@ SUBROUTINE tea_leaf()
       ELSEIF (tl_use_jacobi) THEN
         fields=0
         fields(FIELD_U) = 1
-      ENDIF
-
-      IF(use_fortran_kernels) THEN
-        CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-            chunks(c)%field%x_max,                        &
-            chunks(c)%field%y_min,                        &
-            chunks(c)%field%y_max,                        &
-            chunks(c)%field%u,                            &
-            chunks(c)%field%u0,                           &
-            chunks(c)%field%vector_r,                     &
-            chunks(c)%field%vector_Kx,                    &
-            chunks(c)%field%vector_Ky,                    &
-            rx, ry)
-        CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-            chunks(c)%field%x_max,                                    &
-            chunks(c)%field%y_min,                                    &
-            chunks(c)%field%y_max,                                    &
-            chunks(c)%field%vector_r,                                 &
-            initial_residual)
-      ELSEIF(use_opencl_kernels) THEN
-        CALL tea_leaf_calc_residual_ocl()
-        CALL tea_leaf_calc_2norm_kernel_ocl(1, initial_residual)
       ENDIF
 
       IF (profiler_on) dot_product_time=timer()

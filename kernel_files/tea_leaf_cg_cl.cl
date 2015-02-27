@@ -5,10 +5,10 @@
  */
 
 __kernel void tea_leaf_cg_init_p
-(__global       double * __restrict const rro,
- __global       double * __restrict const p,
+(__global       double * __restrict const p,
  __global       double * __restrict const r,
- __global       double * __restrict const z)
+ __global       double * __restrict const z,
+ __global       double * __restrict const rro)
 {
     __kernel_indexes;
 
@@ -37,8 +37,7 @@ __kernel void tea_leaf_cg_solve_calc_w
  __global const double * __restrict const p,
  __global       double * __restrict const w,
  __global const double * __restrict const Kx,
- __global const double * __restrict const Ky,
- double rx, double ry)
+ __global const double * __restrict const Ky)
 {
     __kernel_indexes;
 

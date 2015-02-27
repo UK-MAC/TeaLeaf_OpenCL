@@ -33,6 +33,7 @@ __kernel void tea_leaf_calc_residual
             - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
+        r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
     }
 }
 

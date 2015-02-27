@@ -74,21 +74,6 @@ SUBROUTINE tea_leaf_kernel_init_common(x_min,  &
    ENDDO
 !$OMP END DO
 
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-
-            r(j, k) = u(j, k) - w(j, k)
-            !r(j, k) = u(j, k)! This is required to make a zero initial guess to match petsc errant behaviour
-                              ! Only works one timestep is run
-        ENDDO
-    ENDDO
-!$OMP END DO
 !$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_init_common

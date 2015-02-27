@@ -405,7 +405,7 @@ void CloverChunk::initSizes
     FIND_PADDING_SIZE(tea_leaf_finalise, 0, 0, 0, 0);
     FIND_PADDING_SIZE(tea_leaf_calc_residual, 0, 0, 0, 0);
     FIND_PADDING_SIZE(tea_leaf_calc_2norm, 0, 0, 0, 0);
-    FIND_PADDING_SIZE(tea_leaf_init_common, 0, 0, 0, 0);
+    FIND_PADDING_SIZE(tea_leaf_init_common, -1, 1, -1, 1);
 }
 
 void CloverChunk::initArgs
@@ -482,6 +482,11 @@ void CloverChunk::initArgs
          *  reduce_buf_4 = rrn
          */
 
+        tea_leaf_cg_solve_init_p_device.setArg(0, vector_p);
+        tea_leaf_cg_solve_init_p_device.setArg(1, vector_r);
+        tea_leaf_cg_solve_init_p_device.setArg(2, vector_z);
+        tea_leaf_cg_solve_init_p_device.setArg(3, reduce_buf_1);
+
         tea_leaf_cg_solve_calc_w_device.setArg(0, reduce_buf_3);
         tea_leaf_cg_solve_calc_w_device.setArg(1, vector_p);
         tea_leaf_cg_solve_calc_w_device.setArg(2, vector_w);
@@ -501,11 +506,6 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_p_device.setArg(1, vector_p);
         tea_leaf_cg_solve_calc_p_device.setArg(2, vector_r);
         tea_leaf_cg_solve_calc_p_device.setArg(3, vector_z);
-
-        tea_leaf_cg_solve_init_p_device.setArg(0, vector_p);
-        tea_leaf_cg_solve_init_p_device.setArg(1, vector_r);
-        tea_leaf_cg_solve_init_p_device.setArg(2, vector_Mi);
-        tea_leaf_cg_solve_init_p_device.setArg(3, reduce_buf_1);
 
         if (tea_solver == TEA_ENUM_CHEBYSHEV)
         {
