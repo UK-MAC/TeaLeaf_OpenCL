@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along with 
 # TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
-#  @brief Makefile for CloverLeaf
+#  @brief Makefile for TeaLeaf
 #  @author David Beckingsale, Wayne Gaudin
 #  @details Agnostic, platform independent makefile for the TeaLeaf benchmark code.
 
@@ -63,7 +63,7 @@ ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
 
-#OMP_INTEL     = -openmp -fpp
+OMP_INTEL     = -openmp -fpp -ip -mmic
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp -cpp
 OMP_CRAY      = -e Z
@@ -72,7 +72,7 @@ OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
 OMP=$(OMP_$(COMPILER))
 
-FLAGS_INTEL     = -O3 -no-prec-div -fpp -fno-inline
+FLAGS_INTEL     = -O3 -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
@@ -170,6 +170,7 @@ FORTRAN_FILES=\
 	timestep.o			\
 	set_field_kernel.o            \
 	set_field.o                   \
+	tea_leaf_common_kernels.o             \
 	tea_leaf_jacobi.o             \
 	tea_leaf_cg.o             	\
 	tea_leaf_cheby.o             	\

@@ -11,7 +11,8 @@
 const static size_t LOCAL_X = 128;
 const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-static int BLOCK_STRIDE = 4;
+
+#define BLOCK_SIZE 4
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1
@@ -117,9 +118,7 @@ private:
     int tea_solver;
 
     // tea leaf
-    cl::Kernel tea_leaf_cg_init_u_device;
-    cl::Kernel tea_leaf_cg_init_directions_device;
-    cl::Kernel tea_leaf_cg_init_others_device;
+    cl::Kernel tea_leaf_cg_solve_init_p_device;
     cl::Kernel tea_leaf_cg_solve_calc_w_device;
     cl::Kernel tea_leaf_cg_solve_calc_ur_device;
     cl::Kernel tea_leaf_cg_solve_calc_rrn_device;
@@ -135,13 +134,11 @@ private:
     cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_update_r_device;
-    cl::Kernel tea_leaf_ppcg_solve_init_p_device;
 
     // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
     cl::Buffer ch_alphas_device, ch_betas_device;
 
     // need more for the Kx/Ky arrays
-    cl::Kernel tea_leaf_jacobi_init_device;
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
 
@@ -155,8 +152,8 @@ private:
     cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
-    cl::Kernel tea_leaf_init_diag_device;
     cl::Kernel tea_leaf_calc_residual_device;
+    cl::Kernel tea_leaf_init_common_device;
 
     // tolerance specified in tea.in
     float tolerance;
@@ -360,6 +357,7 @@ public:
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);
+    void tea_leaf_init_common(int, double, double*, double*);
 
     // ctor
     CloverChunk

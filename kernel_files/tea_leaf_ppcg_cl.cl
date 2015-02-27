@@ -65,28 +65,3 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
     }
 }
 
-__kernel void tea_leaf_ppcg_solve_init_p
-(__global       double * __restrict const p,
- __global const double * __restrict const r,
- __global const double * __restrict const Mi,
- __global       double * __restrict const rro)
-{
-    __kernel_indexes;
-
-    __local double rro_shared[BLOCK_SZ];
-    rro_shared[lid] = 0.0;
-
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
-    {
-#if defined(USE_PRECONDITIONER)
-        p[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#else
-        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-#endif
-        rro_shared[lid] = p[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-    }
-
-    REDUCTION(rro_shared, rro, SUM)
-}
-

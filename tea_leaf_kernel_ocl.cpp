@@ -9,13 +9,6 @@ extern CloverChunk chunk;
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
 
-// Chebyshev solver
-extern "C" void tea_leaf_kernel_cheby_copy_u_ocl_
-(void)
-{
-    chunk.tea_leaf_cheby_copy_u();
-}
-
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 (int* norm_array, double* norm)
 {
@@ -36,14 +29,6 @@ extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
 {
     chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
         *rx, *ry, *cheby_calc_step);
-}
-
-void CloverChunk::tea_leaf_cheby_copy_u
-(void)
-{
-    // copy into u0 for later residual check
-    queue.finish();
-    queue.enqueueCopyBuffer(u, u0, 0, 0, (x_max+4) * (y_max+4) * sizeof(double));
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel
@@ -166,74 +151,13 @@ void CloverChunk::calcrxry
 void CloverChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry, double * rro)
 {
-    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
-    {
-        DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
-    }
-
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
-
-    calcrxry(dt, rx, ry);
 
     // only needs to be set once
     tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
     tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
-    tea_leaf_init_diag_device.setArg(2, *rx);
-    tea_leaf_init_diag_device.setArg(3, *ry);
 
-    // copy u, get density value modified by coefficient
-    tea_leaf_cg_init_u_device.setArg(6, coefficient);
-    ENQUEUE_OFFSET(tea_leaf_cg_init_u_device);
-
-    // init Kx, Ky
-    ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
-
-    // premultiply Kx/Ky
-    ENQUEUE_OFFSET(tea_leaf_init_diag_device);
-
-    // get initial guess in w, r, etc
-    // XXX copy to u0 before this?
-    tea_leaf_calc_residual_device.setArg(1, u);
-    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
-    tea_leaf_calc_residual_device.setArg(1, u0);
-
-    if (preconditioner_on)
-    {
-        block_jacobi_offset = cl::NDRange(2, 0);
-        int ceild = std::ceil((1.0*y_max)/BLOCK_STRIDE);
-        int floord = y_max/BLOCK_STRIDE;
-        // FIXME choose a smart one based on x_max, or tea.in flag?
-        assert(ceild == floord);
-        block_jacobi_global = cl::NDRange(x_max, floord);
-
-        switch (x_max % 32)
-        {
-        case 0:
-            block_jacobi_local = cl::NDRange(32, 1);
-            break;
-        case 16:
-            block_jacobi_local = cl::NDRange(16, 2);
-            break;
-        default:
-            block_jacobi_local =  cl::NullRange;
-            break;
-        }
-
-
-        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-
-        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-    }
-
-    ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
-
-    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
+    ppcg_init_p(rro);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_w
@@ -277,35 +201,10 @@ void CloverChunk::tea_leaf_kernel_cg_calc_p
 
 /********************/
 
-// jacobi solver functions
-extern "C" void tea_leaf_kernel_init_ocl_
-(const int * coefficient, double * dt, double * rx, double * ry)
-{
-    chunk.tea_leaf_init_jacobi(*coefficient, *dt, rx, ry);
-}
-
 extern "C" void tea_leaf_kernel_solve_ocl_
 (const double * rx, const double * ry, double * error)
 {
     chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
-}
-
-// jacobi
-void CloverChunk::tea_leaf_init_jacobi
-(int coefficient, double dt, double * rx, double * ry)
-{
-    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
-    {
-        DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
-    }
-
-    calcrxry(dt, rx, ry);
-
-    tea_leaf_jacobi_init_device.setArg(6, coefficient);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_init_device);
-
-    tea_leaf_jacobi_solve_device.setArg(0, *rx);
-    tea_leaf_jacobi_solve_device.setArg(1, *ry);
 }
 
 void CloverChunk::tea_leaf_kernel_jacobi
@@ -319,6 +218,12 @@ void CloverChunk::tea_leaf_kernel_jacobi
 
 /********************/
 
+extern "C" void tea_leaf_kernel_init_common_ocl_
+(const int * coefficient, double * dt, double * rx, double * ry)
+{
+    chunk.tea_leaf_init_common(*coefficient, *dt, rx, ry);
+}
+
 // used by both
 extern "C" void tea_leaf_kernel_finalise_ocl_
 (void)
@@ -330,6 +235,58 @@ extern "C" void tea_leaf_calc_residual_ocl_
 (void)
 {
     chunk.tea_leaf_calc_residual();
+}
+
+void CloverChunk::tea_leaf_init_common
+(int coefficient, double dt, double * rx, double * ry)
+{
+    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
+    {
+        DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
+    }
+
+    calcrxry(dt, rx, ry);
+
+    tea_leaf_init_common_device.setArg(6, *rx);
+    tea_leaf_init_common_device.setArg(7, *ry);
+    tea_leaf_init_common_device.setArg(8, coefficient);
+    ENQUEUE_OFFSET(tea_leaf_init_common_device);
+
+    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+
+    if (preconditioner_on)
+    {
+        block_jacobi_offset = cl::NDRange(2, 0);
+        int ceild = std::ceil((1.0*y_max)/BLOCK_SIZE);
+        int floord = y_max/BLOCK_SIZE;
+        // FIXME choose a smart one based on x_max, or tea.in flag?
+        assert(ceild == floord);
+        block_jacobi_global = cl::NDRange(x_max, floord);
+
+        switch (x_max % 64)
+        {
+        case 0:
+            block_jacobi_local = cl::NDRange(64, 1);
+            break;
+        case 32:
+            block_jacobi_local = cl::NDRange(32, 2);
+            break;
+        default:
+            block_jacobi_local =  cl::NullRange;
+            break;
+        }
+
+
+        enqueueKernel(tea_leaf_block_init, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+
+        enqueueKernel(tea_leaf_block_solve, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+    }
 }
 
 // both
@@ -394,7 +351,7 @@ void CloverChunk::ppcg_init
 void CloverChunk::ppcg_init_p
 (double * rro)
 {
-    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }

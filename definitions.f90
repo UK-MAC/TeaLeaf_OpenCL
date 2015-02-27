@@ -70,6 +70,7 @@ MODULE definitions_module
    LOGICAL      :: tl_use_cg
    LOGICAL      :: tl_use_ppcg
    LOGICAL      :: tl_use_jacobi
+   LOGICAL      :: verbose_on
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
    INTEGER      :: coefficient
@@ -100,6 +101,7 @@ MODULE definitions_module
                           ,tea_solve       &
                           ,tea_reset       &
                           ,set_field       &
+                          ,dot_product     &
                           ,halo_exchange
                      
    END TYPE profiler_type

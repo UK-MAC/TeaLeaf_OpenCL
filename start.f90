@@ -39,7 +39,7 @@ SUBROUTINE start
   LOGICAL :: profiler_off
 
   IF(parallel%boss)THEN
-    WrITE(g_out,*) 'Setting up initial geometry'
+    WRITE(g_out,*) 'Setting up initial geometry'
     WRITE(g_out,*)
   ENDIF
 
