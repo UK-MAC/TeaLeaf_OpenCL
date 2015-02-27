@@ -19,7 +19,7 @@
   x_cells=400
   y_cells=400
 
-  !use_fortran_kernels
+  use_fortran_kernels
   opencl_vendor=any
   opencl_type=gpu
 

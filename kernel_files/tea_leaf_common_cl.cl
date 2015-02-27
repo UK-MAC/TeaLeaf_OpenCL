@@ -7,8 +7,7 @@ __kernel void tea_leaf_finalise
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         energy[THARR2D(0, 0, 0)] = u1[THARR2D(0, 0, 0)]/density[THARR2D(0, 0, 0)];
     }
@@ -23,8 +22,7 @@ __kernel void tea_leaf_calc_residual
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         const double smvp = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -46,8 +44,7 @@ __kernel void tea_leaf_calc_2norm
     __local double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         rro_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
     }
@@ -69,8 +66,7 @@ __kernel void tea_leaf_init_common
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 1 &&*/ row <= (y_max + 1) + 1
-    && /*column >= (x_min + 1) - 1 &&*/ column <= (x_max + 1) + 1)
+    if (WITHIN_BOUNDS)
     {
         u0[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
         u[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];

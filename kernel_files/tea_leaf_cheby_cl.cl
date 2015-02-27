@@ -13,8 +13,7 @@ __kernel void tea_leaf_cheby_solve_init_p
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -38,8 +37,7 @@ __kernel void tea_leaf_cheby_solve_calc_u
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += p[THARR2D(0, 0, 0)];
     }
@@ -60,8 +58,7 @@ __kernel void tea_leaf_cheby_solve_calc_p
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])

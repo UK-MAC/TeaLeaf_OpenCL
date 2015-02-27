@@ -8,8 +8,7 @@ __kernel void tea_leaf_ppcg_solve_init_sd
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
 #if defined(USE_PRECONDITIONER)
         sd[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
@@ -28,8 +27,7 @@ __kernel void tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         const double result = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -52,8 +50,7 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
 #if defined(USE_PRECONDITIONER)

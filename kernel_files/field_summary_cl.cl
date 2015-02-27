@@ -22,8 +22,7 @@ __kernel void field_summary
     ie_shared[lid] = 0.0;
     temp_shared[lid] = 0.0;
 
-    if(/*row >= (y_min + 1) &&*/ row <= (y_max + 1)
-    && /*column >= (x_min + 1) &&*/ column <= (x_max + 1))
+    if (WITHIN_BOUNDS)
     {
         const double cell_vol = volume[THARR2D(0, 0, 0)];
         const double cell_mass = cell_vol * density[THARR2D(0, 0, 0)];

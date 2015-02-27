@@ -4,8 +4,6 @@
  *  Kernels used for conjugate gradient method
  */
 
-//if\s*(\/\?\*\?row >= ([^)]\+) [-+] \(\w\) &&\*\?\/\? row <= ([^)]\+) [+-] \(\w\)\n\s\+&& \/\?\*\?column >= ([^)]\+) [-+] \(\w\) &&\*\?\/\? column <= ([^)]\+) [+-] \(\w\))
-
 __kernel void tea_leaf_cg_solve_init_p
 (__global       double * __restrict const p,
  __global       double * __restrict const r,

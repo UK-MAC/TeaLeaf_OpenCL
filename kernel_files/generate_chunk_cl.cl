@@ -26,8 +26,7 @@ __kernel void generate_chunk
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if (WITHIN_BOUNDS)
     {
         const double x_cent = state_xmin[state];
         const double y_cent = state_ymin[state];
@@ -66,8 +65,7 @@ __kernel void generate_chunk
 
     }
 
-    if (row >= (y_min + 1) - 1 && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 1 && column <= (x_max + 1) + 1)
+    if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)]*density0[THARR2D(0, 0, 0)];
     }
@@ -81,8 +79,7 @@ __kernel void generate_chunk_init
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if (WITHIN_BOUNDS)
     {
         energy0[THARR2D(0, 0, 0)] = state_energy[0];
         density0[THARR2D(0, 0, 0)] = state_density[0];
