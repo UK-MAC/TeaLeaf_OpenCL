@@ -114,6 +114,8 @@ __kernel void block_init
     const size_t column = get_global_id(0);
     const size_t row = get_global_id(1)*BLOCK_SIZE + 2;
 
+    if (row > y_max || column > x_max) return;
+
     int j = 0;
 
     cp[THARR2D(0, j, 0)] = COEF_C/COEF_B;
@@ -137,6 +139,8 @@ __kernel void block_solve
     const size_t column = get_global_id(0);
     const size_t row = get_global_id(1)*BLOCK_SIZE + 2;
 
+    if (row > y_max || column > x_max) return;
+
     int j = 0;
 
     __private double dp_l[BLOCK_SIZE];
@@ -157,7 +161,6 @@ __kernel void block_solve
     {
         z_l[j] = dp_l[j] - cp[THARR2D(0, j, 0)]*z_l[j + 1];
     }
-    barrier(CLK_GLOBAL_MEM_FENCE);
 
     for (j = 0; j < BLOCK_SIZE; j++)
     {

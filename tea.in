@@ -16,10 +16,10 @@
   end_time=15.0
 
   end_step=3
-  x_cells=400
-  y_cells=400
+  x_cells=920
+  y_cells=920
 
-  use_fortran_kernels
+  !use_fortran_kernels
   opencl_vendor=any
   opencl_type=gpu
 
