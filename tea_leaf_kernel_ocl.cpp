@@ -38,15 +38,23 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     {
         // norm of u0
         tea_leaf_calc_2norm_device.setArg(0, u0);
+        tea_leaf_calc_2norm_device.setArg(1, u0);
     }
     else if (norm_array == 1)
     {
         // norm of r
         tea_leaf_calc_2norm_device.setArg(0, vector_r);
+        tea_leaf_calc_2norm_device.setArg(1, vector_r);
+    }
+    else if (norm_array == 2)
+    {
+        // norm of r
+        tea_leaf_calc_2norm_device.setArg(0, vector_r);
+        tea_leaf_calc_2norm_device.setArg(1, vector_z);
     }
     else
     {
-        DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
+        DIE("Invalid value '%d' for norm_array passed, should be 0 for u0, 1 for r, 2 for r*z", norm_array);
     }
 
     ENQUEUE_OFFSET(tea_leaf_calc_2norm_device);
@@ -192,22 +200,23 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
-
     if (preconditioner_on)
     {
-        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
+        enqueueKernel(tea_leaf_cg_solve_calc_ur_device, __LINE__, __FILE__,
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);
 
-        ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_rrn_device);
+        fprintf(stdout, "%zu %zu\n", block_jacobi_local[0], block_jacobi_local[1]);
+        fprintf(stdout, "%zu %zu\n", block_jacobi_global[0], block_jacobi_global[1]);
 
-        *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
+        tea_leaf_calc_2norm_kernel(2, rrn);
     }
     else
     {
-        tea_leaf_calc_2norm_kernel(1, rrn);
+        ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
+
+        *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
     }
 }
 

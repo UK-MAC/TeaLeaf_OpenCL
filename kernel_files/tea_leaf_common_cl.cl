@@ -31,12 +31,12 @@ __kernel void tea_leaf_calc_residual
             - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
-        r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
     }
 }
 
 __kernel void tea_leaf_calc_2norm
-(__global const double * __restrict const r,
+(__global const double * __restrict const r1,
+ __global const double * __restrict const r2,
  __global       double * __restrict const rro)
 {
     __kernel_indexes;
@@ -46,7 +46,7 @@ __kernel void tea_leaf_calc_2norm
 
     if (WITHIN_BOUNDS)
     {
-        rro_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        rro_shared[lid] = r1[THARR2D(0, 0, 0)]*r2[THARR2D(0, 0, 0)];
     }
 
     REDUCTION(rro_shared, rro, SUM)

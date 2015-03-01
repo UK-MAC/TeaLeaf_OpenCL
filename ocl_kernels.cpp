@@ -79,7 +79,6 @@ void CloverChunk::initProgram
     {
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device, 0, 0, 0, 0);
-        compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_rrn", tea_leaf_cg_solve_calc_rrn_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_init_p", tea_leaf_cg_solve_init_p_device, 0, 0, 0, 0);
 
@@ -131,7 +130,7 @@ CloverChunk::launch_specs_t CloverChunk::findPaddingSize
 }
 
 void CloverChunk::compileKernel
-(std::stringstream& options_orig,
+(std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
  cl::Kernel& kernel,
@@ -146,6 +145,9 @@ void CloverChunk::compileKernel
             (std::istreambuf_iterator<char>(ifile)),
             (std::istreambuf_iterator<char>()));
     }
+
+    std::stringstream options_orig;
+    options_orig << options_orig_knl.str();
 
     options_orig << "-D KERNEL_X_MIN=" << launch_x_min << " ";
     options_orig << "-D KERNEL_X_MAX=" << launch_x_max << " ";
@@ -457,11 +459,12 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_ur_device.setArg(2, vector_p);
         tea_leaf_cg_solve_calc_ur_device.setArg(3, vector_r);
         tea_leaf_cg_solve_calc_ur_device.setArg(4, vector_w);
-
-        tea_leaf_cg_solve_calc_rrn_device.setArg(0, reduce_buf_4);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(1, vector_r);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(2, vector_w);
-        tea_leaf_cg_solve_calc_rrn_device.setArg(3, vector_z);
+        tea_leaf_cg_solve_calc_ur_device.setArg(5, vector_z);
+        tea_leaf_cg_solve_calc_ur_device.setArg(6, cp);
+        tea_leaf_cg_solve_calc_ur_device.setArg(7, bfp);
+        tea_leaf_cg_solve_calc_ur_device.setArg(8, vector_Kx);
+        tea_leaf_cg_solve_calc_ur_device.setArg(9, vector_Ky);
+        tea_leaf_cg_solve_calc_ur_device.setArg(10, reduce_buf_4);
 
         tea_leaf_cg_solve_calc_p_device.setArg(1, vector_p);
         tea_leaf_cg_solve_calc_p_device.setArg(2, vector_r);
@@ -526,7 +529,7 @@ void CloverChunk::initArgs
     tea_leaf_calc_residual_device.setArg(3, vector_Kx);
     tea_leaf_calc_residual_device.setArg(4, vector_Ky);
 
-    tea_leaf_calc_2norm_device.setArg(1, reduce_buf_1);
+    tea_leaf_calc_2norm_device.setArg(2, reduce_buf_1);
 
     // both finalise the same
     tea_leaf_finalise_device.setArg(0, density);

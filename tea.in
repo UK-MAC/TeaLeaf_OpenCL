@@ -19,7 +19,6 @@
   x_cells=920
   y_cells=920
 
-  !use_fortran_kernels
   opencl_vendor=any
   opencl_type=gpu
 
@@ -30,6 +29,7 @@
 
   tl_check_result
 
+  !use_fortran_kernels
   tl_preconditioner_on
 
 *endtea
