@@ -81,25 +81,28 @@ __kernel void tea_leaf_cg_solve_calc_ur
     if (WITHIN_BOUNDS)
     {
 
-#define COEF_A (1*(-Ky[THARR2D(0,j+ 0, 0)]))
-#define COEF_B (1*(1.0 + (Ky[THARR2D(0,j+ 1, 0)] + Ky[THARR2D(0,j+ 0, 0)]) + (Kx[THARR2D(1,j+ 0, 0)] + Kx[THARR2D(0,j+ 0, 0)])))
-#define COEF_C (1*(-Ky[THARR2D(0,j+ 1, 0)]))
+#define COEF_A (-Ky[THARR2D(0,j+ 0, 0)])
+#define COEF_B (1.0 + (Ky[THARR2D(0,j+ 1, 0)] + Ky[THARR2D(0,j+ 0, 0)]) + (Kx[THARR2D(1,j+ 0, 0)] + Kx[THARR2D(0,j+ 0, 0)]))
+#define COEF_C (-Ky[THARR2D(0,j+ 1, 0)])
 
         int j;
+        __private double r_l[BLOCK_SIZE];
         __private double z_l[BLOCK_SIZE];
         __private double dp_l[BLOCK_SIZE];
 
         for (j = 0; j < BLOCK_SIZE; j++)
         {
             u[THARR2D(0, j, 0)] += alpha*p[THARR2D(0, j, 0)];
-            r[THARR2D(0, j, 0)] -= alpha*w[THARR2D(0, j, 0)];
+            r_l[j] = r[THARR2D(0, j, 0)] -= alpha*w[THARR2D(0, j, 0)];
         }
 
-        dp_l[j] = r[THARR2D(0, j, 0)]/COEF_B;
+        j = 0;
+
+        dp_l[j] = r_l[j]/COEF_B;
 
         for (j = 1; j < BLOCK_SIZE; j++)
         {
-            dp_l[j] = (r[THARR2D(0, j, 0)] - COEF_A*dp_l[j - 1])*bfp[THARR2D(0, j, 0)];
+            dp_l[j] = (r_l[j] - COEF_A*dp_l[j - 1])*bfp[THARR2D(0, j, 0)];
         }
 
         j = BLOCK_SIZE - 1;

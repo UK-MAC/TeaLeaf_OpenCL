@@ -207,9 +207,6 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
                       block_jacobi_global,
                       block_jacobi_local);
 
-        fprintf(stdout, "%zu %zu\n", block_jacobi_local[0], block_jacobi_local[1]);
-        fprintf(stdout, "%zu %zu\n", block_jacobi_global[0], block_jacobi_global[1]);
-
         tea_leaf_calc_2norm_kernel(2, rrn);
     }
     else

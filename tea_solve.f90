@@ -497,8 +497,6 @@ SUBROUTINE tea_leaf()
           ELSEIF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
           ENDIF
-          print *, rrn
-          call exit
 
           IF (profiler_on) dot_product_time=timer()
           CALL tea_allsum(rrn)
