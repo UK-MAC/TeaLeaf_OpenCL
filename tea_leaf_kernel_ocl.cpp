@@ -344,7 +344,17 @@ void CloverChunk::ppcg_init
 void CloverChunk::ppcg_init_sd
 (void)
 {
-    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
+    if (preconditioner_on)
+    {
+        enqueueKernel(tea_leaf_ppcg_solve_init_sd_device, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+    }
+    else
+    {
+        ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
+    }
 }
 
 void CloverChunk::ppcg_inner
