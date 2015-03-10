@@ -15,7 +15,7 @@
   tl_max_iters=2000
    test_problem 6
   tl_use_ppcg
-  !tl_preconditioner_on
+  tl_preconditioner_on
   tl_check_result
   tl_eps=1.0e-12
 

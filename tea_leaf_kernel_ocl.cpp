@@ -50,7 +50,14 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     {
         // ddot(z, r)
         tea_leaf_calc_2norm_device.setArg(0, vector_r);
-        tea_leaf_calc_2norm_device.setArg(1, vector_z);
+        if (preconditioner_on)
+        {
+            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+        }
+        else
+        {
+            tea_leaf_calc_2norm_device.setArg(1, vector_r);
+        }
     }
     else
     {
