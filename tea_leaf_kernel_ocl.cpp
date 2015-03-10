@@ -48,7 +48,7 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     }
     else if (norm_array == 2)
     {
-        // norm of r
+        // ddot(z, r)
         tea_leaf_calc_2norm_device.setArg(0, vector_r);
         tea_leaf_calc_2norm_device.setArg(1, vector_z);
     }
@@ -169,7 +169,7 @@ void CloverChunk::tea_leaf_init_cg
 
         size_t xl = x_max;
         xl += block_jacobi_local[0] - (xl % block_jacobi_local[0]);
-        size_t yl = y_max/BLOCK_SIZE;
+        size_t yl = y_max/JACOBI_BLOCK_SIZE;
         yl += block_jacobi_local[1] - (yl % block_jacobi_local[1]);
 
         block_jacobi_global = cl::NDRange(xl, yl);
@@ -185,7 +185,9 @@ void CloverChunk::tea_leaf_init_cg
                       block_jacobi_local);
     }
 
-    ppcg_init_p(rro);
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
+
+    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_w
@@ -301,12 +303,6 @@ extern "C" void tea_leaf_kernel_ppcg_init_ocl_
     chunk.ppcg_init(ch_alphas, ch_betas, *theta, *n_inner_steps);
 }
 
-extern "C" void tea_leaf_kernel_ppcg_init_p_ocl_
-(double * rro)
-{
-    chunk.ppcg_init_p(rro);
-}
-
 extern "C" void tea_leaf_kernel_ppcg_init_sd_ocl_
 (void)
 {
@@ -323,7 +319,7 @@ void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
-    tea_leaf_ppcg_solve_init_sd_device.setArg(3, theta);
+    tea_leaf_ppcg_solve_init_sd_device.setArg(7, theta);
 
     // never going to do more than n_inner_steps steps? XXX
     size_t ch_buf_sz = n_inner_steps*sizeof(double);
@@ -338,14 +334,6 @@ void CloverChunk::ppcg_init
     tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_betas_device);
 }
 
-void CloverChunk::ppcg_init_p
-(double * rro)
-{
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
-
-    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
-}
-
 void CloverChunk::ppcg_init_sd
 (void)
 {
@@ -356,6 +344,14 @@ void CloverChunk::ppcg_inner
 (int ppcg_cur_step)
 {
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
+
+    if (preconditioner_on)
+    {
+        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
+                      block_jacobi_offset,
+                      block_jacobi_global,
+                      block_jacobi_local);
+    }
 
     tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ppcg_cur_step - 1);
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);

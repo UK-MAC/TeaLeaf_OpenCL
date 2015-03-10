@@ -1,4 +1,5 @@
 #include <kernel_files/macros_cl.cl>
+#include <kernel_files/tea_block_jacobi.cl>
 
 /*
  *  Kernels used for conjugate gradient method
@@ -76,49 +77,19 @@ __kernel void tea_leaf_cg_solve_calc_ur
 {
 #if defined(USE_PRECONDITIONER)
     const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*BLOCK_SIZE + 2;
+    const size_t row = get_global_id(1)*JACOBI_BLOCK_SIZE + 2;
 
-    if (WITHIN_BOUNDS)
+    if (row > y_max || column > x_max) return;
+
+    __private double r_l[JACOBI_BLOCK_SIZE];
+
+    for (int k = 0; k < BLOCK_TOP; k++)
     {
-
-#define COEF_A (-Ky[THARR2D(0,j+ 0, 0)])
-#define COEF_B (1.0 + (Ky[THARR2D(0,j+ 1, 0)] + Ky[THARR2D(0,j+ 0, 0)]) + (Kx[THARR2D(1,j+ 0, 0)] + Kx[THARR2D(0,j+ 0, 0)]))
-#define COEF_C (-Ky[THARR2D(0,j+ 1, 0)])
-
-        int j;
-        __private double r_l[BLOCK_SIZE];
-        __private double z_l[BLOCK_SIZE];
-        __private double dp_l[BLOCK_SIZE];
-
-        for (j = 0; j < BLOCK_SIZE; j++)
-        {
-            u[THARR2D(0, j, 0)] += alpha*p[THARR2D(0, j, 0)];
-            r_l[j] = r[THARR2D(0, j, 0)] -= alpha*w[THARR2D(0, j, 0)];
-        }
-
-        j = 0;
-
-        dp_l[j] = r_l[j]/COEF_B;
-
-        for (j = 1; j < BLOCK_SIZE; j++)
-        {
-            dp_l[j] = (r_l[j] - COEF_A*dp_l[j - 1])*bfp[THARR2D(0, j, 0)];
-        }
-
-        j = BLOCK_SIZE - 1;
-
-        z_l[j] = dp_l[j];
-
-        for (j = BLOCK_SIZE - 2; j >= 0; j--)
-        {
-            z_l[j] = dp_l[j] - cp[THARR2D(0, j, 0)]*z_l[j + 1];
-        }
-
-        for (j = 0; j < BLOCK_SIZE; j++)
-        {
-            z[THARR2D(0, j, 0)] = z_l[j];
-        }
+        u[THARR2D(0, k, 0)] += alpha*p[THARR2D(0, k, 0)];
+        r_l[k] = r[THARR2D(0, k, 0)] -= alpha*w[THARR2D(0, k, 0)];
     }
+
+    block_solve_func(r_l, z, cp, bfp, Kx, Ky);
 #else
     __kernel_indexes;
 

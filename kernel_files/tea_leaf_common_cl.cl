@@ -1,4 +1,5 @@
 #include <kernel_files/macros_cl.cl>
+#include <kernel_files/tea_block_jacobi.cl>
 
 __kernel void tea_leaf_finalise
 (__global const double * __restrict const density,
@@ -35,8 +36,8 @@ __kernel void tea_leaf_calc_residual
 }
 
 __kernel void tea_leaf_calc_2norm
-(__global const double * __restrict const r1,
- __global const double * __restrict const r2,
+(__global const double * const r1,
+ __global const double * const r2,
  __global       double * __restrict const rro)
 {
     __kernel_indexes;
@@ -95,76 +96,6 @@ __kernel void tea_leaf_init_common
             Ky[THARR2D(0, 0, 0)] = (dens_up + dens_centre)/(2.0*dens_up*dens_centre);
             Ky[THARR2D(0, 0, 0)] *= ry;
         }
-    }
-}
-
-#define COEF_A (1*(-Ky[THARR2D(0,j+ 0, 0)]))
-#define COEF_B (1*(1.0 + (Ky[THARR2D(0,j+ 1, 0)] + Ky[THARR2D(0,j+ 0, 0)]) + (Kx[THARR2D(1,j+ 0, 0)] + Kx[THARR2D(0,j+ 0, 0)])))
-#define COEF_C (1*(-Ky[THARR2D(0,j+ 1, 0)]))
-
-__kernel void block_init
-(__global const double * __restrict const r,
- __global const double * __restrict const z,
- __global       double * __restrict const cp,
- __global       double * __restrict const bfp,
- __global const double * __restrict const dp,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
-{
-    const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*BLOCK_SIZE + 2;
-
-    if (row > y_max || column > x_max) return;
-
-    int j = 0;
-
-    cp[THARR2D(0, j, 0)] = COEF_C/COEF_B;
-
-    for (j = 1; j < BLOCK_SIZE; j++)
-    {
-        bfp[THARR2D(0, j, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(0, j - 1, 0)]);
-        cp[THARR2D(0, j, 0)] = COEF_C*bfp[THARR2D(0, j, 0)];
-    }
-}
-
-__kernel void block_solve
-(__global const double * __restrict const r,
- __global       double * __restrict const z,
- __global const double * __restrict const cp,
- __global const double * __restrict const bfp,
- __global       double * __restrict const dp,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
-{
-    const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*BLOCK_SIZE + 2;
-
-    if (row > y_max || column > x_max) return;
-
-    int j = 0;
-
-    __private double dp_l[BLOCK_SIZE];
-
-    dp_l[j] = r[THARR2D(0, j, 0)]/COEF_B;
-
-    for (j = 1; j < BLOCK_SIZE; j++)
-    {
-        dp_l[j] = (r[THARR2D(0, j, 0)] - COEF_A*dp_l[j - 1])*bfp[THARR2D(0, j, 0)];
-    }
-
-    j = BLOCK_SIZE - 1;
-
-    __private double z_l[BLOCK_SIZE];
-    z_l[j] = dp_l[j];
-
-    for (j = BLOCK_SIZE - 2; j >= 0; j--)
-    {
-        z_l[j] = dp_l[j] - cp[THARR2D(0, j, 0)]*z_l[j + 1];
-    }
-
-    for (j = 0; j < BLOCK_SIZE; j++)
-    {
-        z[THARR2D(0, j, 0)] = z_l[j];
     }
 }
 

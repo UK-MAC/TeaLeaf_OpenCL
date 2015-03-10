@@ -4,6 +4,9 @@ IMPLICIT NONE
 
     integer, parameter::stride = 4
 
+    INTEGER(KIND=4), parameter :: block_size=4
+    INTEGER(KIND=4), parameter :: kstep = block_size*stride
+
 CONTAINS
 
 SUBROUTINE tea_leaf_kernel_init_common(x_min,  &
@@ -74,6 +77,21 @@ SUBROUTINE tea_leaf_kernel_init_common(x_min,  &
    ENDDO
 !$OMP END DO
 
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            w(j, k) = (1.0_8                                      &
+                + ry*(Ky(j, k+1) + Ky(j, k))                      &
+                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
+
+            r(j, k) = u(j, k) - w(j, k)
+            !r(j, k) = u(j, k)! This is required to make a zero initial guess to match petsc errant behaviour
+                              ! Only works one timestep is run
+        ENDDO
+    ENDDO
+!$OMP END DO
 !$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_init_common
@@ -191,16 +209,17 @@ subroutine tea_block_init(x_min,             &
 
   INTEGER(KIND=4):: j, ko, k, bottom, top
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, bfp, Kx, Ky
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, bfp
   REAL(KIND=8) :: rx, ry
 
 !$OMP DO PRIVATE(j, bottom, top, ko, k)
     DO ko=y_min,y_max,stride
 
       bottom = ko
-      top = ko + stride - 1
+      top = min(ko + stride - 1, y_max)
 
-!!$OMP SIMD
+!$OMP SIMD
       do j=x_min, x_max
         k = bottom
         cp(j,k) = COEF_C/COEF_B
@@ -223,50 +242,76 @@ subroutine tea_block_solve(x_min,             &
                            z,                 &
                            cp,                     &
                            bfp,                     &
-                           dp,                     &
                            Kx, Ky, rx, ry)
 
   IMPLICIT NONE
 
-  INTEGER(KIND=4):: j, ko, k, s, bottom, top, jo, ki
+  INTEGER(KIND=4):: j, ko, k, bottom, top, ki, upper_k, k_extra
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, dp, bfp, Kx, Ky, r, z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky, r
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: cp, bfp, z
   REAL(KIND=8) :: rx, ry
   REAL(KIND=8), dimension(0:stride-1) :: dp_l, z_l
 
-  INTEGER(KIND=4), parameter :: block_size=8
-  INTEGER(KIND=4), parameter :: kstep = block_size*stride
-  INTEGER(KIND=4), parameter :: jstep = block_size
+  k_extra = y_max - mod(y_max, kstep)
 
-!$OMP DO PRIVATE(j, bottom, top, ko, k, ki, jo)
-    DO ko=y_min,y_max - kstep, kstep
-      do ki=ko,ko + kstep - 1,stride
+!$OMP DO
+    DO ko=y_min, k_extra, kstep
+      upper_k = ko+kstep - stride
+
+      do ki=ko,upper_k,stride
         bottom = ki
-        top = ki + stride - 1
+        top = ki+stride - 1
 
-        do jo=x_min,x_max - jstep,jstep
-!!$OMP SIMD PRIVATE(dp_l, z_l)
-          do j=jo,jo+jstep - 1
-            k = bottom
-            if (j .gt. x_max .or. k .gt. y_max) continue
-            dp_l(k-bottom) = r(j, k)/COEF_B
+!$OMP SIMD PRIVATE(dp_l, z_l)
+!!DIR$ LOOP COUNT(920)
+        do j=x_min,x_max
+          k = bottom
+          dp_l(k-bottom) = r(j, k)/COEF_B
 
-            DO k=bottom+1,top
-              dp_l(k-bottom) = (r(j, k) - COEF_A*dp_l(k-bottom-1))*bfp(j, k)
-            ENDDO
+          DO k=bottom+1,top
+            dp_l(k-bottom) = (r(j, k) - COEF_A*dp_l(k-bottom-1))*bfp(j, k)
+          ENDDO
 
-            k = top
-            z_l(k-bottom) = dp_l(k-bottom)
+          k=top
+          z_l(k-bottom) = dp_l(k-bottom)
 
-            DO k=top-1, bottom, -1
-              z_l(k-bottom) = dp_l(k-bottom) - cp(j, k)*z_l(k-bottom+1)
-            ENDDO
+          DO k=top-1, bottom, -1
+            z_l(k-bottom) = dp_l(k-bottom) - cp(j, k)*z_l(k-bottom+1)
+          ENDDO
 
-            DO k=bottom,top
-              z(j, k) = z_l(k-bottom)
-            ENDDO
-          enddo
+          DO k=bottom,top
+            z(j, k) = z_l(k-bottom)
+          ENDDO
         enddo
+      enddo
+    ENDDO
+!$OMP END DO
+
+!$OMP DO
+    DO ki=k_extra+1, y_max, stride
+      bottom = min(ki, y_max)
+      top = min(ki+stride-1, y_max)
+
+!$OMP SIMD PRIVATE(dp_l, z_l)
+      do j=x_min,x_max
+        k = bottom
+        dp_l(k-bottom) = r(j, k)/COEF_B
+
+        DO k=bottom+1,top
+          dp_l(k-bottom) = (r(j, k) - COEF_A*dp_l(k-bottom-1))*bfp(j, k)
+        ENDDO
+
+        k=top
+        z_l(k-bottom) = dp_l(k-bottom)
+
+        DO k=top-1, bottom, -1
+          z_l(k-bottom) = dp_l(k-bottom) - cp(j, k)*z_l(k-bottom+1)
+        ENDDO
+
+        DO k=bottom,top
+          z(j, k) = z_l(k-bottom)
+        ENDDO
       enddo
     ENDDO
 !$OMP END DO

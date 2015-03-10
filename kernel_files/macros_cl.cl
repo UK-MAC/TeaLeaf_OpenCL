@@ -180,3 +180,4 @@
     #error No device type specified - don't know which reduction to use
 
 #endif
+

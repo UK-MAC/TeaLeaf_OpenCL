@@ -12,7 +12,7 @@ const static size_t LOCAL_X = 128;
 const static size_t LOCAL_Y = 1;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 
-#define BLOCK_SIZE 4
+#define JACOBI_BLOCK_SIZE 4
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1
@@ -144,7 +144,7 @@ private:
 
     cl::Kernel tea_leaf_block_init_device;
     cl::Kernel tea_leaf_block_solve_device;
-    cl::Buffer cp, bfp, dp;
+    cl::Buffer cp, bfp;
     cl::NDRange block_jacobi_global;
     cl::NDRange block_jacobi_offset;
     cl::NDRange block_jacobi_local;
@@ -357,7 +357,6 @@ public:
     void ppcg_init(const double * ch_alphas, const double * ch_betas,
         const double theta, const int n);
     void ppcg_init_sd();
-    void ppcg_init_p(double * rro);
     void ppcg_inner(int);
 
     void tea_leaf_finalise();

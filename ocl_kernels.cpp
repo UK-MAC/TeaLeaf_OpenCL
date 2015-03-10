@@ -25,7 +25,17 @@ void CloverChunk::initProgram
     options << "-Dy_min=" << y_min << " ";
     options << "-Dy_max=" << y_max << " ";
 
-    options << "-DBLOCK_SIZE=" << BLOCK_SIZE << " ";
+    options << "-DJACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
+
+    // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge - rather expensive check
+    if (y_max % JACOBI_BLOCK_SIZE)
+    {
+        options << "-DBLOCK_TOP=MIN((int)(y_max-row),(int)" << JACOBI_BLOCK_SIZE << ") ";
+    }
+    else
+    {
+        options << "-DBLOCK_TOP=" << JACOBI_BLOCK_SIZE << " ";
+    }
 
     // local sizes
     options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
@@ -248,7 +258,7 @@ cl::Program CloverChunk::compileProgram
     }
     catch (cl::Error e)
     {
-        fprintf(stderr, "Errors in creating program\n");
+        fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
 
         try
         {
@@ -496,8 +506,12 @@ void CloverChunk::initArgs
         else if (tea_solver == TEA_ENUM_PPCG)
         {
             tea_leaf_ppcg_solve_init_sd_device.setArg(0, vector_r);
-            tea_leaf_ppcg_solve_init_sd_device.setArg(1, vector_Mi);
-            tea_leaf_ppcg_solve_init_sd_device.setArg(2, vector_sd);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(1, vector_sd);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(2, vector_z);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(3, cp);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(4, bfp);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(5, vector_Kx);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(6, vector_Ky);
 
             tea_leaf_ppcg_solve_update_r_device.setArg(0, u);
             tea_leaf_ppcg_solve_update_r_device.setArg(1, vector_r);
@@ -505,7 +519,15 @@ void CloverChunk::initArgs
             tea_leaf_ppcg_solve_update_r_device.setArg(3, vector_Ky);
             tea_leaf_ppcg_solve_update_r_device.setArg(4, vector_sd);
 
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
+            if (preconditioner_on)
+            {
+                tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_z);
+            }
+            else
+            {
+                tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
+            }
+
             tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_Mi);
             tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_sd);
         }
@@ -548,17 +570,15 @@ void CloverChunk::initArgs
     tea_leaf_block_init_device.setArg(1, vector_z);
     tea_leaf_block_init_device.setArg(2, cp);
     tea_leaf_block_init_device.setArg(3, bfp);
-    tea_leaf_block_init_device.setArg(4, dp);
-    tea_leaf_block_init_device.setArg(5, vector_Kx);
-    tea_leaf_block_init_device.setArg(6, vector_Ky);
+    tea_leaf_block_init_device.setArg(4, vector_Kx);
+    tea_leaf_block_init_device.setArg(5, vector_Ky);
 
     tea_leaf_block_solve_device.setArg(0, vector_r);
     tea_leaf_block_solve_device.setArg(1, vector_z);
     tea_leaf_block_solve_device.setArg(2, cp);
     tea_leaf_block_solve_device.setArg(3, bfp);
-    tea_leaf_block_solve_device.setArg(4, dp);
-    tea_leaf_block_solve_device.setArg(5, vector_Kx);
-    tea_leaf_block_solve_device.setArg(6, vector_Ky);
+    tea_leaf_block_solve_device.setArg(4, vector_Kx);
+    tea_leaf_block_solve_device.setArg(5, vector_Ky);
 
     fprintf(DBGOUT, "Kernel arguments set\n");
 }

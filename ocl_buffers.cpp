@@ -64,7 +64,6 @@ void CloverChunk::initBuffers
     BUF2D_ALLOC(u0, 0, 0);
     BUF2D_ALLOC(vector_z, 1, 1);
 
-    BUF2D_ALLOC(dp, 0, 0);
     BUF2D_ALLOC(cp, 0, 0);
     BUF2D_ALLOC(bfp, 0, 0);
 
