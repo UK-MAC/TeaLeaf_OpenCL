@@ -1,0 +1,40 @@
+# REQUIRED
+streamid
+
+####################
+# useful - low overhead
+gpustarttimestamp
+gridsize3d
+threadblocksize
+countermodeaggregate
+
+####################
+# maybe useful - some overhead
+#memtransfersize
+#memtransferdir
+#active_warps
+#active_cycles 
+
+####################
+# in depth - high overhead
+
+# memory per work group
+stasmemperblock
+
+# registers per work item
+#regperthread
+
+# l1 miss/store
+#l1_local_load_miss
+#l1_local_store_miss
+
+# l1 miss, but hit l2
+#l2_subp0_read_l1_hit_sectors
+
+# load/store that straddled cache lines
+#global_ld_mem_divergence_replays
+#global_st_mem_divergence_replays
+
+# branches and divergent branches
+#branch
+#divergent_branch
