@@ -23,4 +23,6 @@
   opencl_vendor=any
   opencl_type=gpu
 
+  !profiler_on
+
 *endtea

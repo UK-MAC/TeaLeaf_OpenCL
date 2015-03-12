@@ -172,7 +172,7 @@ void CloverChunk::tea_leaf_init_cg
     {
         block_jacobi_offset = cl::NDRange(2, 0);
 
-        block_jacobi_local = cl::NDRange(32, 2);
+        block_jacobi_local = cl::NDRange(32, 4);
 
         size_t xl = x_max;
         xl += block_jacobi_local[0] - (xl % block_jacobi_local[0]);
@@ -215,15 +215,14 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);
-
-        tea_leaf_calc_2norm_kernel(2, rrn);
     }
     else
     {
         ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
 
-        *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
     }
+
+    *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_p

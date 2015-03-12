@@ -1,13 +1,4 @@
 
-#define THARR2D(x_offset, y_offset, big_row)        \
-    (                                               \
-      column                      /* horizontal  */ \
-    + row*(x_max + 4)             /* vertical    */ \
-    + (x_offset)                  /* horz offset */ \
-    + (y_offset)*(x_max + 4)      /* vert offset */ \
-    + (big_row)*(row + (y_offset))/* big row   */   \
-    )
-
 #define COEF_A (1*(-Ky[THARR2D(0,k+ 0, 0)]))
 #define COEF_B (1*(1.0 + (Ky[THARR2D(0,k+ 1, 0)] + Ky[THARR2D(0,k+ 0, 0)]) + (Kx[THARR2D(1,k+ 0, 0)] + Kx[THARR2D(0,k+ 0, 0)])))
 #define COEF_C (1*(-Ky[THARR2D(0,k+ 1, 0)]))
