@@ -66,6 +66,7 @@ __kernel void tea_leaf_ppcg_solve_update_r
 
 __kernel void tea_leaf_ppcg_solve_calc_sd
 (__global const double * __restrict const r,
+ __global const double * __restrict const z,
  __global const double * __restrict const Mi,
  __global       double * __restrict const sd,
  __constant const double * __restrict const alpha,

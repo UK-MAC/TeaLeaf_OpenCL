@@ -43,6 +43,11 @@ const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 #define X_FACE_DATA 3
 #define Y_FACE_DATA 4
 
+// preconditioners
+#define TL_PREC_NONE        1
+#define TL_PREC_JAC_DIAG    2
+#define TL_PREC_JAC_BLOCK   3
+
 typedef struct cell_info {
     const int x_extra;
     const int y_extra;
@@ -157,8 +162,8 @@ private:
 
     // tolerance specified in tea.in
     float tolerance;
-    // using preconditioner
-    bool preconditioner_on;
+    // type of preconditioner
+    int preconditioner_type;
 
     // calculate rx/ry to pass back to fortran
     void calcrxry

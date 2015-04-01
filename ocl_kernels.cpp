@@ -13,11 +13,7 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    if (preconditioner_on)
-    {
-        // use jacobi preconditioner when running CG solver
-        options << "-DUSE_PRECONDITIONER ";
-    }
+    options << "-DPRECONDITIONER=" << preconditioner_type << " ";
 
     // pass in these values so you don't have to pass them in to every kernel
     options << "-Dx_min=" << x_min << " ";
@@ -519,17 +515,11 @@ void CloverChunk::initArgs
             tea_leaf_ppcg_solve_update_r_device.setArg(3, vector_Ky);
             tea_leaf_ppcg_solve_update_r_device.setArg(4, vector_sd);
 
-            if (preconditioner_on)
-            {
-                tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_z);
-            }
-            else
-            {
-                tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
-            }
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_z);
 
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_Mi);
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_sd);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_Mi);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(3, vector_sd);
         }
     }
     else

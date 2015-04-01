@@ -293,7 +293,6 @@ SUBROUTINE read_input()
   endif
 
   IF(parallel%boss) THEN
-  print *, parallel%boss
     WRITE(g_out,*)
     IF(use_fortran_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using Fortran Kernels'

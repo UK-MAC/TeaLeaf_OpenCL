@@ -5,16 +5,10 @@
 enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
 
 /*
- *  reads file given and finds the platform vendor to be used
+ *  Reads the string assigned to a setting
  */
-std::string platformRead
-(FILE* input);
-
-/*
- *  reads file given and finds the platform type
- */
-std::string typeRead
-(FILE* input);
+std::string settingRead
+(FILE* input, const char * setting);
 
 /*
  *  Takes string of type of context and returns enumerated value

@@ -144,16 +144,14 @@ void CloverChunk::initOcl
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
-    std::string desired_vendor = platformRead(input);
+    std::string desired_vendor = settingRead(input, "opencl_vendor");
 
     int preferred_device = preferredDevice(input);
     preferred_device = (preferred_device < 0) ? 0 : preferred_device;
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
 
-    std::string type_name = typeRead(input);
+    std::string type_name = settingRead(input, "opencl_type");
     desired_type = typeMatch(type_name);
-
-    preconditioner_on = paramEnabled(input, "tl_preconditioner_on");
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
@@ -188,6 +186,21 @@ void CloverChunk::initOcl
     }
 
     fclose(input);
+
+    std::string desired_preconditioner = settingRead(input, "tl_preconditioner_type");
+
+    if (desired_preconditioner.find("none"))
+    {
+        preconditioner_type = TL_PREC_NONE;
+    }
+    else if (desired_preconditioner.find("tl_prec_jac_diag"))
+    {
+        preconditioner_type = TL_PREC_JAC_DIAG;
+    }
+    else if (desired_preconditioner.find("tl_prec_jac_block"))
+    {
+        preconditioner_type = TL_PREC_JAC_BLOCK;
+    }
 
     if (desired_vendor.find("no_setting") != std::string::npos)
     {

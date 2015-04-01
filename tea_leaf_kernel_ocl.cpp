@@ -336,8 +336,8 @@ void CloverChunk::ppcg_init
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_alphas_device);
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_betas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_alphas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ch_betas_device);
 }
 
 void CloverChunk::ppcg_init_sd
@@ -369,7 +369,7 @@ void CloverChunk::ppcg_inner
                       block_jacobi_local);
     }
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ppcg_cur_step - 1);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(6, ppcg_cur_step - 1);
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
 }
 

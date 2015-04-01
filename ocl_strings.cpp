@@ -37,10 +37,10 @@ std::string matchParam
     return param_string;
 }
 
-std::string platformRead
-(FILE* input)
+std::string settingRead
+(FILE* input, const char * setting)
 {
-    std::string plat_name = matchParam(input, "opencl_vendor");
+    std::string plat_name = matchParam(input, setting);
 
     // convert to lower case
     std::transform(plat_name.begin(),
@@ -49,20 +49,6 @@ std::string platformRead
                    tolower);
 
     return plat_name;
-}
-
-std::string typeRead
-(FILE* input)
-{
-    std::string type_name = matchParam(input, "opencl_type");
-
-    // convert to lower case
-    std::transform(type_name.begin(),
-                   type_name.end(),
-                   type_name.begin(),
-                   tolower);
-
-    return type_name;
 }
 
 int typeMatch
