@@ -36,6 +36,7 @@ MODULE tea_module
   !USE MPI
 
   IMPLICIT NONE
+
   include "mpif.h"
 
 CONTAINS
@@ -44,7 +45,7 @@ SUBROUTINE tea_barrier
 
   INTEGER :: err
 
-  CALL MPI_BARRIER(MPI_COMM_WORLD,err)
+  CALL MPI_BARRIER(mpi_cart_comm,err)
 
 END SUBROUTINE tea_barrier
 
@@ -52,7 +53,7 @@ SUBROUTINE tea_abort
 
   INTEGER :: ierr,err
 
-  CALL MPI_ABORT(MPI_COMM_WORLD,ierr,err)
+  CALL MPI_ABORT(mpi_cart_comm,ierr,err)
 
 END SUBROUTINE tea_abort
 
@@ -73,15 +74,27 @@ SUBROUTINE tea_init_comms
   IMPLICIT NONE
 
   INTEGER :: err,rank,size
+  INTEGER, dimension(2)  :: periodic
+  ! not periodic
+  data periodic/0, 0/
+
+  mpi_dims = 0
 
   rank=0
   size=1
 
   CALL MPI_INIT(err)
+  CALL MPI_COMM_SIZE(mpi_comm_world,size,err)
 
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err)
+  ! Create comm and get coords
+  CALL MPI_DIMS_CREATE(size, 2, mpi_dims, err)
+  CALL MPI_CART_CREATE(mpi_comm_world, 2, mpi_dims, periodic, 1, mpi_cart_comm, err)
 
+  CALL MPI_COMM_RANK(mpi_cart_comm,rank,err)
+  CALL MPI_COMM_SIZE(mpi_cart_comm,size,err)
+  CALL MPI_CART_COORDS(mpi_cart_comm, rank, 2, mpi_coords, err)
+
+  parallel%boss=.FALSE.
   parallel%parallel=.TRUE.
   parallel%task=rank
 
@@ -115,90 +128,64 @@ SUBROUTINE tea_decompose(x_cells,y_cells,left,right,bottom,top)
 
   IMPLICIT NONE
 
-  INTEGER :: x_cells,y_cells,left(:),right(:),top(:),bottom(:)
+  INTEGER :: x_cells,y_cells
+  INTEGER, dimension(1:) :: left,right,top,bottom
   INTEGER :: c,delta_x,delta_y
 
-  REAL(KIND=8) :: mesh_ratio,factor_x,factor_y
-  INTEGER  :: chunk_x,chunk_y,mod_x,mod_y,split_found
+  INTEGER  :: chunk_x,chunk_y,mod_x,mod_y
 
-  INTEGER  :: cx,cy,chunk,add_x,add_y,add_x_prev,add_y_prev
+  INTEGER  :: err
 
-  ! 2D Decomposition of the mesh
+  ! 1 chunk
+  c = 1
 
-  mesh_ratio=real(x_cells)/real(y_cells)
+  ! Get destinations/sources
+  CALL mpi_cart_shift(mpi_cart_comm, 0, 1,      &
+    chunks(c)%chunk_neighbours(chunk_bottom),   &
+    chunks(c)%chunk_neighbours(chunk_top),      &
+    err)
+  CALL mpi_cart_shift(mpi_cart_comm, 1, 1,      &
+    chunks(c)%chunk_neighbours(chunk_left),     &
+    chunks(c)%chunk_neighbours(chunk_right),    &
+    err)
 
-  chunk_x=number_of_chunks
-  chunk_y=1
+  where (chunks(c)%chunk_neighbours .eq. mpi_proc_null)
+    chunks(c)%chunk_neighbours = external_face
+  end where
 
-  split_found=0 ! Used to detect 1D decomposition
-  DO c=1,number_of_chunks
-    IF (MOD(number_of_chunks,c).EQ.0) THEN
-      factor_x=number_of_chunks/real(c)
-      factor_y=c
-      !Compare the factor ratio with the mesh ratio
-      IF(factor_x/factor_y.LE.mesh_ratio) THEN
-        chunk_y=c
-        chunk_x=number_of_chunks/c
-        split_found=1
-        EXIT
-      ENDIF
-    ENDIF
-  ENDDO
-
-  IF(split_found.EQ.0.OR.chunk_y.EQ.number_of_chunks) THEN ! Prime number or 1D decomp detected
-    IF(mesh_ratio.GE.1.0) THEN
-      chunk_x=number_of_chunks
-      chunk_y=1
-    ELSE
-      chunk_x=1
-      chunk_y=number_of_chunks
-    ENDIF
-  ENDIF
+  chunk_y = mpi_dims(1)
+  chunk_x = mpi_dims(2)
 
   delta_x=x_cells/chunk_x
   delta_y=y_cells/chunk_y
   mod_x=MOD(x_cells,chunk_x)
   mod_y=MOD(y_cells,chunk_y)
 
-  ! Set up chunk mesh ranges and chunk connectivity
+  left(c) = mpi_coords(2)*delta_x + 1
+  if (mpi_coords(2) .le. mod_x) then
+    left(c) = left(c) + mpi_coords(2)
+  else
+    left(c) = left(c) + mod_x
+  endif
+  right(c) = left(c)+delta_x - 1
+  if (mpi_coords(2) .lt. mod_x) then
+    right(c) = right(c) + 1
+  endif
 
-    add_x_prev=0
-    add_y_prev=0
-    chunk=1
-    DO cy=1,chunk_y
-        DO cx=1,chunk_x
-            add_x=0
-            add_y=0
-            IF(cx.LE.mod_x)add_x=1
-            IF(cy.LE.mod_y)add_y=1
-
-            IF (chunk .EQ. parallel%task+1) THEN
-                left(1)   = (cx-1)*delta_x+1+add_x_prev
-                right(1)  = left(1)+delta_x-1+add_x
-                bottom(1) = (cy-1)*delta_y+1+add_y_prev
-                top(1)    = bottom(1)+delta_y-1+add_y
-
-                chunks(1)%chunk_neighbours(chunk_left)=chunk_x*(cy-1)+cx-1
-                chunks(1)%chunk_neighbours(chunk_right)=chunk_x*(cy-1)+cx+1
-                chunks(1)%chunk_neighbours(chunk_bottom)=chunk_x*(cy-2)+cx
-                chunks(1)%chunk_neighbours(chunk_top)=chunk_x*(cy)+cx
-
-                IF(cx.EQ.1)       chunks(1)%chunk_neighbours(chunk_left)=external_face
-                IF(cx.EQ.chunk_x) chunks(1)%chunk_neighbours(chunk_right)=external_face
-                IF(cy.EQ.1)       chunks(1)%chunk_neighbours(chunk_bottom)=external_face
-                IF(cy.EQ.chunk_y) chunks(1)%chunk_neighbours(chunk_top)=external_face
-            ENDIF
-
-            IF(cx.LE.mod_x)add_x_prev=add_x_prev+1
-            chunk=chunk+1
-        ENDDO
-        add_x_prev=0
-        IF(cy.LE.mod_y)add_y_prev=add_y_prev+1
-    ENDDO
+  bottom(c) = mpi_coords(1)*delta_y + 1
+  if (mpi_coords(1) .le. mod_y) then
+    bottom(c) = bottom(c) + mpi_coords(1)
+  else
+    bottom(c) = bottom(c) + mod_y
+  endif
+  top(c) = bottom(c)+delta_y - 1
+  if (mpi_coords(1) .lt. mod_y) then
+    top(c) = top(c) + 1
+  endif
 
   IF(parallel%boss)THEN
     WRITE(g_out,*)
-    WRITE(g_out,*)"Mesh ratio of ",mesh_ratio
+    WRITE(g_out,*)"Mesh ratio of ",REAL(x_cells)/REAL(y_cells)
     WRITE(g_out,*)"Decomposing the mesh into ",chunk_x," by ",chunk_y," chunks"
     WRITE(g_out,*)
   ENDIF
@@ -241,17 +228,20 @@ SUBROUTINE tea_exchange(fields,depth)
 
   IMPLICIT NONE
 
-    INTEGER      :: fields(NUM_FIELDS),depth, chunk
+    INTEGER      :: fields(NUM_FIELDS),depth, chunk,err
     INTEGER      :: left_right_offset(NUM_FIELDS),bottom_top_offset(NUM_FIELDS)
-    INTEGER      :: request(4)
-    INTEGER      :: message_count,err
-    INTEGER      :: status(MPI_STATUS_SIZE,4)
     INTEGER      :: end_pack_index_left_right, end_pack_index_bottom_top,field
+    INTEGER      :: message_count_lr, message_count_ud
+    INTEGER, dimension(4)                 :: request_lr, request_ud
+    INTEGER, dimension(MPI_STATUS_SIZE,4) :: status_lr, status_ud
+    LOGICAL :: test_complete
 
     ! Assuming 1 patch per task, this will be changed
 
-    request=0
-    message_count=0
+    request_lr=0
+    message_count_lr=0
+    request_ud = 0
+    message_count_ud = 0
 
     chunk = 1
 
@@ -274,7 +264,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, left_right_offset, depth, &
             CHUNK_LEFT, chunks(chunk)%left_snd_buffer)
       else
-        CALL tea_pack_left(chunk, fields, depth, left_right_offset)
+        CALL tea_pack_left(chunk, fields, depth, chunks(chunk)%left_snd_buffer, left_right_offset)
       endif
 
       !send and recv messagse to the left
@@ -282,8 +272,8 @@ SUBROUTINE tea_exchange(fields,depth)
                                          chunks(chunk)%left_rcv_buffer,                      &
                                          chunk,end_pack_index_left_right,                    &
                                          1, 2,                                               &
-                                         request(message_count+1), request(message_count+2))
-      message_count = message_count + 2
+                                         request_lr(message_count_lr+1), request_lr(message_count_lr+2))
+      message_count_lr = message_count_lr + 2
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
@@ -292,7 +282,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, left_right_offset, depth, &
             CHUNK_RIGHT, chunks(chunk)%right_snd_buffer)
       else
-        CALL tea_pack_right(chunk, fields, depth, left_right_offset)
+        CALL tea_pack_right(chunk, fields, depth, chunks(chunk)%right_snd_buffer, left_right_offset)
       endif
 
       !send message to the right
@@ -300,40 +290,38 @@ SUBROUTINE tea_exchange(fields,depth)
                                           chunks(chunk)%right_rcv_buffer,                     &
                                           chunk,end_pack_index_left_right,                    &
                                           2, 1,                                               &
-                                          request(message_count+1), request(message_count+2))
-      message_count = message_count + 2
+                                          request_lr(message_count_lr+1), request_lr(message_count_lr+2))
+      message_count_lr = message_count_lr + 2
     ENDIF
 
-    !make a call to wait / sync
-    CALL MPI_WAITALL(message_count,request,status,err)
+    CALL MPI_TESTALL(message_count_lr, request_lr, test_complete, status_lr, err)
 
-    !unpack in left direction
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      if (use_opencl_kernels) then
-        call ocl_unpack_buffers(fields, left_right_offset, depth, &
-            CHUNK_LEFT, chunks(chunk)%left_rcv_buffer)
-      else
-        CALL tea_unpack_left(fields, chunk, depth,                      &
-                                chunks(chunk)%left_rcv_buffer,             &
-                                left_right_offset)                  
-      endif
+    IF ((depth .gt. 1) .or. (test_complete .eq. .true.)) THEN
+      IF (test_complete .eq. .false.) THEN
+        !make a call to wait / sync
+        CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
+      ENDIF
+
+      !unpack in left direction
+      IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+        if (use_opencl_kernels) then
+          call ocl_unpack_buffers(fields, left_right_offset, depth, &
+              CHUNK_LEFT, chunks(chunk)%left_rcv_buffer)
+        else
+          CALL tea_unpack_left(chunk, fields, depth, chunks(chunk)%left_rcv_buffer, left_right_offset)
+        endif
+      ENDIF
+
+      !unpack in right direction
+      IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        if (use_opencl_kernels) then
+          call ocl_unpack_buffers(fields, left_right_offset, depth, &
+              CHUNK_RIGHT, chunks(chunk)%right_rcv_buffer)
+        else
+          CALL tea_unpack_right(chunk, fields, depth, chunks(chunk)%right_rcv_buffer, left_right_offset)
+        endif
+      ENDIF
     ENDIF
-
-
-    !unpack in right direction
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      if (use_opencl_kernels) then
-        call ocl_unpack_buffers(fields, left_right_offset, depth, &
-            CHUNK_RIGHT, chunks(chunk)%right_rcv_buffer)
-      else
-        CALL tea_unpack_right(fields, chunk, depth,                     &
-                                 chunks(chunk)%right_rcv_buffer,           &
-                                 left_right_offset)
-      endif
-    ENDIF
-
-    message_count = 0
-    request = 0
 
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
       ! do bottom exchanges
@@ -341,7 +329,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_BOTTOM, chunks(chunk)%bottom_snd_buffer)
       else
-        CALL tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
+        CALL tea_pack_bottom(chunk, fields, depth, chunks(chunk)%bottom_snd_buffer, bottom_top_offset)
       endif
 
       !send message downwards
@@ -349,8 +337,8 @@ SUBROUTINE tea_exchange(fields,depth)
                                            chunks(chunk)%bottom_rcv_buffer,                     &
                                            chunk,end_pack_index_bottom_top,                     &
                                            3, 4,                                                &
-                                           request(message_count+1), request(message_count+2))
-      message_count = message_count + 2
+                                           request_ud(message_count_ud+1), request_ud(message_count_ud+2))
+      message_count_ud = message_count_ud + 2
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
@@ -359,7 +347,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_pack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_TOP, chunks(chunk)%top_snd_buffer)
       else
-        CALL tea_pack_top(chunk, fields, depth, bottom_top_offset)
+        CALL tea_pack_top(chunk, fields, depth, chunks(chunk)%top_snd_buffer, bottom_top_offset)
       endif
 
       !send message upwards
@@ -367,12 +355,35 @@ SUBROUTINE tea_exchange(fields,depth)
                                         chunks(chunk)%top_rcv_buffer,                           &
                                         chunk,end_pack_index_bottom_top,                        &
                                         4, 3,                                                   &
-                                        request(message_count+1), request(message_count+2))
-      message_count = message_count + 2
+                                        request_ud(message_count_ud+1), request_ud(message_count_ud+2))
+      message_count_ud = message_count_ud + 2
+    ENDIF
+
+    IF ((depth .eq. 1) .and. (test_complete .eq. .false.)) THEN
+      !make a call to wait / sync
+      CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
+
+      !unpack in left direction
+      if (use_opencl_kernels) then
+        call ocl_unpack_buffers(fields, left_right_offset, depth, &
+            CHUNK_LEFT, chunks(chunk)%left_rcv_buffer)
+      else
+        CALL tea_unpack_left(chunk, fields, depth, chunks(chunk)%left_rcv_buffer, left_right_offset)
+      endif
+
+      !unpack in right direction
+      IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        if (use_opencl_kernels) then
+          call ocl_unpack_buffers(fields, left_right_offset, depth, &
+              CHUNK_RIGHT, chunks(chunk)%right_rcv_buffer)
+        else
+          CALL tea_unpack_right(chunk, fields, depth, chunks(chunk)%right_rcv_buffer, left_right_offset)
+        endif
+      ENDIF
     ENDIF
 
     !need to make a call to wait / sync
-    CALL MPI_WAITALL(message_count,request,status,err)
+    CALL MPI_WAITALL(message_count_ud,request_ud,status_ud,err)
 
     !unpack in top direction
     IF( chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face ) THEN
@@ -380,9 +391,7 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_TOP, chunks(chunk)%top_rcv_buffer)
       else
-        CALL tea_unpack_top(fields, chunk, depth,                       &
-                               chunks(chunk)%top_rcv_buffer,               &
-                               bottom_top_offset)
+        CALL tea_unpack_top(chunk, fields, depth, chunks(chunk)%top_rcv_buffer, bottom_top_offset)
       endif
     ENDIF
 
@@ -392,15 +401,13 @@ SUBROUTINE tea_exchange(fields,depth)
         call ocl_unpack_buffers(fields, bottom_top_offset, depth, &
             CHUNK_BOTTOM, chunks(chunk)%bottom_rcv_buffer)
       else
-        CALL tea_unpack_bottom(fields, chunk, depth,                   &
-                                 chunks(chunk)%bottom_rcv_buffer,         &
-                                 bottom_top_offset)
+        CALL tea_unpack_bottom(chunk, fields, depth, chunks(chunk)%bottom_rcv_buffer, bottom_top_offset)
       endif
     ENDIF
 
 END SUBROUTINE tea_exchange
 
-SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
+SUBROUTINE tea_pack_left(chunk, fields, depth, left_snd_buffer, left_right_offset)
 
   USE pack_kernel_module
 
@@ -408,7 +415,9 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
 
   INTEGER      :: fields(:),depth, chunk
   INTEGER      :: left_right_offset(:)
+  REAL(KIND=8)    :: left_snd_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
@@ -416,7 +425,7 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%density,                 &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_DENSITY))
@@ -429,7 +438,7 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%energy0,                  &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_ENERGY0))
@@ -442,7 +451,7 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%energy1,                  &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_ENERGY1))
@@ -455,7 +464,7 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%vector_p,                  &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_P))
@@ -468,7 +477,7 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%u,                  &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_U))
@@ -481,12 +490,13 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
                                     chunks(chunk)%field%y_min,                    &
                                     chunks(chunk)%field%y_max,                    &
                                     chunks(chunk)%field%vector_sd,                  &
-                                    chunks(chunk)%left_snd_buffer,                &
+                                    left_snd_buffer,                &
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                     depth, CELL_DATA,                             &
                                     left_right_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_pack_left
 
@@ -501,19 +511,17 @@ SUBROUTINE tea_send_recv_message_left(left_snd_buffer, left_rcv_buffer,      &
   INTEGER         :: total_size, tag_send, tag_recv, err
   INTEGER         :: req_send, req_recv
 
-  left_task =chunks(chunk)%chunk_neighbours(chunk_left) - 1
+  left_task =chunks(chunk)%chunk_neighbours(chunk_left)
 
   CALL MPI_ISEND(left_snd_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_send &
-                ,MPI_COMM_WORLD,req_send,err)
+                ,mpi_cart_comm,req_send,err)
 
   CALL MPI_IRECV(left_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_recv &
-                ,MPI_COMM_WORLD,req_recv,err)
+                ,mpi_cart_comm,req_recv,err)
 
 END SUBROUTINE tea_send_recv_message_left
 
-SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
-                              left_rcv_buffer,                              &
-                              left_right_offset)
+SUBROUTINE tea_unpack_left(chunk, fields, depth, left_rcv_buffer, left_right_offset)
 
   USE pack_kernel_module
 
@@ -523,7 +531,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
   INTEGER         :: left_right_offset(:)
   REAL(KIND=8)    :: left_rcv_buffer(:)
 
-
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
@@ -531,7 +539,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%density,                 &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_DENSITY))
@@ -544,7 +552,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%energy0,                  &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_ENERGY0))
@@ -557,7 +565,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%energy1,                  &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_ENERGY1))
@@ -570,7 +578,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%vector_p,                  &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_P))
@@ -583,7 +591,7 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%u,                  &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_U))
@@ -596,23 +604,26 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%vector_sd,                  &
-                                      chunks(chunk)%left_rcv_buffer,                &
+                                      left_rcv_buffer,                &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       left_right_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_unpack_left
 
-SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
+SUBROUTINE tea_pack_right(chunk, fields, depth, right_snd_buffer, left_right_offset)
 
   USE pack_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER        :: chunk, fields(:), depth, tot_packr, left_right_offset(:)
+  INTEGER        :: chunk, fields(:), depth, left_right_offset(:)
+  REAL(KIND=8)    :: right_snd_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
@@ -620,7 +631,7 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%density,                 &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_DENSITY))
@@ -633,7 +644,7 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%energy0,                  &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_ENERGY0))
@@ -646,7 +657,7 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%energy1,                  &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_ENERGY1))
@@ -659,7 +670,7 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%vector_p,                  &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_P))
@@ -672,7 +683,7 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%u,                  &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_U))
@@ -685,12 +696,13 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%vector_sd,                  &
-                                     chunks(chunk)%right_snd_buffer,               &
+                                     right_snd_buffer,               &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      left_right_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_pack_right
 
@@ -707,27 +719,26 @@ SUBROUTINE tea_send_recv_message_right(right_snd_buffer, right_rcv_buffer,   &
   INTEGER      :: total_size, tag_send, tag_recv, err
   INTEGER      :: req_send, req_recv
 
-  right_task=chunks(chunk)%chunk_neighbours(chunk_right) - 1
+  right_task=chunks(chunk)%chunk_neighbours(chunk_right)
 
   CALL MPI_ISEND(right_snd_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_send, &
-                 MPI_COMM_WORLD,req_send,err)
+                 mpi_cart_comm,req_send,err)
 
   CALL MPI_IRECV(right_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_recv, &
-                 MPI_COMM_WORLD,req_recv,err)
+                 mpi_cart_comm,req_recv,err)
 
 END SUBROUTINE tea_send_recv_message_right
 
-SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
-                               right_rcv_buffer,                              &
-                               left_right_offset)
+SUBROUTINE tea_unpack_right(chunk, fields, depth, right_rcv_buffer, left_right_offset)
 
   USE pack_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER         :: fields(:), chunk, total_in_right_buff, depth, left_right_offset(:)
+  INTEGER         :: fields(:), chunk, depth, left_right_offset(:)
   REAL(KIND=8)    :: right_rcv_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_right(chunks(chunk)%field%x_min,                    &
@@ -735,7 +746,7 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%density,                 &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_DENSITY))
@@ -748,7 +759,7 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%energy0,                  &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_ENERGY0))
@@ -761,7 +772,7 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%energy1,                  &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_ENERGY1))
@@ -774,7 +785,7 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%vector_p,                  &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_P))
@@ -787,7 +798,7 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%u,                  &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_U))
@@ -800,23 +811,26 @@ SUBROUTINE tea_unpack_right(fields, chunk, depth,                          &
                                        chunks(chunk)%field%y_min,                    &
                                        chunks(chunk)%field%y_max,                    &
                                        chunks(chunk)%field%vector_sd,                  &
-                                       chunks(chunk)%right_rcv_buffer,               &
+                                       right_rcv_buffer,               &
                                        CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                        depth, CELL_DATA,                             &
                                        left_right_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_unpack_right
 
-SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
+SUBROUTINE tea_pack_top(chunk, fields, depth, top_snd_buffer, bottom_top_offset)
 
   USE pack_kernel_module
 
   IMPLICIT NONE
 
   INTEGER        :: chunk, fields(:), depth, bottom_top_offset(:)
+  REAL(KIND=8)    :: top_snd_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_pack_message_top(chunks(chunk)%field%x_min,                    &
@@ -824,7 +838,7 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%density,                 &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_DENSITY))
@@ -837,7 +851,7 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%energy0,                  &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_ENERGY0))
@@ -850,7 +864,7 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%energy1,                  &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_ENERGY1))
@@ -863,7 +877,7 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%vector_p,                  &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_P))
@@ -876,7 +890,7 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%u,                  &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_U))
@@ -889,12 +903,13 @@ SUBROUTINE tea_pack_top(chunk, fields, depth, bottom_top_offset)
                                    chunks(chunk)%field%y_min,                    &
                                    chunks(chunk)%field%y_max,                    &
                                    chunks(chunk)%field%vector_sd,                  &
-                                   chunks(chunk)%top_snd_buffer,                 &
+                                   top_snd_buffer,                 &
                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                    depth, CELL_DATA,                             &
                                    bottom_top_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_pack_top
 
@@ -911,28 +926,26 @@ SUBROUTINE tea_send_recv_message_top(top_snd_buffer, top_rcv_buffer,     &
     INTEGER      :: total_size, tag_send, tag_recv, err
     INTEGER      :: req_send, req_recv
 
-    top_task=chunks(chunk)%chunk_neighbours(chunk_top) - 1
+    top_task=chunks(chunk)%chunk_neighbours(chunk_top)
 
     CALL MPI_ISEND(top_snd_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_send, &
-                   MPI_COMM_WORLD,req_send,err)
+                   mpi_cart_comm,req_send,err)
 
     CALL MPI_IRECV(top_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_recv, &
-                   MPI_COMM_WORLD,req_recv,err)
+                   mpi_cart_comm,req_recv,err)
 
 END SUBROUTINE tea_send_recv_message_top
 
-SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
-                             top_rcv_buffer,                              &
-                             bottom_top_offset)
+SUBROUTINE tea_unpack_top(chunk, fields, depth, top_rcv_buffer, bottom_top_offset)
 
   USE pack_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER         :: fields(:), chunk, total_in_top_buff, depth, bottom_top_offset(:)
+  INTEGER         :: fields(:), chunk, depth, bottom_top_offset(:)
   REAL(KIND=8)    :: top_rcv_buffer(:)
 
-
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_top(chunks(chunk)%field%x_min,                    &
@@ -940,7 +953,7 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%density,                 &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_DENSITY))
@@ -953,7 +966,7 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%energy0,                  &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_ENERGY0))
@@ -966,7 +979,7 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%energy1,                  &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_ENERGY1))
@@ -979,7 +992,7 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%vector_p,                  &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_P))
@@ -992,7 +1005,7 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%u,                  &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_U))
@@ -1005,23 +1018,26 @@ SUBROUTINE tea_unpack_top(fields, chunk, depth,                        &
                                      chunks(chunk)%field%y_min,                    &
                                      chunks(chunk)%field%y_max,                    &
                                      chunks(chunk)%field%vector_sd,                  &
-                                     chunks(chunk)%top_rcv_buffer,                 &
+                                     top_rcv_buffer,                 &
                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                      depth, CELL_DATA,                             &
                                      bottom_top_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_unpack_top
 
-SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
+SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_snd_buffer, bottom_top_offset)
 
   USE pack_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER        :: chunk, fields(:), depth, tot_packb, bottom_top_offset(:)
+  INTEGER        :: chunk, fields(:), depth, bottom_top_offset(:)
+  REAL(KIND=8)    :: bottom_snd_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_pack_message_bottom(chunks(chunk)%field%x_min,                    &
@@ -1029,7 +1045,7 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%density,                 &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_DENSITY))
@@ -1042,7 +1058,7 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%energy0,                  &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_ENERGY0))
@@ -1055,7 +1071,7 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%energy1,                  &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_ENERGY1))
@@ -1068,7 +1084,7 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%vector_p,                  &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_P))
@@ -1081,7 +1097,7 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%u,                  &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_U))
@@ -1094,12 +1110,13 @@ SUBROUTINE tea_pack_bottom(chunk, fields, depth, bottom_top_offset)
                                       chunks(chunk)%field%y_min,                    &
                                       chunks(chunk)%field%y_max,                    &
                                       chunks(chunk)%field%vector_sd,                  &
-                                      chunks(chunk)%bottom_snd_buffer,              &
+                                      bottom_snd_buffer,              &
                                       CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                       depth, CELL_DATA,                             &
                                       bottom_top_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_pack_bottom
 
@@ -1116,19 +1133,17 @@ SUBROUTINE tea_send_recv_message_bottom(bottom_snd_buffer, bottom_rcv_buffer,   
   INTEGER      :: total_size, tag_send, tag_recv, err
   INTEGER      :: req_send, req_recv
 
-  bottom_task=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
+  bottom_task=chunks(chunk)%chunk_neighbours(chunk_bottom)
 
   CALL MPI_ISEND(bottom_snd_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_send &
-                ,MPI_COMM_WORLD,req_send,err)
+                ,mpi_cart_comm,req_send,err)
 
   CALL MPI_IRECV(bottom_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_recv &
-                ,MPI_COMM_WORLD,req_recv,err)
+                ,mpi_cart_comm,req_recv,err)
 
 END SUBROUTINE tea_send_recv_message_bottom
 
-SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
-                             bottom_rcv_buffer,                              &
-                             bottom_top_offset)
+SUBROUTINE tea_unpack_bottom(chunk, fields, depth, bottom_rcv_buffer, bottom_top_offset)
 
   USE pack_kernel_module
 
@@ -1137,6 +1152,7 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
   INTEGER         :: fields(:), chunk, depth, bottom_top_offset(:)
   REAL(KIND=8)    :: bottom_rcv_buffer(:)
 
+!$OMP PARALLEL
   IF(fields(FIELD_DENSITY).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
@@ -1144,13 +1160,12 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%density,                 &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_DENSITY))
     ENDIF
   ENDIF
-
   IF(fields(FIELD_ENERGY0).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
@@ -1158,13 +1173,12 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%energy0,                  &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_ENERGY0))
     ENDIF
   ENDIF
-
   IF(fields(FIELD_ENERGY1).EQ.1) THEN
     IF(use_fortran_kernels) THEN
       CALL tea_unpack_message_bottom(chunks(chunk)%field%x_min,                    &
@@ -1172,7 +1186,7 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%energy1,                  &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_ENERGY1))
@@ -1185,7 +1199,7 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%vector_p,                  &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_P))
@@ -1198,7 +1212,7 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%u,                  &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_U))
@@ -1211,12 +1225,13 @@ SUBROUTINE tea_unpack_bottom(fields, chunk, depth,                        &
                                         chunks(chunk)%field%y_min,                    &
                                         chunks(chunk)%field%y_max,                    &
                                         chunks(chunk)%field%vector_sd,                  &
-                                        chunks(chunk)%bottom_rcv_buffer,              &
+                                        bottom_rcv_buffer,              &
                                         CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
                                         depth, CELL_DATA,                             &
                                         bottom_top_offset(FIELD_SD))
     ENDIF
   ENDIF
+!$OMP END PARALLEL
 
 END SUBROUTINE tea_unpack_bottom
 
@@ -1234,7 +1249,7 @@ SUBROUTINE tea_sum(value)
 
   total=value
 
-  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,err)
+  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,mpi_cart_comm,err)
 
   value=total
 
@@ -1254,7 +1269,7 @@ SUBROUTINE tea_allsum(value)
 
   total=value
 
-  CALL MPI_ALLREDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,mpi_cart_comm,err)
 
   value=total
 
@@ -1272,7 +1287,7 @@ SUBROUTINE tea_min(value)
 
   minimum=value
 
-  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,mpi_cart_comm,err)
 
   value=minimum
 
@@ -1290,7 +1305,7 @@ SUBROUTINE tea_max(value)
 
   maximum=value
 
-  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,mpi_cart_comm,err)
 
   value=maximum
 
@@ -1308,7 +1323,7 @@ SUBROUTINE tea_allgather(value,values)
 
   values(1)=value ! Just to ensure it will work in serial
 
-  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,err)
+  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,mpi_cart_comm,err)
 
 END SUBROUTINE tea_allgather
 
@@ -1324,7 +1339,7 @@ SUBROUTINE tea_check_error(error)
 
   maximum=error
 
-  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,mpi_cart_comm,err)
 
   error=maximum
 

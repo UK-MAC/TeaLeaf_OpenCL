@@ -70,12 +70,13 @@ SUBROUTINE read_input()
   profiler%tea_init=0.0
   profiler%tea_solve=0.0
   profiler%tea_reset=0.0
+  profiler%dot_product=0.0
 
   tl_ch_cg_errswitch = .FALSE.
   tl_ch_cg_presteps = 30
   tl_ch_cg_epslim = 1e-5
   tl_check_result = .FALSE.
-  tl_preconditioner_on = .FALSE.
+  tl_preconditioner_type = TL_PREC_NONE
 
   tl_ppcg_inner_steps = -1
 
@@ -83,6 +84,7 @@ SUBROUTINE read_input()
   tl_use_cg = .FALSE.
   tl_use_ppcg = .FALSE.
   tl_use_jacobi = .TRUE.
+  verbose_on = .FALSE.
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
@@ -169,14 +171,30 @@ SUBROUTINE read_input()
         tl_check_result = .TRUE.
       CASE('tl_ch_cg_errswitch')
         tl_ch_cg_errswitch = .TRUE.
-      CASE('tl_preconditioner_on')
-        tl_preconditioner_on = .TRUE.
+      CASE('tl_preconditioner_type')
+        DO
+          word=parse_getword(.FALSE.)
+          IF(word.EQ.'') EXIT
+          SELECT CASE(word)
+          CASE('none')
+            tl_preconditioner_type=TL_PREC_NONE
+          CASE('jac_diag')
+            tl_preconditioner_type=TL_PREC_JAC_DIAG
+          CASE('jac_block')
+            tl_preconditioner_type=TL_PREC_JAC_BLOCK
+          CASE DEFAULT
+            CALL report_error('read_input', 'Invalid preconditioner type specified: '//word)
+          END SELECT
+          IF(parallel%boss)WRITE(g_out,"(1x,a25,'  ',a25)")'tl_preconditioner_type',word
+        enddo
       CASE('use_fortran_kernels')
         use_fortran_kernels=.TRUE.
         use_opencl_kernels=.FALSE.
       CASE('use_opencl_kernels')
         use_fortran_kernels=.FALSE.
         use_opencl_kernels=.TRUE.
+      CASE('verbose_on')
+        verbose_on=.TRUE.
       CASE('tl_use_jacobi')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .FALSE.
@@ -207,7 +225,7 @@ SUBROUTINE read_input()
       CASE('tl_coefficient_density')
         coefficient = CONDUCTIVITY
         IF(parallel%boss)WRITE(g_out,"(1x,a29)")'Diffusion coefficient density'
-      CASE('tl_coefficient_inverrse_density')
+      CASE('tl_coefficient_inverse_density')
         coefficient = RECIP_CONDUCTIVITY
         IF(parallel%boss)WRITE(g_out,"(1x,a40)")'Diffusion coefficient reciprocal density'
       CASE('test_problem')
@@ -271,7 +289,7 @@ SUBROUTINE read_input()
 
   ! Simple guess - better than a default of 10
   if (tl_ppcg_inner_steps .eq. -1) then
-    tl_ppcg_inner_steps = SQRT(SQRT(float(grid%x_cells*grid%y_cells)))
+    tl_ppcg_inner_steps = INT(SQRT(SQRT(REAL(grid%x_cells*grid%y_cells))))
   endif
 
   IF(parallel%boss) THEN
@@ -292,8 +310,8 @@ SUBROUTINE read_input()
   ! of a cell width so it lies well with in the intended cell.
   ! Because a cell is either full or empty of a specified state, this small
   ! modification to the state extents does not change the answers.
-  dx=(grid%xmax-grid%xmin)/float(grid%x_cells)
-  dy=(grid%ymax-grid%ymin)/float(grid%y_cells)
+  dx=(grid%xmax-grid%xmin)/REAL(grid%x_cells)
+  dy=(grid%ymax-grid%ymin)/REAL(grid%y_cells)
   DO n=2,number_of_states
     states(n)%xmin=states(n)%xmin+(dx/100.0)
     states(n)%ymin=states(n)%ymin+(dy/100.0)

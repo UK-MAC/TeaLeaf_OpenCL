@@ -19,7 +19,7 @@ countermodeaggregate
 # in depth - high overhead
 
 # memory per work group
-stasmemperblock
+#stasmemperblock
 
 # registers per work item
 #regperthread

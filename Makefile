@@ -63,7 +63,7 @@ ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
 
-OMP_INTEL     = -openmp -fpp -ip -mmic
+OMP_INTEL     = -openmp -fpp -ip -align
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp -cpp
 OMP_CRAY      = -e Z
@@ -118,6 +118,10 @@ ifdef IEEE
   I3E=$(I3E_$(COMPILER))
 endif
 
+ifneq (,$(filter $(COMPILER), GNU INTEL))
+OMP4=-D WITH_OMP4
+endif
+
 MPICXX_LIB=-lmpi_cxx
 
 LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
@@ -131,7 +135,7 @@ FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
-CXX_MPI_COMPILER=mpiCC
+CXX_MPI_COMPILER=mpicxx
 
 ifdef PHI_SOURCE_PROFILING
 CXXFLAGS+=-D _PWD_="\"$(shell pwd)/\"" -D PHI_SOURCE_PROFILING

@@ -84,8 +84,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
                                             chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%tri_bfp(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                                             chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%tri_dp(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                                            chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
 
    ALLOCATE(chunks(chunk)%field%cellx   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2))
    ALLOCATE(chunks(chunk)%field%celly   (chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
@@ -116,6 +114,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
        chunks(chunk)%field%vector_Mi(j,k)=0.0
        chunks(chunk)%field%vector_w(j,k)=0.0
        chunks(chunk)%field%vector_z(j,k)=0.0
+       chunks(chunk)%field%vector_sd(j,k)=0.0
        chunks(chunk)%field%vector_Kx(j,k)=0.0
        chunks(chunk)%field%vector_Ky(j,k)=0.0
 
@@ -127,7 +126,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
 
        chunks(chunk)%field%tri_cp(j,k)=0.0
        chunks(chunk)%field%tri_bfp(j,k)=0.0
-       chunks(chunk)%field%tri_dp(j,k)=0.0
      ENDDO
    ENDDO
 !$OMP ENDDO 

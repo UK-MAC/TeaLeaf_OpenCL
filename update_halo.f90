@@ -32,9 +32,13 @@ SUBROUTINE update_halo(fields,depth)
   IMPLICIT NONE
 
   INTEGER :: c,fields(NUM_FIELDS),depth
+  REAL(KIND=8) :: timer,halo_time
 
+  IF (profiler_on) halo_time=timer()
   CALL tea_exchange(fields,depth)
+  IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
 
+  IF (profiler_on) halo_time=timer()
   DO c=1,chunks_per_task
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
@@ -43,14 +47,6 @@ SUBROUTINE update_halo(fields,depth)
                                 chunks(c)%field%x_max,          &
                                 chunks(c)%field%y_min,          &
                                 chunks(c)%field%y_max,          &
-                                chunks(c)%field%left,           &
-                                chunks(c)%field%bottom,         &
-                                chunks(c)%field%right,          &
-                                chunks(c)%field%top,            &
-                                chunks(c)%field%left_boundary,  &
-                                chunks(c)%field%bottom_boundary,&
-                                chunks(c)%field%right_boundary, &
-                                chunks(c)%field%top_boundary,   &
                                 chunks(c)%chunk_neighbours,     &
                                 chunks(c)%field%density,        &
                                 chunks(c)%field%energy0,        &
@@ -68,6 +64,7 @@ SUBROUTINE update_halo(fields,depth)
     ENDIF
 
   ENDDO
+  IF (profiler_on) profiler%halo_update = profiler%halo_update + (timer() - halo_time)
 
 END SUBROUTINE update_halo
 

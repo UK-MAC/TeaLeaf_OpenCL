@@ -86,8 +86,9 @@ MODULE definitions_module
    LOGICAL      :: tl_check_result
    ! number of inner steps in ppcg solver
    INTEGER      :: tl_ppcg_inner_steps
-   ! preconditioner is on or not
-   LOGICAL      :: tl_preconditioner_on
+
+   ! Preconditioner option
+   INTEGER      :: tl_preconditioner_type
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 
@@ -102,6 +103,7 @@ MODULE definitions_module
                           ,tea_reset       &
                           ,set_field       &
                           ,dot_product     &
+                          ,halo_update     &
                           ,halo_exchange
                      
    END TYPE profiler_type
@@ -132,7 +134,7 @@ MODULE definitions_module
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Kx
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Ky
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_sd
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: tri_cp, tri_bfp, tri_dp
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: tri_cp, tri_bfp
 
      INTEGER         :: left            &
                        ,right           &

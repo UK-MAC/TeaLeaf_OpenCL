@@ -23,7 +23,7 @@ MODULE data_module
 
    IMPLICIT NONE
 
-   REAL(KIND=8), PARAMETER :: g_version=1.1
+   REAL(KIND=8), PARAMETER :: g_version=1.2
 
    INTEGER,      PARAMETER :: g_ibig=640000
 
@@ -68,6 +68,11 @@ MODULE data_module
    INTEGER         ::            CONDUCTIVITY        = 1 &
                                 ,RECIP_CONDUCTIVITY  = 2
 
+   ! 3 different options for preconditioners
+   INTEGER,PARAMETER::           TL_PREC_NONE       = 1 &
+                                ,TL_PREC_JAC_DIAG   = 2 &
+                                ,TL_PREC_JAC_BLOCK  = 3
+
    TYPE parallel_type
       LOGICAL           ::      parallel &
                                ,boss
@@ -81,6 +86,13 @@ MODULE data_module
 
    INTEGER,        PARAMETER ::g_len_max=500
    INTEGER,        PARAMETER ::chunks_per_task=1
+
+   ! cartesian communicator
+   INTEGER                   ::mpi_cart_comm
+   ! dimensions of mpi grid
+   INTEGER, dimension(2)     ::mpi_dims
+   ! this rank's coordinates
+   INTEGER, dimension(2)     ::mpi_coords
 
    INTEGER                   ::lr_pack_buffer_size,bt_pack_buffer_size
 
