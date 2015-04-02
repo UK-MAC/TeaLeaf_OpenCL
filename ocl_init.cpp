@@ -134,8 +134,8 @@ void CloverChunk::initOcl
     }
 
     // Read in from file - easier than passing in from fortran
-    FILE* input = fopen("tea.in", "r");
-    if (NULL == input)
+    std::ifstream input("tea.in");
+    if (!input.is_open())
     {
         // should never happen
         DIE("Input file not found\n");
@@ -185,26 +185,24 @@ void CloverChunk::initOcl
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
-    fclose(input);
-
     std::string desired_preconditioner = settingRead(input, "tl_preconditioner_type");
 
-    if (desired_preconditioner.find("none"))
+    if (desired_preconditioner.find("none") != std::string::npos)
     {
         preconditioner_type = TL_PREC_NONE;
     }
-    else if (desired_preconditioner.find("tl_prec_jac_diag"))
+    else if (desired_preconditioner.find("tl_prec_jac_diag") != std::string::npos)
     {
         preconditioner_type = TL_PREC_JAC_DIAG;
     }
-    else if (desired_preconditioner.find("tl_prec_jac_block"))
+    else if (desired_preconditioner.find("tl_prec_jac_block") != std::string::npos)
     {
         preconditioner_type = TL_PREC_JAC_BLOCK;
     }
 
     if (desired_vendor.find("no_setting") != std::string::npos)
     {
-        DIE("No opencl_vendor specified in clover.in\n");
+        DIE("No opencl_vendor specified in tea.in\n");
     }
     else if (desired_vendor.find("list") != std::string::npos)
     {

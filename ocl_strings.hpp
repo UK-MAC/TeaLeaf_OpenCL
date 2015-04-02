@@ -1,5 +1,6 @@
-#include <cstdio>
 #include <string>
+#include <fstream>
+
 #include "ocl_common.hpp"
 
 enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
@@ -8,7 +9,7 @@ enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
  *  Reads the string assigned to a setting
  */
 std::string settingRead
-(FILE* input, const char * setting);
+(std::ifstream& input, const char * setting);
 
 /*
  *  Takes string of type of context and returns enumerated value
@@ -32,13 +33,13 @@ std::string errToString
  *  Find if tl_use_cg is in the input file
  */
 bool paramEnabled
-(FILE* input, const char* param);
+(std::ifstream& input, const char* param);
 
 /*
  *  Returns index of desired device, or -1 if some error occurs (none specified, invalid specification, etc)
  */
 int preferredDevice
-(FILE* input);
+(std::ifstream& input);
 
 /*
  *  Find out the value of a parameter

@@ -1,30 +1,24 @@
 #include "ocl_strings.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <sstream>
+#include <iostream>
 
 std::string matchParam
-(FILE * input,
- const char* param_name)
+(std::ifstream& input, const char* param_name)
 {
-    std::string param_string;
-    param_string = std::string("NO_SETTING");
-    static char name_buf[101];
-    rewind(input);
+    std::string param_string("NO_SETTING");
+    std::string line;
     /* read in line from file */
-    while (NULL != fgets(name_buf, 100, input))
+    while (getline(input, line))
     {
-        if (NULL != strstr(name_buf, "!")) continue;
+        if (line.find("!") != std::string::npos) continue;
         /* if it has the parameter name, its the line we want */
-        if (NULL != strstr(name_buf, param_name))
+        if (line.find(param_name) != std::string::npos)
         {
-            if (NULL != strstr(name_buf, "="))
+            if (line.find("=") != std::string::npos)
             {
-                *(strstr(name_buf, "=")) = ' ';
-                char param_buf[100];
-                sscanf(name_buf, "%*s %s", param_buf);
-                param_string = std::string(param_buf);
+                param_string = std::string(line.erase(0, line.find("=")));
             }
             else
             {
@@ -38,7 +32,7 @@ std::string matchParam
 }
 
 std::string settingRead
-(FILE* input, const char * setting)
+(std::ifstream& input, const char * setting)
 {
     std::string plat_name = matchParam(input, setting);
 
@@ -100,14 +94,14 @@ std::string strType
 }
 
 bool paramEnabled
-(FILE* input, const char* param)
+(std::ifstream& input, const char* param)
 {
     std::string param_string = matchParam(input, param);
     return (param_string.find("NO_SETTING") == std::string::npos);
 }
 
 int preferredDevice
-(FILE* input)
+(std::ifstream& input)
 {
     std::string param_string = matchParam(input, "opencl_device");
 
