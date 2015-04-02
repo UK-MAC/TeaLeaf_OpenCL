@@ -135,6 +135,8 @@ void CloverChunk::initOcl
 
     // Read in from file - easier than passing in from fortran
     std::ifstream input("tea.in");
+    input.exceptions(std::ifstream::badbit);
+
     if (!input.is_open())
     {
         // should never happen
@@ -158,6 +160,7 @@ void CloverChunk::initOcl
     bool tl_use_chebyshev = paramEnabled(input, "tl_use_chebyshev");
     bool tl_use_ppcg = paramEnabled(input, "tl_use_ppcg");
 
+    // set solve
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_ppcg)
     {
@@ -187,17 +190,27 @@ void CloverChunk::initOcl
 
     std::string desired_preconditioner = settingRead(input, "tl_preconditioner_type");
 
+    // set preconditioner type
+    if(!rank)fprintf(stdout, "Preconditioner to use: ");
+    if (desired_preconditioner.find("jac_diag") != std::string::npos)
+    {
+        preconditioner_type = TL_PREC_JAC_DIAG;
+        if(!rank)fprintf(stdout, "Diagonal Jacobi\n");
+    }
+    else if (desired_preconditioner.find("jac_block") != std::string::npos)
+    {
+        preconditioner_type = TL_PREC_JAC_BLOCK;
+        if(!rank)fprintf(stdout, "Block Jacobi\n");
+    }
     if (desired_preconditioner.find("none") != std::string::npos)
     {
         preconditioner_type = TL_PREC_NONE;
+        if(!rank)fprintf(stdout, "None\n");
     }
-    else if (desired_preconditioner.find("tl_prec_jac_diag") != std::string::npos)
+    else
     {
-        preconditioner_type = TL_PREC_JAC_DIAG;
-    }
-    else if (desired_preconditioner.find("tl_prec_jac_block") != std::string::npos)
-    {
-        preconditioner_type = TL_PREC_JAC_BLOCK;
+        preconditioner_type = TL_PREC_NONE;
+        if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
     if (desired_vendor.find("no_setting") != std::string::npos)

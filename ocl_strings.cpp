@@ -9,8 +9,9 @@ std::string matchParam
 {
     std::string param_string("NO_SETTING");
     std::string line;
+
     /* read in line from file */
-    while (getline(input, line))
+    while (std::getline(input, line))
     {
         if (line.find("!") != std::string::npos) continue;
         /* if it has the parameter name, its the line we want */
@@ -27,6 +28,10 @@ std::string matchParam
             break;
         }
     }
+
+    // getline() sets failbit - clear it
+    input.clear();
+    input.seekg(0);
 
     return param_string;
 }
