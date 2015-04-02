@@ -1,5 +1,10 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
+// preconditioners
+#define TL_PREC_NONE        1
+#define TL_PREC_JAC_DIAG    2
+#define TL_PREC_JAC_BLOCK   3
+
 #define __kernel_indexes                            \
     const size_t column = get_global_id(0);			\
     const size_t row = get_global_id(1);				\

@@ -21,6 +21,6 @@ tl_check_result
 tl_eps=1.0e-12
 profiler_on
 
-opencl_vendor=any
+opencl_vendor=list
 opencl_type=gpu
 *endtea

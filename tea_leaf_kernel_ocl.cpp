@@ -50,7 +50,7 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     {
         // ddot(z, r)
         tea_leaf_calc_2norm_device.setArg(0, vector_r);
-        if (preconditioner_on)
+        if (preconditioner_type == TL_PREC_JAC_BLOCK)
         {
             tea_leaf_calc_2norm_device.setArg(1, vector_z);
         }
@@ -168,7 +168,7 @@ void CloverChunk::tea_leaf_init_cg
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
-    if (preconditioner_on)
+    if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
         block_jacobi_offset = cl::NDRange(2, 0);
 
@@ -209,7 +209,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    if (preconditioner_on)
+    if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
         enqueueKernel(tea_leaf_cg_solve_calc_ur_device, __LINE__, __FILE__,
                       block_jacobi_offset,
@@ -343,7 +343,7 @@ void CloverChunk::ppcg_init
 void CloverChunk::ppcg_init_sd
 (void)
 {
-    if (preconditioner_on)
+    if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
         enqueueKernel(tea_leaf_ppcg_solve_init_sd_device, __LINE__, __FILE__,
                       block_jacobi_offset,
@@ -361,7 +361,7 @@ void CloverChunk::ppcg_inner
 {
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
 
-    if (preconditioner_on)
+    if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
         enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
                       block_jacobi_offset,

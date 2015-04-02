@@ -296,8 +296,8 @@ SUBROUTINE tea_exchange(fields,depth)
 
     CALL MPI_TESTALL(message_count_lr, request_lr, test_complete, status_lr, err)
 
-    IF ((depth .gt. 1) .or. (test_complete .eq. .true.)) THEN
-      IF (test_complete .eq. .false.) THEN
+    IF ((depth .gt. 1) .or. (test_complete .eqv. .true.)) THEN
+      IF (test_complete .eqv. .false.) THEN
         !make a call to wait / sync
         CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
       ENDIF
@@ -359,7 +359,7 @@ SUBROUTINE tea_exchange(fields,depth)
       message_count_ud = message_count_ud + 2
     ENDIF
 
-    IF ((depth .eq. 1) .and. (test_complete .eq. .false.)) THEN
+    IF ((depth .eq. 1) .and. (test_complete .eqv. .false.)) THEN
       !make a call to wait / sync
       CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
 
