@@ -14,17 +14,14 @@ __kernel void update_halo_bottom
 
     if (column >= 2 - depth && column <= (x_max + 1) + x_extra + depth)
     {
-        if (row < depth)
-        {
-            const int offset = 2 + b_offset;
+        const int offset = 2 + b_offset;
 
-            /*
-             * 1 - 2 * row means that row 0 services row 1, and vice versa
-             * this means that it can be dispatched with 'depth' rows only
-             */
-            cur_array[THARR2D(0, 1 - (2 * row), x_extra)] =
-                y_invert * cur_array[THARR2D(0, offset, x_extra)];
-        }
+        /*
+         * 1 - 2 * row means that row 0 services row 1, and vice versa
+         * this means that it can be dispatched with 'depth' rows only
+         */
+        cur_array[THARR2D(0, 1 - (2 * row), x_extra)] =
+            y_invert * cur_array[THARR2D(0, offset, x_extra)];
     }
 }
 
@@ -42,13 +39,10 @@ __kernel void update_halo_top
 
     if (column >= 2 - depth && column <= (x_max + 1) + x_extra + depth)
     {
-        if (row < depth)
-        {
-            const int offset = (- row) * 2 - 1 - x_f_offset;
+        const int offset = (- row) * 2 - 1 - x_f_offset;
 
-            cur_array[THARR2D(0, y_extra + y_max + 2, x_extra)] =
-                y_invert * cur_array[THARR2D(0, y_max + 2 + offset, x_extra)];
-        }
+        cur_array[THARR2D(0, y_extra + y_max + 2, x_extra)] =
+            y_invert * cur_array[THARR2D(0, y_max + 2 + offset, x_extra)];
     }
 }
 
