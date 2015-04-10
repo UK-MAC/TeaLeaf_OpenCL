@@ -110,7 +110,7 @@ void CloverChunk::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_finalise", tea_leaf_finalise_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_residual", tea_leaf_calc_residual_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_2norm", tea_leaf_calc_2norm_device, 0, 0, 0, 0);
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, -1, 1, -1, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, -1, 1, -1, 1);
 
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
@@ -517,7 +517,6 @@ void CloverChunk::initArgs
 
             tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
             tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_z);
-
             tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_Mi);
             tea_leaf_ppcg_solve_calc_sd_device.setArg(3, vector_sd);
         }
