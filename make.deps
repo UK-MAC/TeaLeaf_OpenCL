@@ -51,3 +51,18 @@ update_halo.o update_halo_module.mod: update_halo.f90 tea_module.mod \
 update_halo_kernel.o update_halo_kernel_module.mod: \
  update_halo_kernel.f90
 visit.o: visit.f90 tea_module.mod update_halo_module.mod
+field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
+ ocl_reduction.hpp
+generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp
+initialise_chunk_kernel_ocl.o: initialise_chunk_kernel_ocl.cpp \
+ ocl_common.hpp
+ocl_buffers.o: ocl_buffers.cpp ocl_common.hpp
+ocl_errors.o: ocl_errors.cpp ocl_common.hpp
+ocl_init.o: ocl_init.cpp ocl_common.hpp ocl_strings.hpp
+ocl_kernels.o: ocl_kernels.cpp ocl_common.hpp
+ocl_pack.o: ocl_pack.cpp ocl_common.hpp
+ocl_reduction.o: ocl_reduction.cpp ocl_common.hpp
+ocl_strings.o: ocl_strings.cpp ocl_strings.hpp ocl_common.hpp
+set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp
+tea_leaf_kernel_ocl.o: tea_leaf_kernel_ocl.cpp ocl_common.hpp
+update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp
