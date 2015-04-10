@@ -25,9 +25,9 @@
 // check if within bounds, based on what was passed in when compiled - stops having to make sure 2 numbers in different places are the same
 #define WITHIN_BOUNDS                               \
     (/*row >= (y_min + 1) - KERNEL_X_MIN &&*/       \
-     row <= (y_max + 1) + KERNEL_X_MAX &&           \
+     row <= (y_max + 1) + KERNEL_Y_MAX &&           \
      /*column >= (x_min + 1) - KERNEL_Y_MIN &&*/    \
-     column <= (x_max + 1) + KERNEL_Y_MAX)
+     column <= (x_max + 1) + KERNEL_X_MAX)
 //if\s*(\/\?\*\?row >= ([^)]\+) \([-+] \w\)\?&&\*\?\/\? row <= ([^)]\+)\( [+-] \w\)\?\n\s\+&& \/\?\*\?column >= ([^)]\+) \([-+] \w \)\?&&\*\?\/\? column <= ([^)]\+)\( [+-] \w\)\?)
 
 #ifdef CLOVER_NO_BUILTINS
