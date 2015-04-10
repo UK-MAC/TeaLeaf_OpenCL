@@ -132,14 +132,8 @@ extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_p_
 void CloverChunk::calcrxry
 (double dt, double * rx, double * ry)
 {
-    static int initd = 0;
-    if (!initd)
-    {
-        // make sure intialise chunk has finished
-        queue.finish();
-        // celldx doesnt change after that so check once
-        initd = 1;
-    }
+    // make sure intialise chunk has finished
+    queue.finish();
 
     double dx, dy;
 
@@ -194,7 +188,7 @@ void CloverChunk::tea_leaf_init_cg
 
     ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
 
-    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
+    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_w
