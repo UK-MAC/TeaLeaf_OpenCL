@@ -202,7 +202,7 @@ void CloverChunk::initOcl
         preconditioner_type = TL_PREC_JAC_BLOCK;
         if(!rank)fprintf(stdout, "Block Jacobi\n");
     }
-    if (desired_preconditioner.find("none") != std::string::npos)
+    else if (desired_preconditioner.find("none") != std::string::npos)
     {
         preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None\n");

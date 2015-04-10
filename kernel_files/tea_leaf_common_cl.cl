@@ -99,3 +99,20 @@ __kernel void tea_leaf_init_common
     }
 }
 
+__kernel void tea_leaf_init_jac_diag
+(__global       double * __restrict const Mi,
+ __global const double * __restrict const Kx,
+ __global const double * __restrict const Ky)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        const double diag = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
+
+        Mi[THARR2D(0, 0, 0)] = 1.0/diag;
+    }
+}
+

@@ -149,6 +149,7 @@ private:
 
     cl::Kernel tea_leaf_block_init_device;
     cl::Kernel tea_leaf_block_solve_device;
+    cl::Kernel tea_leaf_init_jac_diag_device;;
     cl::Buffer cp, bfp;
     cl::NDRange block_jacobi_global;
     cl::NDRange block_jacobi_offset;

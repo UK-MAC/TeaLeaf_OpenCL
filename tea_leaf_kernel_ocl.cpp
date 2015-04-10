@@ -162,6 +162,8 @@ void CloverChunk::tea_leaf_init_cg
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
+    // Assume calc_residual has been called before this (to calculate initial_residual)
+
     if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
         block_jacobi_offset = cl::NDRange(2, 0);
@@ -184,6 +186,10 @@ void CloverChunk::tea_leaf_init_cg
                       block_jacobi_offset,
                       block_jacobi_global,
                       block_jacobi_local);
+    }
+    else if (preconditioner_type == TL_PREC_JAC_DIAG)
+    {
+        ENQUEUE_OFFSET(tea_leaf_init_jac_diag_device);
     }
 
     ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
@@ -319,7 +325,7 @@ void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
-    tea_leaf_ppcg_solve_init_sd_device.setArg(7, theta);
+    tea_leaf_ppcg_solve_init_sd_device.setArg(8, theta);
 
     // never going to do more than n_inner_steps steps? XXX
     size_t ch_buf_sz = n_inner_steps*sizeof(double);
