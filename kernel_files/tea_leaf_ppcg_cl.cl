@@ -90,6 +90,11 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
     if (WITHIN_BOUNDS)
     {
         // JAC_BLOCK will call block_solve before this function
+        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*z[THARR2D(0, 0, 0)];
+        }
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
             z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];

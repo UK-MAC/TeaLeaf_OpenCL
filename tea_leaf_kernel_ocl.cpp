@@ -222,7 +222,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 
     }
 
-    *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
+    *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 }
 
 void CloverChunk::tea_leaf_kernel_cg_calc_p

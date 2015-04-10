@@ -449,7 +449,7 @@ void CloverChunk::initArgs
          *  reduce_buf_1 = bb
          *  reduce_buf_2 = rro
          *  reduce_buf_3 = pw
-         *  reduce_buf_4 = rrn
+         *  reduce_buf_5 = rrn
          */
 
         tea_leaf_cg_solve_init_p_device.setArg(0, vector_p);
@@ -474,7 +474,7 @@ void CloverChunk::initArgs
         tea_leaf_cg_solve_calc_ur_device.setArg(8, vector_Mi);
         tea_leaf_cg_solve_calc_ur_device.setArg(9, vector_Kx);
         tea_leaf_cg_solve_calc_ur_device.setArg(10, vector_Ky);
-        tea_leaf_cg_solve_calc_ur_device.setArg(11, reduce_buf_4);
+        tea_leaf_cg_solve_calc_ur_device.setArg(11, reduce_buf_5);
 
         tea_leaf_cg_solve_calc_p_device.setArg(1, vector_p);
         tea_leaf_cg_solve_calc_p_device.setArg(2, vector_r);

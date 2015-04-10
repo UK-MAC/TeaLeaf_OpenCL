@@ -97,16 +97,6 @@ __kernel void tea_leaf_cg_solve_calc_ur
         const size_t loc_row = get_local_id(1);
         const size_t lid = loc_row*get_local_size(0) + loc_column;
 
-        if (!lid)
-        {
-            // FIXME shoulodn't be needed
-            for (int k = 0; k < BLOCK_TOP+1; k++)
-            {
-                rrn[(get_group_id(1)*get_num_groups(0) + get_group_id(0)) +
-                    get_num_groups(0)*get_num_groups(1)*k] = 0;
-            }
-        }
-
         rrn_shared[lid] = 0.0;
 
         if (row > y_max || column > x_max) return;
@@ -125,6 +115,8 @@ __kernel void tea_leaf_cg_solve_calc_ur
         {
             rrn_shared[lid] += z[THARR2D(0, k, 0)]*r_l[k];
         }
+
+        REDUCTION(rrn_shared, rrn, SUM);
     }
     else
     {
@@ -142,7 +134,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
                 z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
                 rrn_shared[lid] = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
             }
-            else
+            else if (PRECONDITIONER == TL_PREC_NONE)
             {
                 rrn_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
             }
