@@ -289,10 +289,10 @@ void CloverChunk::initSizes
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    const size_t glob_x = x_max+5 +
-        (((x_max+5)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+5)%LOCAL_X)));
-    const size_t glob_y = y_max+5 +
-        (((y_max+5)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+5)%LOCAL_Y)));
+    const size_t glob_x = x_max+4 +
+        (((x_max+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+4)%LOCAL_X)));
+    const size_t glob_y = y_max+4 +
+        (((y_max+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+4)%LOCAL_Y)));
     total_cells = glob_x*glob_y;
 
     fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
