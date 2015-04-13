@@ -86,62 +86,45 @@ __kernel void tea_leaf_cg_solve_calc_ur
 
  __global       double * __restrict const rrn)
 {
+    __kernel_indexes;
     __local double rrn_shared[BLOCK_SZ];
+    rrn_shared[lid] = 0.0;
 
-    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    if (WITHIN_BOUNDS)
     {
-        const size_t column = get_global_id(0);
-        const size_t row = get_global_id(1)*JACOBI_BLOCK_SIZE + 2;
+        u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
+        r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
 
-        const size_t loc_column = get_local_id(0);
-        const size_t loc_row = get_local_id(1);
-        const size_t lid = loc_row*get_local_size(0) + loc_column;
-
-        rrn_shared[lid] = 0.0;
-
-        if (row > y_max || column > x_max) return;
-
-        __private double r_l[JACOBI_BLOCK_SIZE];
-
-        for (int k = 0; k < BLOCK_TOP; k++)
+        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
-            u[THARR2D(0, k, 0)] += alpha*p[THARR2D(0, k, 0)];
-            r_l[k] = r[THARR2D(0, k, 0)] -= alpha*w[THARR2D(0, k, 0)];
-        }
+            __local double r_l[BLOCK_SZ];
+            __local double z_l[BLOCK_SZ];
 
-        block_solve_func(r_l, z, cp, bfp, Kx, Ky);
+            r_l[lid] = r[THARR2D(0, 0, 0)];
 
-        for (int k = 0; k < BLOCK_TOP; k++)
-        {
-            rrn_shared[lid] += z[THARR2D(0, k, 0)]*r_l[k];
-        }
-
-        REDUCTION(rrn_shared, rrn, SUM);
-    }
-    else
-    {
-        __kernel_indexes;
-
-        rrn_shared[lid] = 0.0;
-
-        if (WITHIN_BOUNDS)
-        {
-            u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
-            r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
-
-            if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if (loc_row == 0)
             {
-                z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
-                rrn_shared[lid] = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+                block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
             }
-            else if (PRECONDITIONER == TL_PREC_NONE)
-            {
-                rrn_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-            }
-        }
+            barrier(CLK_LOCAL_MEM_FENCE);
 
-        REDUCTION(rrn_shared, rrn, SUM);
+            z[THARR2D(0, 0, 0)] = z_l[lid];
+
+            rrn_shared[lid] = r_l[lid]*z_l[lid];
+        }
+        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
+        {
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
     }
+
+    REDUCTION(rrn_shared, rrn, SUM);
 }
 
 /* reduce rrn */

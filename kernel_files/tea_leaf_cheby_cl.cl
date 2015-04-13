@@ -23,11 +23,18 @@ __kernel void tea_leaf_cheby_solve_init_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#if defined(USE_PRECONDITIONER)
-        p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
-#else
-        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
-#endif
+        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+        {
+        // TODO
+        }
+        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
+        }
     }
 }
 
@@ -68,12 +75,20 @@ __kernel void tea_leaf_cheby_solve_calc_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-        p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
-#if defined(USE_PRECONDITIONER)
-                            + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#else
+        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+        {
+        // TODO
+        }
+        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
+                                + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
                             + beta[step]*r[THARR2D(0, 0, 0)];
-#endif
+        }
     }
 }
 

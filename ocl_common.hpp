@@ -8,8 +8,8 @@
 #include <map>
 
 // 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_X = 128;
-const static size_t LOCAL_Y = 1;
+const static size_t LOCAL_X = 32;
+const static size_t LOCAL_Y = 4;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 
 #define JACOBI_BLOCK_SIZE 4

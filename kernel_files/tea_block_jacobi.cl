@@ -4,44 +4,42 @@
 #define COEF_C (1*(-Ky[THARR2D(0,k+ 1, 0)]))
 
 void block_solve_func
-(__private const double r_l[JACOBI_BLOCK_SIZE],
- __global       double * __restrict const z,
+(__local const double r_local[BLOCK_SZ],
+ __local       double z_local[BLOCK_SZ],
  __global const double * __restrict const cp,
  __global const double * __restrict const bfp,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky)
 {
     const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*JACOBI_BLOCK_SIZE + 2;
+    const size_t row = get_global_id(1);
+
+    const size_t loc_column = get_local_id(1);
+    const size_t loc_row_size = get_local_size(0);
 
     int k = 0;
+#define LOC_K (loc_column + k*loc_row_size)
 
-    __private double dp_l[JACOBI_BLOCK_SIZE];
-    __private double z_l[JACOBI_BLOCK_SIZE];
+    __private double dp_priv[JACOBI_BLOCK_SIZE];
 
-    dp_l[k] = r_l[k]/COEF_B;
+    dp_priv[k] = r_local[LOC_K]/COEF_B;
 
     for (k = 1; k < BLOCK_TOP; k++)
     {
-        dp_l[k] = (r_l[k] - COEF_A*dp_l[k - 1])*bfp[THARR2D(0, k, 0)];
+        dp_priv[k] = (r_local[LOC_K] - COEF_A*dp_priv[k - 1])*bfp[THARR2D(0, k, 0)];
     }
 
     k = BLOCK_TOP - 1;
 
-    z_l[k] = dp_l[k];
+    z_local[LOC_K] = dp_priv[k];
 
     for (k = BLOCK_TOP - 2; k >= 0; k--)
     {
-        z_l[k] = dp_l[k] - cp[THARR2D(0, k, 0)]*z_l[k + 1];
-    }
-
-    for (k = 0; k < BLOCK_TOP; k++)
-    {
-        z[THARR2D(0, k, 0)] = z_l[k];
+        z_local[LOC_K] = dp_priv[k] - cp[THARR2D(0, k, 0)]*z_local[k + 1];
     }
 }
 
-__kernel void block_solve
+__kernel void tea_leaf_block_solve
 (__global const double * __restrict const r,
  __global       double * __restrict const z,
  __global const double * __restrict const cp,
@@ -49,22 +47,27 @@ __kernel void block_solve
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky)
 {
-    const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*JACOBI_BLOCK_SIZE + 2;
+    __kernel_indexes;
 
-    if (row > y_max || column > x_max) return;
-
-    __private double r_l[JACOBI_BLOCK_SIZE];
-
-    for (int k = 0; k < BLOCK_TOP; k++)
+    if (WITHIN_BOUNDS)
     {
-        r_l[k] = r[THARR2D(0, k, 0)];
-    }
+        __local double r_l[BLOCK_SZ];
+        __local double z_l[BLOCK_SZ];
 
-    block_solve_func(r_l, z, cp, bfp, Kx, Ky);
+        r_l[lid] = r[THARR2D(0, 0, 0)];
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (loc_row == 0)
+        {
+            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        z[THARR2D(0, 0, 0)] = z_l[lid];
+    }
 }
 
-__kernel void block_init
+__kernel void tea_leaf_block_init
 (__global const double * __restrict const r,
  __global const double * __restrict const z,
  __global       double * __restrict const cp,
@@ -72,19 +75,21 @@ __kernel void block_init
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky)
 {
-    const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1)*JACOBI_BLOCK_SIZE + 2;
+    __kernel_indexes;
 
-    if (row > y_max || column > x_max) return;
-
-    int k = 0;
-
-    cp[THARR2D(0, k, 0)] = COEF_C/COEF_B;
-
-    for (k = 1; k < BLOCK_TOP; k++)
+    if (WITHIN_BOUNDS)
     {
-        bfp[THARR2D(0, k, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(0, k - 1, 0)]);
-        cp[THARR2D(0, k, 0)] = COEF_C*bfp[THARR2D(0, k, 0)];
+        if (loc_row == 0)
+        {
+            int k = 0;
+            cp[THARR2D(0, k, 0)] = COEF_C/COEF_B;
+
+            for (k = 1; k < BLOCK_TOP; k++)
+            {
+                bfp[THARR2D(0, k, 0)] = 1.0/(COEF_B - COEF_A*cp[THARR2D(0, k - 1, 0)]);
+                cp[THARR2D(0, k, 0)] = COEF_C*bfp[THARR2D(0, k, 0)];
+            }
+        }
     }
 }
 

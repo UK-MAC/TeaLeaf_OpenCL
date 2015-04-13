@@ -112,8 +112,8 @@ void CloverChunk::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_calc_2norm", tea_leaf_calc_2norm_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 0, 1, 0, 1);
 
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
 
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, 0, 0, 0, 0);
 
