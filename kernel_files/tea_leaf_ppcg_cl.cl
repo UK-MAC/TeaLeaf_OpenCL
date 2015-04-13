@@ -43,8 +43,8 @@ __kernel void tea_leaf_ppcg_solve_init_sd
         {
             if (PRECONDITIONER == TL_PREC_JAC_DIAG)
             {
-                z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
-                sd[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)]/theta;
+                //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+                sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)]/theta;
             }
             else
             {
@@ -97,9 +97,9 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         }
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
-            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
-                                + beta[step]*z[THARR2D(0, 0, 0)];
+                                + beta[step]*r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
         }
         else
         {
