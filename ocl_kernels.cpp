@@ -528,12 +528,13 @@ void CloverChunk::initArgs
     }
     else
     {
+        // reusing Mi here as 'un'
         tea_leaf_jacobi_copy_u_device.setArg(0, u);
         tea_leaf_jacobi_copy_u_device.setArg(1, vector_Mi);
 
         tea_leaf_jacobi_solve_device.setArg(0, vector_Kx);
         tea_leaf_jacobi_solve_device.setArg(1, vector_Ky);
-        tea_leaf_jacobi_solve_device.setArg(2, vector_w);
+        tea_leaf_jacobi_solve_device.setArg(2, u0);
         tea_leaf_jacobi_solve_device.setArg(3, u);
         tea_leaf_jacobi_solve_device.setArg(4, vector_Mi);
         tea_leaf_jacobi_solve_device.setArg(5, reduce_buf_1);
