@@ -69,32 +69,45 @@ __kernel void tea_leaf_init_common
 
     if (WITHIN_BOUNDS)
     {
-        u0[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
-        u[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
+        double dens_centre, dens_left, dens_up;
 
-        // don't do this bit in second row/column
-        if (row >= (y_min + 1)
-        && column >= (x_min + 1))
+        if (COEF_CONDUCTIVITY == coef)
         {
-            double dens_centre, dens_left, dens_up;
+            dens_centre = density[THARR2D(0, 0, 0)];
+            dens_left = density[THARR2D(-1, 0, 0)];
+            dens_up = density[THARR2D(0, -1, 0)];
+        }
+        else if (COEF_RECIP_CONDUCTIVITY == coef)
+        {
+            dens_centre = 1.0/density[THARR2D(0, 0, 0)];
+            dens_left = 1.0/density[THARR2D(-1, 0, 0)];
+            dens_up = 1.0/density[THARR2D(0, -1, 0)];
+        }
 
-            if (COEF_CONDUCTIVITY == coef)
-            {
-                dens_centre = density[THARR2D(0, 0, 0)];
-                dens_left = density[THARR2D(-1, 0, 0)];
-                dens_up = density[THARR2D(0, -1, 0)];
-            }
-            else if (COEF_RECIP_CONDUCTIVITY == coef)
-            {
-                dens_centre = 1.0/density[THARR2D(0, 0, 0)];
-                dens_left = 1.0/density[THARR2D(-1, 0, 0)];
-                dens_up = 1.0/density[THARR2D(0, -1, 0)];
-            }
+        /*
+         *  This is how the Fortran does it - makes no difference seeing as u/u0
+         *  are set to 0 outside of the bounds of the mesh anyway, but this is
+         *  more consistent and possibly prevent future bugs
+         */
+        if (row < (y_min + 1))
+        {
+            dens_up=0;
+        }
+        if (column < (x_min + 1))
+        {
+            dens_left=0;
+        }
 
-            Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
-            Kx[THARR2D(0, 0, 0)] *= rx;
-            Ky[THARR2D(0, 0, 0)] = (dens_up + dens_centre)/(2.0*dens_up*dens_centre);
-            Ky[THARR2D(0, 0, 0)] *= ry;
+        Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
+        Kx[THARR2D(0, 0, 0)] *= rx;
+        Ky[THARR2D(0, 0, 0)] = (dens_up + dens_centre)/(2.0*dens_up*dens_centre);
+        Ky[THARR2D(0, 0, 0)] *= ry;
+
+        // only inside bounds of mesh
+        if (row <= (y_max + 1) && column <= (x_max + 1))
+        {
+            u0[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
+            u[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
         }
     }
 }
