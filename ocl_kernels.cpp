@@ -190,7 +190,7 @@ void CloverChunk::compileKernel
         }
         catch (KernelCompileError err)
         {
-            DIE("Errors in compiling %s:\n%s\n", kernel_name, err.what());
+            DIE("Errors in compiling %s (in %s):\n%s\n", kernel_name, source_name.c_str(), err.what());
         }
 
         built_programs[source_name + options] = program;
