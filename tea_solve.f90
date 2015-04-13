@@ -185,6 +185,12 @@ SUBROUTINE tea_leaf()
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
         ENDIF
 
+        ! and globally sum rro
+        IF (profiler_on) dot_product_time=timer()
+        CALL tea_allsum(rro)
+        IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
+        IF (profiler_on) init_time = init_time + (timer()-dot_product_time)
+
         ! need to update p when using CG due to matrix/vector multiplication
         fields=0
         fields(FIELD_U) = 1
@@ -193,12 +199,6 @@ SUBROUTINE tea_leaf()
         CALL update_halo(fields,1)
         !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
         IF (profiler_on) init_time=init_time+(timer()-halo_time)
-
-        ! and globally sum rro
-        IF (profiler_on) dot_product_time=timer()
-        CALL tea_allsum(rro)
-        IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
-        IF (profiler_on) init_time = init_time + (timer()-dot_product_time)
       ELSEIF (tl_use_jacobi) THEN
         fields=0
         fields(FIELD_U) = 1
