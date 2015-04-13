@@ -12,7 +12,7 @@ xmax=10.0
 ymax=10.0
 initial_timestep=0.004
 end_step=20
-tl_max_iters=10000
+tl_max_iters=5000
  test_problem 6
 tl_use_ppcg
 tl_preconditioner_type=jac_block

@@ -486,10 +486,12 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_init_p_device.setArg(1, u0);
             tea_leaf_cheby_solve_init_p_device.setArg(2, vector_p);
             tea_leaf_cheby_solve_init_p_device.setArg(3, vector_r);
-            tea_leaf_cheby_solve_init_p_device.setArg(4, vector_Mi);
-            tea_leaf_cheby_solve_init_p_device.setArg(5, vector_w);
-            tea_leaf_cheby_solve_init_p_device.setArg(6, vector_Kx);
-            tea_leaf_cheby_solve_init_p_device.setArg(7, vector_Ky);
+            tea_leaf_cheby_solve_init_p_device.setArg(4, vector_w);
+            tea_leaf_cheby_solve_init_p_device.setArg(5, cp);
+            tea_leaf_cheby_solve_init_p_device.setArg(6, bfp);
+            tea_leaf_cheby_solve_init_p_device.setArg(7, vector_Mi);
+            tea_leaf_cheby_solve_init_p_device.setArg(8, vector_Kx);
+            tea_leaf_cheby_solve_init_p_device.setArg(9, vector_Ky);
 
             tea_leaf_cheby_solve_calc_u_device.setArg(0, u);
             tea_leaf_cheby_solve_calc_u_device.setArg(1, vector_p);
@@ -498,10 +500,12 @@ void CloverChunk::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(1, u0);
             tea_leaf_cheby_solve_calc_p_device.setArg(2, vector_p);
             tea_leaf_cheby_solve_calc_p_device.setArg(3, vector_r);
-            tea_leaf_cheby_solve_calc_p_device.setArg(4, vector_Mi);
-            tea_leaf_cheby_solve_calc_p_device.setArg(5, vector_w);
-            tea_leaf_cheby_solve_calc_p_device.setArg(6, vector_Kx);
-            tea_leaf_cheby_solve_calc_p_device.setArg(7, vector_Ky);
+            tea_leaf_cheby_solve_calc_p_device.setArg(4, vector_w);
+            tea_leaf_cheby_solve_calc_p_device.setArg(5, cp);
+            tea_leaf_cheby_solve_calc_p_device.setArg(6, bfp);
+            tea_leaf_cheby_solve_calc_p_device.setArg(7, vector_Mi);
+            tea_leaf_cheby_solve_calc_p_device.setArg(8, vector_Kx);
+            tea_leaf_cheby_solve_calc_p_device.setArg(9, vector_Ky);
         }
         else if (tea_solver == TEA_ENUM_PPCG)
         {
