@@ -26,7 +26,7 @@ void CloverChunk::initProgram
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge - rather expensive check
     if (y_max % JACOBI_BLOCK_SIZE)
     {
-        options << "-DBLOCK_TOP=MIN((int)(y_max-row),(int)" << JACOBI_BLOCK_SIZE << ") ";
+        options << "-DBLOCK_TOP=\"MIN((int)(y_max-row),(int)" << JACOBI_BLOCK_SIZE << ")\" ";
     }
     else
     {
