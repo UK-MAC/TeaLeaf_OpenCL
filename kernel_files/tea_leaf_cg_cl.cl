@@ -21,7 +21,7 @@ __kernel void tea_leaf_cg_solve_init_p
     {
         if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
-            // would have already been calculated before after initialisation
+            // z initialised when block_solve kernel is called before this
             p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
         }
         else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
@@ -97,21 +97,20 @@ __kernel void tea_leaf_cg_solve_calc_ur
 
         if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
-            __local double r_l[BLOCK_SZ];
             __local double z_l[BLOCK_SZ];
 
-            r_l[lid] = r[THARR2D(0, 0, 0)];
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)];
 
             barrier(CLK_LOCAL_MEM_FENCE);
             if (loc_row == 0)
             {
-                block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+                block_solve_func(rrn_shared, z_l, cp, bfp, Kx, Ky);
             }
             barrier(CLK_LOCAL_MEM_FENCE);
 
             z[THARR2D(0, 0, 0)] = z_l[lid];
 
-            rrn_shared[lid] = r_l[lid]*z_l[lid];
+            rrn_shared[lid] = rrn_shared[lid]*z_l[lid];
         }
         else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {

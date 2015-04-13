@@ -521,9 +521,13 @@ void CloverChunk::initArgs
             tea_leaf_ppcg_solve_update_r_device.setArg(4, vector_sd);
 
             tea_leaf_ppcg_solve_calc_sd_device.setArg(0, vector_r);
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_z);
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_Mi);
-            tea_leaf_ppcg_solve_calc_sd_device.setArg(3, vector_sd);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_sd);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_z);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(3, cp);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(4, bfp);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(5, vector_Mi);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(6, vector_Kx);
+            tea_leaf_ppcg_solve_calc_sd_device.setArg(7, vector_Ky);
         }
     }
     else

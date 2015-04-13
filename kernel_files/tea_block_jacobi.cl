@@ -15,7 +15,7 @@ void block_solve_func
     const size_t row = get_global_id(1);
 
     const size_t loc_column = get_local_id(0);
-    const size_t loc_row_size = get_local_size(0);
+    const size_t loc_row_size = LOCAL_X;
 
     int k = 0;
 #define LOC_K (loc_column + k*loc_row_size)
@@ -35,7 +35,7 @@ void block_solve_func
 
     for (k = BLOCK_TOP - 2; k >= 0; k--)
     {
-        z_local[LOC_K] = dp_priv[k] - cp[THARR2D(0, k, 0)]*z_local[LOC_K + 1];
+        z_local[LOC_K] = dp_priv[k] - cp[THARR2D(0, k, 0)]*z_local[LOC_K + LOCAL_X];
     }
 }
 

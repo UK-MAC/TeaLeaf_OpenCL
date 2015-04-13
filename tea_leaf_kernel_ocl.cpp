@@ -166,37 +166,8 @@ void CloverChunk::tea_leaf_init_cg
 
     if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
-        /*
-        block_jacobi_offset = cl::NDRange(2, 0);
-
-        block_jacobi_local = cl::NDRange(32, 4);
-
-        size_t xl = x_max;
-        xl += block_jacobi_local[0] - (xl % block_jacobi_local[0]);
-        size_t yl = y_max/JACOBI_BLOCK_SIZE;
-        yl += block_jacobi_local[1] - (yl % block_jacobi_local[1]);
-
-        block_jacobi_global = cl::NDRange(xl, yl);
-
-        enqueueKernel(tea_leaf_block_init_device, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-
-        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-        */
-
         ENQUEUE_OFFSET(tea_leaf_block_init_device);
         ENQUEUE_OFFSET(tea_leaf_block_solve_device);
-
-        size_t bufsz = ((x_max+4) * (y_max+4) * sizeof(double));
-        std::vector<double> copied(bufsz/sizeof(double), 0);
-        queue.enqueueReadBuffer(cp, CL_TRUE, 0, bufsz, &copied.front());
-        for (int ii = 0; ii < copied.size(); ii++) fprintf(stdout, "%f\n", copied[ii]);
-        exit(1);
     }
     else if (preconditioner_type == TL_PREC_JAC_DIAG)
     {
@@ -220,20 +191,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    /*
-    if (preconditioner_type == TL_PREC_JAC_BLOCK)
-    {
-        enqueueKernel(tea_leaf_cg_solve_calc_ur_device, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-    }
-    else
-    */
-    {
-        ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
-
-    }
+    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
 
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 }
@@ -349,24 +307,14 @@ void CloverChunk::ppcg_init
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_alphas_device);
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ch_betas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(8, ch_alphas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(9, ch_betas_device);
 }
 
 void CloverChunk::ppcg_init_sd
 (void)
 {
-    if (preconditioner_type == TL_PREC_JAC_BLOCK)
-    {
-        enqueueKernel(tea_leaf_ppcg_solve_init_sd_device, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-    }
-    else
-    {
-        ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
-    }
+    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
 }
 
 void CloverChunk::ppcg_inner
@@ -374,15 +322,7 @@ void CloverChunk::ppcg_inner
 {
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
 
-    if (preconditioner_type == TL_PREC_JAC_BLOCK)
-    {
-        enqueueKernel(tea_leaf_block_solve_device, __LINE__, __FILE__,
-                      block_jacobi_offset,
-                      block_jacobi_global,
-                      block_jacobi_local);
-    }
-
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(6, ppcg_cur_step - 1);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(10, ppcg_cur_step - 1);
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
 }
 
