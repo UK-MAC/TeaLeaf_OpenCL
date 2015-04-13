@@ -7,12 +7,12 @@
 #include <cstdlib>
 #include <map>
 
-// 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_X = 32;
-const static size_t LOCAL_Y = 4;
-const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-
 #define JACOBI_BLOCK_SIZE 4
+
+// 2 dimensional arrays - use a 2D tile for local group
+const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
+const static size_t LOCAL_X = 128/LOCAL_Y;
+const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1

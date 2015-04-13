@@ -1,7 +1,7 @@
 
-#define COEF_A (1*(-Ky[THARR2D(0,k+ 0, 0)]))
-#define COEF_B (1*(1.0 + (Ky[THARR2D(0,k+ 1, 0)] + Ky[THARR2D(0,k+ 0, 0)]) + (Kx[THARR2D(1,k+ 0, 0)] + Kx[THARR2D(0,k+ 0, 0)])))
-#define COEF_C (1*(-Ky[THARR2D(0,k+ 1, 0)]))
+#define COEF_A (-Ky[THARR2D(0,k+ 0, 0)])
+#define COEF_B (1.0 + (Ky[THARR2D(0,k+ 1, 0)] + Ky[THARR2D(0,k+ 0, 0)]) + (Kx[THARR2D(1,k+ 0, 0)] + Kx[THARR2D(0,k+ 0, 0)]))
+#define COEF_C (-Ky[THARR2D(0,k+ 1, 0)])
 
 void block_solve_func
 (__local const double r_local[BLOCK_SZ],
@@ -14,7 +14,7 @@ void block_solve_func
     const size_t column = get_global_id(0);
     const size_t row = get_global_id(1);
 
-    const size_t loc_column = get_local_id(1);
+    const size_t loc_column = get_local_id(0);
     const size_t loc_row_size = get_local_size(0);
 
     int k = 0;
@@ -35,7 +35,7 @@ void block_solve_func
 
     for (k = BLOCK_TOP - 2; k >= 0; k--)
     {
-        z_local[LOC_K] = dp_priv[k] - cp[THARR2D(0, k, 0)]*z_local[k + 1];
+        z_local[LOC_K] = dp_priv[k] - cp[THARR2D(0, k, 0)]*z_local[LOC_K + 1];
     }
 }
 
