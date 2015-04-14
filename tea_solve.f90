@@ -53,7 +53,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8),SAVE :: eigmin, eigmax, theta, cn
-  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
+  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, ppcg_inner_iters
   LOGICAL :: ch_switch_check
   LOGICAL, SAVE :: first=.TRUE.
 
@@ -64,6 +64,7 @@ SUBROUTINE tea_leaf()
   cg_time = 0.0_8
   ch_time = 0.0_8
   cg_calc_steps = 0
+  ppcg_inner_iters = 0
 
   total_solve_time = 0.0_8
   init_time = 0.0_8
@@ -212,12 +213,14 @@ SUBROUTINE tea_leaf()
 
         iteration_time = timer()
 
-        IF (tl_ch_cg_errswitch) THEN
-            ! either the error has got below tolerance, or it's already going - minimum 20 steps to converge eigenvalues
-            ch_switch_check = (cheby_calc_steps .GT. 0) .OR. (error .LE. tl_ch_cg_epslim) .AND. (n .GE. 20)
-        ELSE
-            ! enough steps have passed and error < 1, otherwise it's nowhere near converging on eigenvalues
-            ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (error .le. 1.0_8)
+        IF (ch_switch_check .eqv. .false.) THEN
+          IF (tl_ch_cg_errswitch) THEN
+              ! either the error has got below tolerance, or it's already going - minimum 20 steps to converge eigenvalues
+              ch_switch_check = (cheby_calc_steps .GT. 0) .OR. (error .LE. tl_ch_cg_epslim) .AND. (n .GE. 20)
+          ELSE
+              ! enough steps have passed and error < 1, otherwise it's nowhere near converging on eigenvalues
+              ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (error .le. 1.0_8)
+          ENDIF
         ENDIF
 
         IF ((tl_use_chebyshev .OR. tl_use_ppcg) .AND. ch_switch_check) THEN
@@ -257,11 +260,11 @@ SUBROUTINE tea_leaf()
 
             IF (parallel%boss) THEN
 !$            IF(OMP_GET_THREAD_NUM().EQ.0) THEN
-103 FORMAT("Eigen min",e14.6," Eigen max",e14.6," Condition number",e14.6," Error",e14.6)
+100 FORMAT("Eigen min",e14.6," Eigen max",e14.6," Condition number",e14.6," Error",e14.6)
                 WRITE(g_out,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
-                WRITE(g_out, 103) eigmin,eigmax,cn,error
+                WRITE(g_out, 100) eigmin,eigmax,cn,error
                 WRITE(0,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
-                WRITE(0, 103) eigmin,eigmax,cn,error
+                WRITE(0, 100) eigmin,eigmax,cn,error
 !$            ENDIF
             ENDIF
           ENDIF
@@ -272,8 +275,6 @@ SUBROUTINE tea_leaf()
                     error, rx, ry, theta, cn, max_cheby_iters, est_itc, solve_time)
 
                 cheby_calc_steps = 1
-
-                switch_step = n
               ELSE
                   IF(use_fortran_kernels) THEN
                       CALL tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
@@ -398,14 +399,15 @@ SUBROUTINE tea_leaf()
 
             CALL tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
                 rx, ry, tl_ppcg_inner_steps, c, solve_time)
+            ppcg_inner_iters = ppcg_inner_iters + tl_ppcg_inner_steps
 
             IF(use_fortran_kernels) THEN
               CALL tea_leaf_ppcg_calc_zrnorm_kernel(chunks(c)%field%x_min, &
                     chunks(c)%field%x_max,                           &
                     chunks(c)%field%y_min,                           &
                     chunks(c)%field%y_max,                           &
-                    chunks(c)%field%vector_z,                        &
                     chunks(c)%field%vector_r,                        &
+                    chunks(c)%field%vector_z,                        &
                     tl_preconditioner_type, rrn)
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(2, rrn)
@@ -611,8 +613,11 @@ SUBROUTINE tea_leaf()
 
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Iteration count ', i8)") n-1
-          IF(tl_use_ppcg) WRITE(g_out,"('Total Iteration count ',i8)") (n-1)*tl_ppcg_inner_steps
-          IF(tl_use_ppcg) WRITE(0,"('Total Iteration count ', i8)") (n-1)*tl_ppcg_inner_steps
+103 FORMAT('PPCG Iteration count', i8, ' (Total ',i8,')')
+          IF(tl_use_ppcg) THEN
+            WRITE(g_out,103) ppcg_inner_iters, ppcg_inner_iters + n-1
+            WRITE(0,103) ppcg_inner_iters, ppcg_inner_iters + n-1
+          ENDIF
 !$      ENDIF
       ENDIF
 
