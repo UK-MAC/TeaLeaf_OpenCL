@@ -19,7 +19,7 @@ std::string matchParam
         {
             if (line.find("=") != std::string::npos)
             {
-                param_string = std::string(line.erase(0, line.find("=")));
+                param_string = std::string(line.erase(0, 1+line.find("=")));
             }
             else
             {
