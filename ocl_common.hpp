@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <map>
 
-#define JACOBI_BLOCK_SIZE 4
+#define JACOBI_BLOCK_SIZE 1
 
 // 2 dimensional arrays - use a 2D tile for local group
 const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
