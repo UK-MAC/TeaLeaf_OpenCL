@@ -65,6 +65,7 @@ SUBROUTINE tea_leaf()
   ch_time = 0.0_8
   cg_calc_steps = 0
   ppcg_inner_iters = 0
+  ch_switch_check = .false.
 
   total_solve_time = 0.0_8
   init_time = 0.0_8
@@ -406,8 +407,8 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%x_max,                           &
                     chunks(c)%field%y_min,                           &
                     chunks(c)%field%y_max,                           &
-                    chunks(c)%field%vector_r,                        &
                     chunks(c)%field%vector_z,                        &
+                    chunks(c)%field%vector_r,                        &
                     tl_preconditioner_type, rrn)
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(2, rrn)
