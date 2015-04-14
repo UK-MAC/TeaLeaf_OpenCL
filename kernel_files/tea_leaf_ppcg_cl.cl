@@ -110,7 +110,7 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                                 + beta[step]*r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
         }
-        else
+        else if (PRECONDITIONER == TL_PREC_NONE)
         {
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                                 + beta[step]*r[THARR2D(0, 0, 0)];

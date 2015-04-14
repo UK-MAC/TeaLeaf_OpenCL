@@ -215,10 +215,14 @@ CloverChunk::~CloverChunk
     {
         fprintf(stdout, "@@@@@ PROFILING @@@@@\n");
 
-        for (std::map<std::string, double>::iterator ii = kernel_times.begin();
-            ii != kernel_times.end(); ii++)
+        std::map<std::string, double>::iterator ii = kernel_times.begin();
+        std::map<std::string, int>::iterator jj = kernel_calls.begin();
+
+        for (ii = kernel_times.begin(), jj = kernel_calls.begin();
+            ii != kernel_times.end(); ii++, jj++)
         {
-            fprintf(stdout, "%30s : %.3f\n", (*ii).first.c_str(), (*ii).second);
+            fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg.)\n",
+                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second);
         }
     }
 }

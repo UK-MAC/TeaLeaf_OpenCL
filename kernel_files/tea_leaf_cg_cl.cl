@@ -87,6 +87,7 @@ __kernel void tea_leaf_cg_solve_calc_ur
  __global       double * __restrict const rrn)
 {
     __kernel_indexes;
+
     __local double rrn_shared[BLOCK_SZ];
     rrn_shared[lid] = 0.0;
 
