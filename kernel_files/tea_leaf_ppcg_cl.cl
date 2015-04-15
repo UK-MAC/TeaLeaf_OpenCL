@@ -21,14 +21,6 @@ __kernel void tea_leaf_ppcg_solve_init_sd
 
     if (WITHIN_BOUNDS)
     {
-        const double smvp = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
-            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
-            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
-
-        r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
-
         if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
             __local double r_l[BLOCK_SZ];
