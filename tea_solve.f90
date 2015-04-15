@@ -695,6 +695,16 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   CALL update_halo(fields,1)
 
   IF(use_fortran_kernels) THEN
+     CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
+         chunks(c)%field%x_max,                        &
+         chunks(c)%field%y_min,                        &
+         chunks(c)%field%y_max,                        &
+         chunks(c)%field%u,                            &
+         chunks(c)%field%u0,                           &
+         chunks(c)%field%vector_r,                     &
+         chunks(c)%field%vector_Kx,                    &
+         chunks(c)%field%vector_Ky,                    &
+         rx, ry)
     CALL tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&
         chunks(c)%field%x_max,                              &
         chunks(c)%field%y_min,                              &
@@ -709,16 +719,6 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
         chunks(c)%field%vector_Mi,                          &
         rx, ry,                          &
         theta, tl_preconditioner_type)
-     CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-         chunks(c)%field%x_max,                        &
-         chunks(c)%field%y_min,                        &
-         chunks(c)%field%y_max,                        &
-         chunks(c)%field%u,                            &
-         chunks(c)%field%u0,                           &
-         chunks(c)%field%vector_r,                     &
-         chunks(c)%field%vector_Kx,                    &
-         chunks(c)%field%vector_Ky,                    &
-         rx, ry)
   ELSEIF(use_opencl_kernels) THEN
     CALL tea_leaf_calc_residual_ocl()
     CALL tea_leaf_kernel_ppcg_init_sd_ocl()
