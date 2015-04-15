@@ -221,8 +221,8 @@ CloverChunk::~CloverChunk
         for (ii = kernel_times.begin(), jj = kernel_calls.begin();
             ii != kernel_times.end(); ii++, jj++)
         {
-            fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg.)\n",
-                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second);
+            fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
+                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
         }
     }
 }
