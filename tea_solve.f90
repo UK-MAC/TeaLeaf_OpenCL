@@ -601,21 +601,20 @@ SUBROUTINE tea_leaf()
       IF (parallel%boss) THEN
 !$      IF(OMP_GET_THREAD_NUM().EQ.0) THEN
 
-101 FORMAT('EXACT error calculated as', e14.7)
 102 FORMAT('Conduction error ',e14.7)
-
           WRITE(g_out,102) error/initial_residual
           WRITE(0,102) error/initial_residual
 
           IF (tl_check_result) THEN
+101 FORMAT('EXACT error calculated as', e14.7)
             WRITE(0, 101) exact_error/initial_residual
             WRITE(g_out, 101) exact_error/initial_residual
           ENDIF
 
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Iteration count ', i8)") n-1
-103 FORMAT('PPCG Iteration count', i8, ' (Total ',i8,')')
           IF(tl_use_ppcg) THEN
+103 FORMAT('PPCG Iteration count', i8, ' (Total ',i8,')')
             WRITE(g_out,103) ppcg_inner_iters, ppcg_inner_iters + n-1
             WRITE(0,103) ppcg_inner_iters, ppcg_inner_iters + n-1
           ENDIF
