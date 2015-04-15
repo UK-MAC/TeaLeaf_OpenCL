@@ -50,11 +50,16 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     {
         // ddot(z, r)
         tea_leaf_calc_2norm_device.setArg(0, vector_r);
+
         if (preconditioner_type == TL_PREC_JAC_BLOCK)
         {
             tea_leaf_calc_2norm_device.setArg(1, vector_z);
         }
-        else
+        else if (preconditioner_type == TL_PREC_JAC_DIAG)
+        {
+            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+        }
+        else if (preconditioner_type == TL_PREC_NONE)
         {
             tea_leaf_calc_2norm_device.setArg(1, vector_r);
         }
