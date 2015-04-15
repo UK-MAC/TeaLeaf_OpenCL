@@ -308,7 +308,7 @@ void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
-    tea_leaf_ppcg_solve_init_sd_device.setArg(8, theta);
+    tea_leaf_ppcg_solve_init_sd_device.setArg(10, theta);
 
     // never going to do more than n_inner_steps steps? XXX
     size_t ch_buf_sz = n_inner_steps*sizeof(double);

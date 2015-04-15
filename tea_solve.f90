@@ -334,11 +334,6 @@ SUBROUTINE tea_leaf()
               !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
               IF (profiler_on) init_time=init_time+(timer()-halo_time)
 
-              IF(use_opencl_kernels) THEN
-                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
-                    theta, tl_ppcg_inner_steps)
-              ENDIF
-
               IF(use_fortran_kernels) THEN
                 CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
                     chunks(c)%field%x_max,                        &
@@ -352,6 +347,11 @@ SUBROUTINE tea_leaf()
                     rx, ry)
               ELSEIF(use_opencl_kernels) THEN
                 CALL tea_leaf_calc_residual_ocl()
+              ENDIF
+
+              IF(use_opencl_kernels) THEN
+                call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
+                    theta, tl_ppcg_inner_steps)
               ENDIF
             ENDIF
 
@@ -555,6 +555,7 @@ SUBROUTINE tea_leaf()
             WRITE(g_out,*)"Residual ",error
 !$        ENDIF
         ENDIF
+
         IF (abs(error) .LT. eps*initial_residual) EXIT
 
       ENDDO
@@ -687,6 +688,11 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   REAL(KIND=8) :: rx, ry, theta
   REAL(KIND=8) :: halo_time, timer, solve_time
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
+
+  fields = 0
+  fields(FIELD_U) = 1
+
+  CALL update_halo(fields,1)
 
   IF(use_fortran_kernels) THEN
     CALL tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&

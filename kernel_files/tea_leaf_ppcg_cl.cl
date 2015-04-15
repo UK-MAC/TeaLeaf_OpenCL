@@ -2,7 +2,7 @@
 #include <kernel_files/tea_block_jacobi.cl>
 
 __kernel void tea_leaf_ppcg_solve_init_sd
-(__global const double * __restrict const r,
+(__global       double * __restrict const r,
  __global       double * __restrict const sd,
 
  __global       double * __restrict const z,
@@ -12,12 +12,23 @@ __kernel void tea_leaf_ppcg_solve_init_sd
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
 
+ __global const double * __restrict const u,
+ __global const double * __restrict const u0,
+
  double theta)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
+        const double smvp = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
+
+        r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - smvp;
+
         if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
             __local double r_l[BLOCK_SZ];
@@ -57,6 +68,8 @@ __kernel void tea_leaf_ppcg_solve_update_r
 
     if (WITHIN_BOUNDS)
     {
+        u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
+
         const double result = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*sd[THARR2D(0, 0, 0)]
@@ -64,7 +77,6 @@ __kernel void tea_leaf_ppcg_solve_update_r
             - (Kx[THARR2D(1, 0, 0)]*sd[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*sd[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] -= result;
-        u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
     }
 }
 

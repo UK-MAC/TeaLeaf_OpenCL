@@ -517,6 +517,8 @@ void CloverChunk::initArgs
             tea_leaf_ppcg_solve_init_sd_device.setArg(5, vector_Mi);
             tea_leaf_ppcg_solve_init_sd_device.setArg(6, vector_Kx);
             tea_leaf_ppcg_solve_init_sd_device.setArg(7, vector_Ky);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(8, u);
+            tea_leaf_ppcg_solve_init_sd_device.setArg(9, u0);
 
             tea_leaf_ppcg_solve_update_r_device.setArg(0, u);
             tea_leaf_ppcg_solve_update_r_device.setArg(1, vector_r);
