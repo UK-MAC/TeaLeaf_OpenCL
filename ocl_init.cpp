@@ -146,13 +146,13 @@ void CloverChunk::initOcl
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
-    std::string desired_vendor = settingRead(input, "opencl_vendor");
+    std::string desired_vendor = readString(input, "opencl_vendor");
 
-    int preferred_device = preferredDevice(input);
+    int preferred_device = readInt(input, "opencl_device");
     preferred_device = (preferred_device < 0) ? 0 : preferred_device;
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
 
-    std::string type_name = settingRead(input, "opencl_type");
+    std::string type_name = readString(input, "opencl_type");
     desired_type = typeMatch(type_name);
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
@@ -188,7 +188,7 @@ void CloverChunk::initOcl
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
-    std::string desired_preconditioner = settingRead(input, "tl_preconditioner_type");
+    std::string desired_preconditioner = readString(input, "tl_preconditioner_type");
 
     // set preconditioner type
     if(!rank)fprintf(stdout, "Preconditioner to use: ");

@@ -113,6 +113,7 @@ void CloverChunk::enqueueKernel
                                        local_range,
                                        events,
                                        prof_event);
+
             prof_event->wait();
 
             prof_event->getProfilingInfo(CL_PROFILING_COMMAND_START, &start);
@@ -211,9 +212,9 @@ void CloverChunk::cloverDie
 CloverChunk::~CloverChunk
 (void)
 {
-    if (profiler_on)
+    if (profiler_on && !rank)
     {
-        fprintf(stdout, "@@@@@ PROFILING @@@@@\n");
+        fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
 
         std::map<std::string, double>::iterator ii = kernel_times.begin();
         std::map<std::string, int>::iterator jj = kernel_calls.begin();

@@ -290,6 +290,7 @@ SUBROUTINE read_input()
   ! Simple guess - better than a default of 10
   if (tl_ppcg_inner_steps .eq. -1) then
     tl_ppcg_inner_steps = 4*INT(SQRT(SQRT(REAL(grid%x_cells*grid%y_cells))))
+    IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
   endif
 
   IF(parallel%boss) THEN

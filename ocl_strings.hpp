@@ -8,7 +8,13 @@ enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
 /*
  *  Reads the string assigned to a setting
  */
-std::string settingRead
+std::string readString
+(std::ifstream& input, const char * setting);
+
+/*
+ *  Reads an integer assigned to a setting
+ */
+int readInt
 (std::ifstream& input, const char * setting);
 
 /*

@@ -7,7 +7,7 @@
 std::string matchParam
 (std::ifstream& input, const char* param_name)
 {
-    std::string param_string("NO_SETTING");
+    std::string param_string;
     std::string line;
 
     /* read in line from file */
@@ -36,7 +36,7 @@ std::string matchParam
     return param_string;
 }
 
-std::string settingRead
+std::string readString
 (std::ifstream& input, const char * setting)
 {
     std::string plat_name = matchParam(input, setting);
@@ -49,6 +49,32 @@ std::string settingRead
 
     return plat_name;
 }
+
+int readInt
+(std::ifstream& input, const char * setting)
+{
+    std::string param_string = matchParam(input, setting);
+
+    int param_value;
+
+    if (param_string.size() == 0)
+    {
+        // not found in file
+        param_value = -1;
+    }
+    else
+    {
+        std::stringstream converter(param_string);
+
+        if (!(converter >> param_value))
+        {
+            param_value = -1;
+        }
+    }
+
+    return param_value;
+}
+
 
 int typeMatch
 (std::string& type_name)
@@ -102,31 +128,6 @@ bool paramEnabled
 (std::ifstream& input, const char* param)
 {
     std::string param_string = matchParam(input, param);
-    return (param_string.find("NO_SETTING") == std::string::npos);
-}
-
-int preferredDevice
-(std::ifstream& input)
-{
-    std::string param_string = matchParam(input, "opencl_device");
-
-    int preferred_device;
-
-    if (param_string.size() == 0)
-    {
-        // not found in file
-        preferred_device = -1;
-    }
-    else
-    {
-        std::stringstream converter(param_string);
-
-        if (!(converter >> preferred_device))
-        {
-            preferred_device = -1;
-        }
-    }
-
-    return preferred_device;
+    return (param_string.size() != 0);
 }
 

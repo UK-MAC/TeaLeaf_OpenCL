@@ -19,30 +19,39 @@ __kernel void tea_leaf_ppcg_solve_init_sd
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+        __local double r_l[BLOCK_SZ];
+        __local double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
         {
-            __local double r_l[BLOCK_SZ];
-            __local double z_l[BLOCK_SZ];
-
             r_l[lid] = r[THARR2D(0, 0, 0)];
+        }
 
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if (loc_row == 0)
-            {
-                block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (loc_row == 0)
+        {
+            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
 
+        if (WITHIN_BOUNDS)
+        {
             sd[THARR2D(0, 0, 0)] = z_l[lid]/theta;
         }
-        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
             //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)]/theta;
         }
-        else
+        else if (PRECONDITIONER == TL_PREC_NONE)
         {
             sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
         }
@@ -89,26 +98,36 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+        __local double r_l[BLOCK_SZ];
+        __local double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
         {
-            __local double r_l[BLOCK_SZ];
-            __local double z_l[BLOCK_SZ];
-
             r_l[lid] = r[THARR2D(0, 0, 0)];
+        }
 
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if (loc_row == 0)
-            {
-                block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (loc_row == 0)
+        {
+        if (WITHIN_BOUNDS)
+            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
 
+        if (WITHIN_BOUNDS)
+        {
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                                 + beta[step]*z_l[lid];
         }
-        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
             //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]

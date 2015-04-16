@@ -5,6 +5,12 @@
 #define TL_PREC_JAC_DIAG    2
 #define TL_PREC_JAC_BLOCK   3
 
+#if defined(BLOCK_TOP_CHECK)
+    #define BLOCK_TOP (MIN(((int)y_max + 2 - (int)row),(int)JACOBI_BLOCK_SIZE))
+#else
+    #define BLOCK_TOP (JACOBI_BLOCK_SIZE)
+#endif
+
 #define __kernel_indexes                            \
     const size_t column = get_global_id(0);			\
     const size_t row = get_global_id(1);				\

@@ -95,25 +95,34 @@ __kernel void tea_leaf_cg_solve_calc_ur
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
+    }
 
-        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    {
+        __local double z_l[BLOCK_SZ];
+
+        if (WITHIN_BOUNDS)
         {
-            __local double z_l[BLOCK_SZ];
-
             rrn_shared[lid] = r[THARR2D(0, 0, 0)];
+        }
 
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if (loc_row == 0)
-            {
-                block_solve_func(rrn_shared, z_l, cp, bfp, Kx, Ky);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (loc_row == 0)
+        {
+            block_solve_func(rrn_shared, z_l, cp, bfp, Kx, Ky);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
 
+        if (WITHIN_BOUNDS)
+        {
             z[THARR2D(0, 0, 0)] = z_l[lid];
 
             rrn_shared[lid] = rrn_shared[lid]*z_l[lid];
         }
-        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
             z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             rrn_shared[lid] = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
