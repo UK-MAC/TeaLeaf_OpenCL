@@ -247,6 +247,9 @@ private:
     cl::NDRange update_lr_local_size[2];
     cl::NDRange update_bt_local_size[2];
 
+    cl::NDRange pack_big_lr_size;
+    cl::NDRange pack_big_bt_size;
+
     // values used to control operation
     size_t x_min;
     size_t x_max;

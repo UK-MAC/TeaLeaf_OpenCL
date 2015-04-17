@@ -291,10 +291,10 @@ void CloverChunk::initSizes
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    const size_t glob_x = x_max+4 +
-        (((x_max+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+4)%LOCAL_X)));
-    const size_t glob_y = y_max+4 +
-        (((y_max+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+4)%LOCAL_Y)));
+    const size_t glob_x = x_max+2*halo_depth +
+        (((x_max+2*halo_depth)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+2*halo_depth)%LOCAL_X)));
+    const size_t glob_y = y_max+2*halo_depth +
+        (((y_max+2*halo_depth)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+2*halo_depth)%LOCAL_Y)));
     total_cells = glob_x*glob_y;
 
     fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
@@ -349,20 +349,20 @@ void CloverChunk::initSizes
     update_bt_local_size[1] = cl::NDRange(local_row_size, 2);
 
     // start off doing minimum amount of work
-    size_t global_row_size = x_max + 5;
-    size_t global_column_size = y_max + 5;
+    size_t global_bt_update_size = x_max + 4;
+    size_t global_lr_update_size = y_max + 4;
 
     // increase just to fit in with local work group sizes
-    while (global_row_size % local_row_size)
-        global_row_size++;
-    while (global_column_size % local_column_size)
-        global_column_size++;
+    while (global_bt_update_size % local_row_size)
+        global_bt_update_size++;
+    while (global_lr_update_size % local_column_size)
+        global_lr_update_size++;
 
     // create ndranges
-    update_lr_global_size[0] = cl::NDRange(1, global_column_size);
-    update_lr_global_size[1] = cl::NDRange(2, global_column_size);
-    update_bt_global_size[0] = cl::NDRange(global_row_size, 1);
-    update_bt_global_size[1] = cl::NDRange(global_row_size, 2);
+    update_lr_global_size[0] = cl::NDRange(1, global_lr_update_size);
+    update_lr_global_size[1] = cl::NDRange(2, global_lr_update_size);
+    update_bt_global_size[0] = cl::NDRange(global_bt_update_size, 1);
+    update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 2);
 
     for (int depth = 0; depth < 2; depth++)
     {
@@ -374,6 +374,18 @@ void CloverChunk::initSizes
             update_bt_global_size[depth][0], update_bt_global_size[depth][1],
             update_bt_local_size[depth][0], update_bt_local_size[depth][1]);
     }
+
+    size_t global_bt_pack_size = x_max + 2*halo_depth;
+    size_t global_lr_pack_size = y_max + 2*halo_depth;
+
+    // increase just to fit in with local work group sizes
+    while (global_bt_pack_size % local_row_size)
+        global_bt_pack_size++;
+    while (global_lr_pack_size % local_column_size)
+        global_lr_pack_size++;
+
+    pack_big_bt_size = cl::NDRange(global_bt_pack_size, halo_depth);
+    pack_big_lr_size = cl::NDRange(halo_depth, global_lr_pack_size);
 
     fprintf(DBGOUT, "Update halo parameters calculated\n");
 }
