@@ -242,13 +242,10 @@ private:
     size_t halo_depth;
 
     // sizes for launching update halo kernels - l/r and u/d updates
-    cl::NDRange update_lr_global_size[2];
-    cl::NDRange update_bt_global_size[2];
-    cl::NDRange update_lr_local_size[2];
-    cl::NDRange update_bt_local_size[2];
-
-    cl::NDRange pack_big_lr_size;
-    cl::NDRange pack_big_bt_size;
+    std::map<int, cl::NDRange> update_lr_global_size;
+    std::map<int, cl::NDRange> update_bt_global_size;
+    std::map<int, cl::NDRange> update_lr_local_size;
+    std::map<int, cl::NDRange> update_bt_local_size;
 
     // values used to control operation
     size_t x_min;

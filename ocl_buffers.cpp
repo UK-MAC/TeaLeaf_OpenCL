@@ -24,13 +24,13 @@ void CloverChunk::initBuffers
         }
 
     #define BUF1DX_ALLOC(name, x_e)     \
-        BUF_ALLOC(name, (x_max+4+x_e) * sizeof(double))
+        BUF_ALLOC(name, (x_max+2*halo_depth+x_e) * sizeof(double))
 
     #define BUF1DY_ALLOC(name, y_e)     \
-        BUF_ALLOC(name, (y_max+4+y_e) * sizeof(double))
+        BUF_ALLOC(name, (y_max+2*halo_depth+y_e) * sizeof(double))
 
     #define BUF2D_ALLOC(name, x_e, y_e) \
-        BUF_ALLOC(name, (x_max+4+x_e) * (y_max+4+y_e) * sizeof(double))
+        BUF_ALLOC(name, (x_max+2*halo_depth+x_e) * (y_max+2*halo_depth+y_e) * sizeof(double))
 
     BUF2D_ALLOC(density, 0, 0);
     BUF2D_ALLOC(energy0, 0, 0);
@@ -78,8 +78,8 @@ void CloverChunk::initBuffers
     BUF_ALLOC(PdV_reduce_buf, 1.5*((sizeof(int)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
 
     // set initial (ideal) size for buffers and increment untl it hits alignment
-    lr_mpi_buf_sz = sizeof(double)*(y_max + 5);
-    bt_mpi_buf_sz = sizeof(double)*(x_max + 5);
+    lr_mpi_buf_sz = sizeof(double)*(y_max + 2*halo_depth);
+    bt_mpi_buf_sz = sizeof(double)*(x_max + 2*halo_depth);
 
     // enough for 1 for each array - overkill, but not that much extra space
     BUF_ALLOC(left_buffer, NUM_BUFFERED_FIELDS*2*lr_mpi_buf_sz);

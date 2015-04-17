@@ -343,10 +343,10 @@ void CloverChunk::initSizes
     }
 
     // create the local sizes, dividing the last possible dimension if needs be
-    update_lr_local_size[0] = cl::NDRange(1, local_column_size);
-    update_lr_local_size[1] = cl::NDRange(2, local_column_size);
-    update_bt_local_size[0] = cl::NDRange(local_row_size, 1);
-    update_bt_local_size[1] = cl::NDRange(local_row_size, 2);
+    update_lr_local_size[1] = cl::NDRange(1, local_column_size);
+    update_lr_local_size[2] = cl::NDRange(2, local_column_size);
+    update_bt_local_size[1] = cl::NDRange(local_row_size, 1);
+    update_bt_local_size[2] = cl::NDRange(local_row_size, 2);
 
     // start off doing minimum amount of work
     size_t global_bt_update_size = x_max + 4;
@@ -359,21 +359,10 @@ void CloverChunk::initSizes
         global_lr_update_size++;
 
     // create ndranges
-    update_lr_global_size[0] = cl::NDRange(1, global_lr_update_size);
-    update_lr_global_size[1] = cl::NDRange(2, global_lr_update_size);
-    update_bt_global_size[0] = cl::NDRange(global_bt_update_size, 1);
-    update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 2);
-
-    for (int depth = 0; depth < 2; depth++)
-    {
-        fprintf(DBGOUT, "Depth %d:\n", depth + 1);
-        fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu]\n",
-            update_lr_global_size[depth][0], update_lr_global_size[depth][1],
-            update_lr_local_size[depth][0], update_lr_local_size[depth][1]);
-        fprintf(DBGOUT, "Bottom/top update halo size: [%zu %zu] split by [%zu %zu]\n",
-            update_bt_global_size[depth][0], update_bt_global_size[depth][1],
-            update_bt_local_size[depth][0], update_bt_local_size[depth][1]);
-    }
+    update_lr_global_size[1] = cl::NDRange(1, global_lr_update_size);
+    update_lr_global_size[2] = cl::NDRange(2, global_lr_update_size);
+    update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
+    update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
     size_t global_bt_pack_size = x_max + 2*halo_depth;
     size_t global_lr_pack_size = y_max + 2*halo_depth;
@@ -384,8 +373,26 @@ void CloverChunk::initSizes
     while (global_lr_pack_size % local_column_size)
         global_lr_pack_size++;
 
-    pack_big_bt_size = cl::NDRange(global_bt_pack_size, halo_depth);
-    pack_big_lr_size = cl::NDRange(halo_depth, global_lr_pack_size);
+    // use same local size as depth 1
+    update_lr_global_size[halo_depth] = cl::NDRange(1, global_lr_pack_size);
+    update_lr_local_size[halo_depth] = update_lr_local_size[1];
+    update_bt_global_size[halo_depth] = cl::NDRange(global_bt_pack_size, 1);
+    update_bt_local_size[halo_depth] = update_bt_local_size[1];
+
+    //for (int depth = 0; depth < 2; depth++)
+    std::map<int, cl::NDRange>::iterator typedef irangeit;
+    for (irangeit key = update_lr_global_size.begin();
+        key != update_lr_global_size.end(); key++)
+    {
+        int depth = key->first;
+        fprintf(DBGOUT, "Depth %d:\n", depth);
+        fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu]\n",
+            update_lr_global_size[depth][0], update_lr_global_size[depth][1],
+            update_lr_local_size[depth][0], update_lr_local_size[depth][1]);
+        fprintf(DBGOUT, "Bottom/top update halo size: [%zu %zu] split by [%zu %zu]\n",
+            update_bt_global_size[depth][0], update_bt_global_size[depth][1],
+            update_bt_local_size[depth][0], update_bt_local_size[depth][1]);
+    }
 
     fprintf(DBGOUT, "Update halo parameters calculated\n");
 }

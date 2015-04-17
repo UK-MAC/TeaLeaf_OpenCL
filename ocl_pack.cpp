@@ -105,14 +105,14 @@ void CloverChunk::packUnpackAllBuffers
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
         side_size = lr_mpi_buf_sz;
-        pack_global = update_lr_global_size[depth-1];
-        pack_local = update_lr_local_size[depth-1];
+        pack_global = update_lr_global_size[depth];
+        pack_local = update_lr_local_size[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
         side_size = bt_mpi_buf_sz;
-        pack_global = update_bt_global_size[depth-1];
-        pack_local = update_bt_local_size[depth-1];
+        pack_global = update_bt_global_size[depth];
+        pack_local = update_bt_local_size[depth];
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);

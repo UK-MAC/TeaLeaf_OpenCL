@@ -221,7 +221,7 @@ SUBROUTINE read_input()
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'
       CASE('halo_depth')
-        max_iters = parse_getival(parse_getword(.TRUE.))
+        halo_depth = parse_getival(parse_getword(.TRUE.))
       CASE('tl_max_iters')
         max_iters = parse_getival(parse_getword(.TRUE.))
       CASE('tl_eps')
