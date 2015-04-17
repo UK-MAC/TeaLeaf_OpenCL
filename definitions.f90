@@ -182,6 +182,8 @@ MODULE definitions_module
 
   END TYPE chunk_type
 
+  ! depth of halo for matrix powers
+  integer :: halo_depth
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks

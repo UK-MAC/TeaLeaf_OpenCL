@@ -232,6 +232,7 @@ SUBROUTINE tea_exchange(fields,depth)
     INTEGER      :: left_right_offset(NUM_FIELDS),bottom_top_offset(NUM_FIELDS)
     INTEGER      :: end_pack_index_left_right, end_pack_index_bottom_top,field
     INTEGER      :: message_count_lr, message_count_ud
+    INTEGER      :: exchange_size_lr, exchange_size_ud
     INTEGER, dimension(4)                 :: request_lr, request_ud
     INTEGER, dimension(MPI_STATUS_SIZE,4) :: status_lr, status_ud
     LOGICAL :: test_complete
@@ -241,8 +242,18 @@ SUBROUTINE tea_exchange(fields,depth)
 
     IF (ALL(chunks(chunk)%chunk_neighbours .eq. external_face)) return
 
-    request_lr=0
-    message_count_lr=0
+    if (depth .le. 2) then
+      ! big exchange
+      exchange_size_lr = halo_depth*(chunks(chunk)%field%y_max+2*halo_depth)
+      exchange_size_ud = halo_depth*(chunks(chunk)%field%x_max+2*halo_depth)
+    else
+      ! normal exchange
+      exchange_size_lr = depth*lr_pack_buffer_size
+      exchange_size_ud = depth*bt_pack_buffer_size
+    endif
+
+    request_lr = 0
+    message_count_lr = 0
     request_ud = 0
     message_count_ud = 0
 
@@ -254,8 +265,8 @@ SUBROUTINE tea_exchange(fields,depth)
       IF(fields(field).EQ.1) THEN
         left_right_offset(field)=end_pack_index_left_right
         bottom_top_offset(field)=end_pack_index_bottom_top
-        end_pack_index_left_right=end_pack_index_left_right + depth*lr_pack_buffer_size
-        end_pack_index_bottom_top=end_pack_index_bottom_top + depth*bt_pack_buffer_size
+        end_pack_index_left_right=end_pack_index_left_right + exchange_size_lr
+        end_pack_index_bottom_top=end_pack_index_bottom_top + exchange_size_ud
       ENDIF
     ENDDO
 

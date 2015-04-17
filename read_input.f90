@@ -86,6 +86,8 @@ SUBROUTINE read_input()
   tl_use_jacobi = .TRUE.
   verbose_on = .FALSE.
 
+  halo_depth=2
+
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
 
@@ -218,6 +220,8 @@ SUBROUTINE read_input()
       CASE('profiler_on')
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'
+      CASE('halo_depth')
+        max_iters = parse_getival(parse_getword(.TRUE.))
       CASE('tl_max_iters')
         max_iters = parse_getival(parse_getword(.TRUE.))
       CASE('tl_eps')
