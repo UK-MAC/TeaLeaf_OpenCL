@@ -240,9 +240,9 @@ private:
 
     // sizes for launching update halo kernels - l/r and u/d updates
     cl::NDRange update_lr_global_size[2];
-    cl::NDRange update_ud_global_size[2];
+    cl::NDRange update_bt_global_size[2];
     cl::NDRange update_lr_local_size[2];
-    cl::NDRange update_ud_local_size[2];
+    cl::NDRange update_bt_local_size[2];
 
     // values used to control operation
     size_t x_min;
