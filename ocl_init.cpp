@@ -12,12 +12,10 @@ CloverChunk chunk;
 
 extern "C" void initialise_ocl_
 (int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max,
- int* profiler_on)
+ int* in_y_min, int* in_y_max)
 {
     chunk = CloverChunk(in_x_min, in_x_max,
-                        in_y_min, in_y_max,
-                        profiler_on);
+                        in_y_min, in_y_max);
 }
 
 // default ctor
@@ -31,13 +29,11 @@ extern "C" void timer_c_(double*);
 
 CloverChunk::CloverChunk
 (int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max,
- int* in_profiler_on)
+ int* in_y_min, int* in_y_max)
 :x_min(*in_x_min),
  x_max(*in_x_max),
  y_min(*in_y_min),
- y_max(*in_y_max),
- profiler_on(*in_profiler_on)
+ y_max(*in_y_max)
 {
 #ifdef OCL_VERBOSE
     DBGOUT = stdout;
@@ -146,6 +142,8 @@ void CloverChunk::initOcl
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
+    profiler_on = paramEnabled(input, "profiler_on");
+
     std::string desired_vendor = readString(input, "opencl_vendor");
 
     int preferred_device = readInt(input, "opencl_device");
@@ -154,6 +152,19 @@ void CloverChunk::initOcl
 
     std::string type_name = readString(input, "opencl_type");
     desired_type = typeMatch(type_name);
+
+    int file_halo_depth = readInt(input, "halo_depth");
+    file_halo_depth = (file_halo_depth < 0) ? 2 : file_halo_depth;
+
+    if (file_halo_depth < 2 && file_halo_depth >= 0)
+    {
+        fprintf(stderr, "Halo depth in file set too low - defaulting to 2\n");
+        halo_depth = 2;
+    }
+    else
+    {
+        halo_depth = file_halo_depth;
+    }
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");

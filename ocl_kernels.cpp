@@ -47,6 +47,9 @@ void CloverChunk::initProgram
     // device type in the form "-D..."
     options << device_type_prepro;
 
+    // depth of halo for exchanges
+    options << "-DHALO_DEPTH=" << halo_depth << " ";
+
     if (!rank)
     {
         fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());

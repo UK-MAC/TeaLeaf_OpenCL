@@ -98,7 +98,7 @@ int typeMatch
     {
         return CL_DEVICE_TYPE_ALL;
     }
-    else if (type_name.find("no_setting") != std::string::npos)
+    else if (type_name.size() == 0)
     {
         return CL_DEVICE_TYPE_ALL;
     }

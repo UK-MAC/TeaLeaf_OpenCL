@@ -238,6 +238,9 @@ private:
     // number of cells reduced
     size_t reduced_cells;
 
+    // halo size
+    size_t halo_depth;
+
     // sizes for launching update halo kernels - l/r and u/d updates
     cl::NDRange update_lr_global_size[2];
     cl::NDRange update_ud_global_size[2];
@@ -259,7 +262,7 @@ private:
     int desired_type;
 
     // if profiling
-    int profiler_on;
+    bool profiler_on;
     // for recording times if profiling is on
     std::map<std::string, double> kernel_times;
     // recording number of times each kernel was called
@@ -371,8 +374,7 @@ public:
     (void);
     CloverChunk
     (int* in_x_min, int* in_x_max,
-     int* in_y_min, int* in_y_max,
-     int* in_profiler_on);
+     int* in_y_min, int* in_y_max);
     // dtor
     ~CloverChunk
     (void);

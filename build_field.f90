@@ -26,7 +26,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
 
    IMPLICIT NONE
 
-   INTEGER :: chunk,x_cells,y_cells,j,k,profiler_int
+   INTEGER :: chunk,x_cells,y_cells,j,k
 
    chunks(chunk)%field%x_min=1
    chunks(chunk)%field%y_min=1
@@ -36,17 +36,10 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
 
    IF (use_opencl_kernels .EQV. .TRUE.) THEN
 
-     IF(profiler_on) THEN
-       profiler_int=1
-     ELSE
-       profiler_int=0
-     ENDIF
-
      call initialise_ocl(chunks(chunk)%field%x_min, &
                          chunks(chunk)%field%x_max, &
                          chunks(chunk)%field%y_min, &
-                         chunks(chunk)%field%y_max, &
-                         profiler_int)
+                         chunks(chunk)%field%y_max)
 
    ELSE
 
