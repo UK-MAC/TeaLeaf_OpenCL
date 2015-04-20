@@ -246,6 +246,8 @@ private:
     std::map<int, cl::NDRange> update_bt_global_size;
     std::map<int, cl::NDRange> update_lr_local_size;
     std::map<int, cl::NDRange> update_bt_local_size;
+    std::map<int, cl::NDRange> update_lr_offset;
+    std::map<int, cl::NDRange> update_bt_offset;
 
     // values used to control operation
     size_t x_min;

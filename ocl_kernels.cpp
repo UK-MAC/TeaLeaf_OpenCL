@@ -133,7 +133,7 @@ CloverChunk::launch_specs_t CloverChunk::findPaddingSize
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((x_min + 1) + (hmin), (y_min + 1) + (vmin));
+    cur_specs.offset = cl::NDRange((x_min + halo_depth) + (hmin), (y_min + halo_depth) + (vmin));
     return cur_specs;
 }
 
@@ -386,6 +386,10 @@ void CloverChunk::initSizes
         key != update_lr_global_size.end(); key++)
     {
         int depth = key->first;
+
+        update_lr_offset[depth] = cl::NDRange(halo_depth - depth, halo_depth - depth + 1);
+        update_bt_offset[depth] = cl::NDRange(halo_depth - depth + 1, halo_depth - depth);
+
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu]\n",
             update_lr_global_size[depth][0], update_lr_global_size[depth][1],

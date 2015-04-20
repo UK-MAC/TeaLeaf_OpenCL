@@ -34,7 +34,7 @@ int depth)
         update_halo_##face##_device.setArg(8, cur_array); \
         enqueueKernel(update_halo_##face##_device, \
                       __LINE__, __FILE__,  \
-                      cl::NullRange,   \
+                      update_##dir##_offset[depth], \
                       update_##dir##_global_size[depth], \
                       update_##dir##_local_size[depth]); \
     }
