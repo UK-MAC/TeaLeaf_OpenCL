@@ -53,17 +53,11 @@ __kernel void update_halo_left
  int grid_type, int depth, 
  __global double * __restrict const cur_array)
 {
-    // offset by 1 if it is anything but a CELL grid
-    int l_offset = (grid_type != CELL_DATA) ? 1 : 0;
-
     __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
     {
-        // first in row
-        const int row_begin = row * (x_max + 4 + x_extra);
-
-        cur_array[row_begin + (1 - column)] = x_invert * cur_array[row_begin + 2 + column + l_offset];
+        cur_array[THARR2D(1 - 2*column, 0, x_extra)] = cur_array[THARR2D((x_min + 1) + x_extra, 0, x_extra)];
     }
 }
 
@@ -74,16 +68,11 @@ __kernel void update_halo_right
  int grid_type, int depth, 
  __global double * __restrict const cur_array)
 {
-    // offset source by -1 if its a y face
-    int y_f_offset = (y_face) ? 1 : 0;
-
     __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
     {
-        const int row_begin = row * (x_max + 4 + x_extra);
-
-        cur_array[row_begin + x_max + 2 + x_extra + column] = x_invert * cur_array[row_begin + x_max + 1 - (column + y_f_offset)];
+        cur_array[THARR2D((x_max + 1) + x_extra + 1, 0, x_extra)] = cur_array[THARR2D((x_max + 1) - 2*column, 0, x_extra)];
     }
 }
 
