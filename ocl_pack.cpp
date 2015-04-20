@@ -98,7 +98,7 @@ void CloverChunk::packUnpackAllBuffers
     // size of this buffer
     size_t side_size = 0;
     // reuse the halo update kernels sizes to launch packing kernels
-    cl::NDRange pack_global, pack_local;
+    cl::NDRange pack_global, pack_local, pack_offset;
 
     switch (face)
     {
@@ -107,12 +107,14 @@ void CloverChunk::packUnpackAllBuffers
         side_size = lr_mpi_buf_sz;
         pack_global = update_lr_global_size[depth];
         pack_local = update_lr_local_size[depth];
+        pack_offset = update_lr_offset[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
         side_size = bt_mpi_buf_sz;
         pack_global = update_bt_global_size[depth];
         pack_local = update_bt_local_size[depth];
+        pack_offset = update_bt_offset[depth];
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
@@ -182,7 +184,7 @@ void CloverChunk::packUnpackAllBuffers
             pack_kernel->setArg(5, offsets[ii]);
 
             enqueueKernel(*pack_kernel, __LINE__, __FILE__,
-                          cl::NullRange,
+                          pack_offset,
                           pack_global,
                           pack_local);
         }

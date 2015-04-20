@@ -22,9 +22,9 @@
 #define THARR2D(x_offset, y_offset, big_row)        \
     (                                               \
       column                      /* horizontal  */ \
-    + row*(x_max + 4)             /* vertical    */ \
+    + row*(x_max + 2*HALO_DEPTH)             /* vertical    */ \
     + (x_offset)                  /* horz offset */ \
-    + (y_offset)*(x_max + 4)      /* vert offset */ \
+    + (y_offset)*(x_max + 2*HALO_DEPTH)      /* vert offset */ \
     + (big_row)*(row + (y_offset))/* big row   */   \
     )
 
