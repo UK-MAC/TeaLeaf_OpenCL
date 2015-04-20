@@ -358,7 +358,7 @@ void CloverChunk::initSizes
     while (global_lr_update_size % local_column_size)
         global_lr_update_size++;
 
-    // create ndranges
+    // create ndranges for depth 1 and 2
     update_lr_global_size[1] = cl::NDRange(1, global_lr_update_size);
     update_lr_global_size[2] = cl::NDRange(2, global_lr_update_size);
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
@@ -373,10 +373,11 @@ void CloverChunk::initSizes
     while (global_lr_pack_size % local_column_size)
         global_lr_pack_size++;
 
+    update_lr_global_size[halo_depth] = cl::NDRange(halo_depth, global_lr_pack_size);
+    update_bt_global_size[halo_depth] = cl::NDRange(global_bt_pack_size, halo_depth);
+
     // use same local size as depth 1
-    update_lr_global_size[halo_depth] = cl::NDRange(1, global_lr_pack_size);
     update_lr_local_size[halo_depth] = update_lr_local_size[1];
-    update_bt_global_size[halo_depth] = cl::NDRange(global_bt_pack_size, 1);
     update_bt_local_size[halo_depth] = update_bt_local_size[1];
 
     //for (int depth = 0; depth < 2; depth++)
