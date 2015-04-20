@@ -47,7 +47,7 @@ int depth)
 
 void CloverChunk::update_halo_kernel
 (const int* fields,
-const int depth,
+int depth,
 const int* chunk_neighbours)
 {
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
@@ -55,6 +55,8 @@ const int* chunk_neighbours)
     {                                                       \
         update_array(arr, type, chunk_neighbours, depth);   \
     }
+
+    if (depth > 2) return;
 
     HALO_UPDATE_RESIDENT(density, CELL);
     HALO_UPDATE_RESIDENT(energy0, CELL);
