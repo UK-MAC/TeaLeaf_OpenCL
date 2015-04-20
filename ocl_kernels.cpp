@@ -295,7 +295,6 @@ void CloverChunk::initSizes
         (((x_max+2*halo_depth)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+2*halo_depth)%LOCAL_X)));
     const size_t glob_y = y_max+2*halo_depth +
         (((y_max+2*halo_depth)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+2*halo_depth)%LOCAL_Y)));
-    total_cells = glob_x*glob_y;
 
     fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
@@ -422,18 +421,14 @@ void CloverChunk::initArgs
     initialise_chunk_first_device.setArg(5, vertexdx);
     initialise_chunk_first_device.setArg(6, vertexy);
     initialise_chunk_first_device.setArg(7, vertexdy);
+    initialise_chunk_first_device.setArg(8, cellx);
+    initialise_chunk_first_device.setArg(9, celldx);
+    initialise_chunk_first_device.setArg(10, celly);
+    initialise_chunk_first_device.setArg(11, celldy);
 
-    initialise_chunk_second_device.setArg(4, vertexx);
-    initialise_chunk_second_device.setArg(5, vertexdx);
-    initialise_chunk_second_device.setArg(6, vertexy);
-    initialise_chunk_second_device.setArg(7, vertexdy);
-    initialise_chunk_second_device.setArg(8, cellx);
-    initialise_chunk_second_device.setArg(9, celldx);
-    initialise_chunk_second_device.setArg(10, celly);
-    initialise_chunk_second_device.setArg(11, celldy);
-    initialise_chunk_second_device.setArg(12, volume);
-    initialise_chunk_second_device.setArg(13, xarea);
-    initialise_chunk_second_device.setArg(14, yarea);
+    initialise_chunk_second_device.setArg(4, volume);
+    initialise_chunk_second_device.setArg(5, xarea);
+    initialise_chunk_second_device.setArg(6, yarea);
 
     // set field
     set_field_device.setArg(0, energy0);

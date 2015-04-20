@@ -9,23 +9,18 @@ extern "C" void initialise_chunk_kernel_ocl_
 void CloverChunk::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)
 {
-    #define ENQUEUE(knl)                                    \
-        CloverChunk::enqueueKernel(knl, __LINE__, __FILE__, \
-                                   cl::NullRange,           \
-                                   global_size,             \
-                                   local_group_size);
-
+    launch_specs["initialise_chunk_first_device"].offset = cl::NDRange(0, 0);
     initialise_chunk_first_device.setArg(0, d_xmin);
     initialise_chunk_first_device.setArg(1, d_ymin);
     initialise_chunk_first_device.setArg(2, d_dx);
     initialise_chunk_first_device.setArg(3, d_dy);
-    ENQUEUE(initialise_chunk_first_device)
+    ENQUEUE_OFFSET(initialise_chunk_first_device)
 
     initialise_chunk_second_device.setArg(0, d_xmin);
     initialise_chunk_second_device.setArg(1, d_ymin);
     initialise_chunk_second_device.setArg(2, d_dx);
     initialise_chunk_second_device.setArg(3, d_dy);
-    ENQUEUE(initialise_chunk_second_device)
+    ENQUEUE_OFFSET(initialise_chunk_second_device)
     queue.finish();
 }
 

@@ -233,8 +233,6 @@ private:
 
     // global size for kernels
     cl::NDRange global_size;
-    // total number of cells
-    size_t total_cells;
     // number of cells reduced
     size_t reduced_cells;
 
