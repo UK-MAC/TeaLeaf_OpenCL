@@ -198,27 +198,30 @@ SUBROUTINE tea_allocate_buffers(chunk)
 
   INTEGER      :: chunk
 
-  lr_pack_buffer_size = (chunks(chunk)%field%y_max+5)
-  bt_pack_buffer_size = (chunks(chunk)%field%x_max+5)
+  INTEGER      :: bt_size, lr_size
+  INTEGER,parameter :: num_buffered=6
+
+  bt_size = num_buffered*(chunks(chunk)%field%x_max + 2*max(2, halo_depth))
+  lr_size = num_buffered*(chunks(chunk)%field%y_max + 2*max(2, halo_depth))
 
   ! Unallocated buffers for external boundaries caused issues on some systems so they are now
   !  all allocated
   IF(parallel%task.EQ.chunks(chunk)%task)THEN
     !IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      ALLOCATE(chunks(chunk)%left_snd_buffer(6*(chunks(chunk)%field%y_max+5)))
-      ALLOCATE(chunks(chunk)%left_rcv_buffer(6*(chunks(chunk)%field%y_max+5)))
+      ALLOCATE(chunks(chunk)%left_snd_buffer(lr_size))
+      ALLOCATE(chunks(chunk)%left_rcv_buffer(lr_size))
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      ALLOCATE(chunks(chunk)%right_snd_buffer(6*(chunks(chunk)%field%y_max+5)))
-      ALLOCATE(chunks(chunk)%right_rcv_buffer(6*(chunks(chunk)%field%y_max+5)))
+      ALLOCATE(chunks(chunk)%right_snd_buffer(lr_size))
+      ALLOCATE(chunks(chunk)%right_rcv_buffer(lr_size))
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      ALLOCATE(chunks(chunk)%bottom_snd_buffer(6*(chunks(chunk)%field%x_max+5)))
-      ALLOCATE(chunks(chunk)%bottom_rcv_buffer(6*(chunks(chunk)%field%x_max+5)))
+      ALLOCATE(chunks(chunk)%bottom_snd_buffer(bt_size))
+      ALLOCATE(chunks(chunk)%bottom_rcv_buffer(bt_size))
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      ALLOCATE(chunks(chunk)%top_snd_buffer(6*(chunks(chunk)%field%x_max+5)))
-      ALLOCATE(chunks(chunk)%top_rcv_buffer(6*(chunks(chunk)%field%x_max+5)))
+      ALLOCATE(chunks(chunk)%top_snd_buffer(bt_size))
+      ALLOCATE(chunks(chunk)%top_rcv_buffer(bt_size))
     !ENDIF
   ENDIF
 
@@ -242,15 +245,8 @@ SUBROUTINE tea_exchange(fields,depth)
 
     IF (ALL(chunks(chunk)%chunk_neighbours .eq. external_face)) return
 
-    if (depth .le. 2) then
-      ! big exchange
-      exchange_size_lr = halo_depth*(chunks(chunk)%field%y_max+2*halo_depth)
-      exchange_size_ud = halo_depth*(chunks(chunk)%field%x_max+2*halo_depth)
-    else
-      ! normal exchange
-      exchange_size_lr = depth*lr_pack_buffer_size
-      exchange_size_ud = depth*bt_pack_buffer_size
-    endif
+    exchange_size_lr = depth*(chunks(chunk)%field%y_max+2*depth)
+    exchange_size_ud = depth*(chunks(chunk)%field%x_max+2*depth)
 
     request_lr = 0
     message_count_lr = 0
