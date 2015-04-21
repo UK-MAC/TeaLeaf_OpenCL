@@ -153,9 +153,9 @@ void CloverChunk::calcrxry
     {
         // celldx/celldy never change, but done for consistency with fortran
         queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*x_min, sizeof(double), &dx);
+            sizeof(double)*(1 + halo_depth), sizeof(double), &dx);
         queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*y_min, sizeof(double), &dy);
+            sizeof(double)*(1 + halo_depth), sizeof(double), &dy);
     }
     catch (cl::Error e)
     {
