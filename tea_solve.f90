@@ -199,6 +199,8 @@ SUBROUTINE tea_leaf()
         fields(FIELD_P) = 1
         IF (profiler_on) halo_time=timer()
         CALL update_halo(fields,1)
+        fields=0
+        fields(FIELD_P) = 1
         !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
         IF (profiler_on) init_time=init_time+(timer()-halo_time)
       ELSEIF (tl_use_jacobi) THEN
