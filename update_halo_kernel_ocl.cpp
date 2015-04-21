@@ -56,8 +56,6 @@ const int* chunk_neighbours)
         update_array(arr, type, chunk_neighbours, depth);   \
     }
 
-    if (depth > 2) return;
-
     HALO_UPDATE_RESIDENT(density, CELL);
     HALO_UPDATE_RESIDENT(energy0, CELL);
     HALO_UPDATE_RESIDENT(energy1, CELL);

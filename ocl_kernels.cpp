@@ -57,7 +57,7 @@ void CloverChunk::initProgram
         fflush(stdout);
     }
 
-    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, 0, 3, 0, 3);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -2, 3, -2, 3);
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device, -2, 2, -2, 2);
@@ -133,7 +133,7 @@ CloverChunk::launch_specs_t CloverChunk::findPaddingSize
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((x_min + halo_depth) + (hmin), (y_min + halo_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((halo_depth) + (hmin), (halo_depth) + (vmin));
     return cur_specs;
 }
 

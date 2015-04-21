@@ -16,35 +16,32 @@ __kernel void initialise_chunk_first
 {
     __kernel_indexes;
 
-    const int offset_column = column - get_global_offset(0);
-    const int offset_row = row - get_global_offset(1);
-
     // fill out x arrays
-    if (offset_row == 0 && column <= (x_max + HALO_DEPTH) + 3)
+    if (row == 0 && column <= (x_max + HALO_DEPTH) + 3)
     {
-        vertexx[column] = d_xmin + d_dx*(double)((((int)offset_column) - 1) - x_min);
+        vertexx[column] = d_xmin + d_dx*(double)((((int)column) - 1) - HALO_DEPTH + 1);
         vertexdx[column] = d_dx;
     }
 
     // fill out y arrays
-    if (offset_column == 0 && row <= (y_max + HALO_DEPTH) + 3)
+    if (column == 0 && row <= (y_max + HALO_DEPTH) + 3)
     {
-        vertexy[row] = d_ymin + d_dy*(double)((((int)offset_row) - 1) - y_min);
+        vertexy[row] = d_ymin + d_dy*(double)((((int)row) - 1) - HALO_DEPTH + 1);
         vertexdy[row] = d_dy;
     }
 
-    const double vertexx_plusone = d_xmin + d_dx*(double)((((int)offset_column)) - x_min);
-    const double vertexy_plusone = d_ymin + d_dy*(double)((((int)offset_row)) - y_min);
+    const double vertexx_plusone = d_xmin + d_dx*(double)((((int)column)) - HALO_DEPTH + 1);
+    const double vertexy_plusone = d_ymin + d_dy*(double)((((int)row)) - HALO_DEPTH + 1);
 
     //fill x arrays
-    if (offset_row == 0 && column <= (x_max + HALO_DEPTH) + 2)
+    if (row == 0 && column <= (x_max + HALO_DEPTH) + 2)
     {
         cellx[column] = 0.5 * (vertexx[column] + vertexx_plusone);
         celldx[column] = d_dx;
     }
 
     //fill y arrays
-    if (offset_column == 0 && row <= (y_max + HALO_DEPTH) + 2)
+    if (column == 0 && row <= (y_max + HALO_DEPTH) + 2)
     {
         celly[row] = 0.5 * (vertexy[row] + vertexy_plusone);
         celldy[row] = d_dy;
