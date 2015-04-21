@@ -378,8 +378,8 @@ void CloverChunk::initSizes
     update_bt_global_size[halo_depth] = cl::NDRange(global_bt_pack_size, halo_depth);
 
     // use same local size as depth 1
-    update_lr_local_size[halo_depth] = update_lr_local_size[1];
-    update_bt_local_size[halo_depth] = update_bt_local_size[1];
+    update_lr_local_size[halo_depth] = update_lr_local_size[2];
+    update_bt_local_size[halo_depth] = update_bt_local_size[2];
 
     //for (int depth = 0; depth < 2; depth++)
     std::map<int, cl::NDRange>::iterator typedef irangeit;
