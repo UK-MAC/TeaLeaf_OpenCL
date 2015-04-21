@@ -9,9 +9,6 @@ __kernel void update_halo_bottom
 {
     __kernel_indexes;
 
-    // offset by 1 if it is anything but a CELL grid
-    int b_offset = (grid_type != CELL_DATA) ? 1 : 0;
-
     if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
         cur_array[THARR2D(0, 0, x_extra)] = y_invert * cur_array[THARR2D(0, (HALO_DEPTH - row)*2, x_extra)];
@@ -26,9 +23,6 @@ __kernel void update_halo_top
  __global double * __restrict const cur_array)
 {
     __kernel_indexes;
-
-    // if x face data, offset source/dest by - 1
-    int x_f_offset = (x_face) ? 1 : 0;
 
     if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
