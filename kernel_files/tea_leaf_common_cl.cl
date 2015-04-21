@@ -89,11 +89,11 @@ __kernel void tea_leaf_init_common
          *  are set to 0 outside of the bounds of the mesh anyway, but this is
          *  more consistent and possibly prevent future bugs
          */
-        if (row < (y_min + 1))
+        if (row < (y_min + HALO_DEPTH))
         {
             dens_up=0;
         }
-        if (column < (x_min + 1))
+        if (column < (x_min + HALO_DEPTH))
         {
             dens_left=0;
         }
@@ -104,7 +104,7 @@ __kernel void tea_leaf_init_common
         Ky[THARR2D(0, 0, 0)] *= ry;
 
         // only inside bounds of mesh
-        if (row <= (y_max + HALO_DEPTH + 1) && column <= (x_max + HALO_DEPTH + 1))
+        if (row <= (y_max + HALO_DEPTH) && column <= (x_max + HALO_DEPTH))
         {
             u0[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
             u[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];

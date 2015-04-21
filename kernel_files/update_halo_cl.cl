@@ -12,15 +12,9 @@ __kernel void update_halo_bottom
     // offset by 1 if it is anything but a CELL grid
     int b_offset = (grid_type != CELL_DATA) ? 1 : 0;
 
-    if (column >= 2 - depth && column <= (x_max + 1) + x_extra + depth)
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
-        const int offset = 2 + b_offset;
-
-        /*
-         * 1 - 2 * row means that row 0 services row 1, and vice versa
-         * this means that it can be dispatched with 'depth' rows only
-         */
-        cur_array[THARR2D(0, 1 - (2 * row), x_extra)] = y_invert * cur_array[THARR2D(0, offset, x_extra)];
+        cur_array[THARR2D(0, 0, x_extra)] = y_invert * cur_array[THARR2D(0, (HALO_DEPTH - row)*2, x_extra)];
     }
 }
 
@@ -36,11 +30,9 @@ __kernel void update_halo_top
     // if x face data, offset source/dest by - 1
     int x_f_offset = (x_face) ? 1 : 0;
 
-    if (column >= 2 - depth && column <= (x_max + 1) + x_extra + depth)
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
-        const int offset = (- row) * 2 - 1 - x_f_offset;
-
-        cur_array[THARR2D(0, y_extra + y_max + 2, x_extra)] = y_invert * cur_array[THARR2D(0, y_max + 2 + offset, x_extra)];
+        cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH, x_extra)] = cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH - row*2, x_extra)];
     }
 }
 
@@ -68,10 +60,9 @@ __kernel void update_halo_right
 {
     __kernel_indexes;
 
-    if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
+    if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH) + y_extra + depth)
     {
-        //cur_array[THARR2D((x_max + 1) + x_extra + 1, 0, x_extra)] = cur_array[THARR2D((x_max + 1) - 2*column, 0, x_extra)];
-        cur_array[THARR2D(x_max + x_extra, 0, x_extra)] = cur_array[THARR2D(x_max + x_extra - (HALO_DEPTH-column), 0, x_extra)];
+        cur_array[THARR2D(x_max + x_extra + HALO_DEPTH, 0, x_extra)] = cur_array[THARR2D(x_max + x_extra + HALO_DEPTH - column*2, 0, x_extra)];
     }
 }
 
