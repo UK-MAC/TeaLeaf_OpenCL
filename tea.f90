@@ -225,6 +225,16 @@ SUBROUTINE tea_allocate_buffers(chunk)
     !ENDIF
   ENDIF
 
+  chunks(chunk)%left_snd_buffer = 0
+  chunks(chunk)%right_snd_buffer = 0
+  chunks(chunk)%bottom_snd_buffer = 0
+  chunks(chunk)%top_snd_buffer = 0
+
+  chunks(chunk)%left_rcv_buffer = 0
+  chunks(chunk)%right_rcv_buffer = 0
+  chunks(chunk)%bottom_rcv_buffer = 0
+  chunks(chunk)%top_rcv_buffer = 0
+
 END SUBROUTINE tea_allocate_buffers
 
 SUBROUTINE tea_exchange(fields,depth)
