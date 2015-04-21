@@ -11,7 +11,7 @@ __kernel void update_halo_bottom
 
     if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
-        cur_array[THARR2D(0, 0, x_extra)] = y_invert * cur_array[THARR2D(0, (HALO_DEPTH - row)*2, x_extra)];
+        cur_array[THARR2D(0, 0, x_extra)] = y_invert * cur_array[THARR2D(0, (HALO_DEPTH - row)*2 - 1, x_extra)];
     }
 }
 
@@ -26,7 +26,7 @@ __kernel void update_halo_top
 
     if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH) + x_extra + depth)
     {
-        cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH, x_extra)] = cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH - row*2, x_extra)];
+        cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH, x_extra)] = cur_array[THARR2D(0, y_max + y_extra + HALO_DEPTH - row*2 - 1, x_extra)];
     }
 }
 
@@ -41,7 +41,7 @@ __kernel void update_halo_left
 
     if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH) + y_extra + depth)
     {
-        cur_array[THARR2D(0, 0, x_extra)] = cur_array[THARR2D((HALO_DEPTH - column)*2, 0, x_extra)];
+        cur_array[THARR2D(0, 0, x_extra)] = cur_array[THARR2D((HALO_DEPTH - column)*2 - 1, 0, x_extra)];
     }
 }
 
@@ -56,7 +56,7 @@ __kernel void update_halo_right
 
     if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH) + y_extra + depth)
     {
-        cur_array[THARR2D(x_max + x_extra + HALO_DEPTH, 0, x_extra)] = cur_array[THARR2D(x_max + x_extra + HALO_DEPTH - column*2, 0, x_extra)];
+        cur_array[THARR2D(x_max + x_extra + HALO_DEPTH, 0, x_extra)] = cur_array[THARR2D(x_max + x_extra + HALO_DEPTH - column*2 - 1, 0, x_extra)];
     }
 }
 

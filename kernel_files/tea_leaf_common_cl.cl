@@ -91,11 +91,11 @@ __kernel void tea_leaf_init_common
          */
         if (row < (y_min + HALO_DEPTH - 1))
         {
-            dens_up=0;
+            dens_up = 0;
         }
         if (column < (x_min + HALO_DEPTH - 1))
         {
-            dens_left=0;
+            dens_left = 0;
         }
 
         Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);

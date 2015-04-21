@@ -216,11 +216,11 @@ SUBROUTINE tea_leaf()
 
         IF (ch_switch_check .eqv. .false.) THEN
           IF (tl_ch_cg_errswitch) THEN
-              ! either the error has got below tolerance, or it's already going - minimum 20 steps to converge eigenvalues
-              ch_switch_check = (cheby_calc_steps .GT. 0) .OR. (error .LE. tl_ch_cg_epslim) .AND. (n .GE. 20)
+              ! either the ABS(error) has got below tolerance, or it's already going - minimum 20 steps to converge eigenvalues
+              ch_switch_check = (cheby_calc_steps .GT. 0) .OR. (ABS(error) .LE. tl_ch_cg_epslim) .AND. (n .GE. 20)
           ELSE
-              ! enough steps have passed and error < 1, otherwise it's nowhere near converging on eigenvalues
-              ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (error .le. 1.0_8)
+              ! enough steps have passed and ABS(error) < 1, otherwise it's nowhere near converging on eigenvalues
+              ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (ABS(error) .le. 1.0_8)
           ENDIF
         ENDIF
 
