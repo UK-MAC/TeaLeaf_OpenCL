@@ -78,15 +78,15 @@ void CloverChunk::initBuffers
     BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
     BUF_ALLOC(PdV_reduce_buf, 1.5*((sizeof(int)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
 
-    // set initial (ideal) size for buffers and increment untl it hits alignment
-    lr_mpi_buf_sz = sizeof(double)*(y_max + 2*halo_depth);
-    bt_mpi_buf_sz = sizeof(double)*(x_max + 2*halo_depth);
+    // size of one side of mesh, plus one extra on the side for each depth, times the number of halos to be exchanged
+    size_t lr_mpi_buf_sz = sizeof(double)*(y_max + 2*halo_depth)*halo_depth;
+    size_t bt_mpi_buf_sz = sizeof(double)*(x_max + 2*halo_depth)*halo_depth;
 
     // enough for 1 for each array - overkill, but not that much extra space
-    BUF_ALLOC(left_buffer, NUM_BUFFERED_FIELDS*2*lr_mpi_buf_sz);
-    BUF_ALLOC(right_buffer, NUM_BUFFERED_FIELDS*2*lr_mpi_buf_sz);
-    BUF_ALLOC(bottom_buffer, NUM_BUFFERED_FIELDS*2*bt_mpi_buf_sz);
-    BUF_ALLOC(top_buffer, NUM_BUFFERED_FIELDS*2*bt_mpi_buf_sz);
+    BUF_ALLOC(left_buffer, NUM_BUFFERED_FIELDS*lr_mpi_buf_sz);
+    BUF_ALLOC(right_buffer, NUM_BUFFERED_FIELDS*lr_mpi_buf_sz);
+    BUF_ALLOC(bottom_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
+    BUF_ALLOC(top_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
 
     fprintf(DBGOUT, "Buffers allocated\n");
 

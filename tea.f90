@@ -201,8 +201,8 @@ SUBROUTINE tea_allocate_buffers(chunk)
   INTEGER      :: bt_size, lr_size
   INTEGER,parameter :: num_buffered=6
 
-  bt_size = num_buffered*(chunks(chunk)%field%x_max + 2*max(2, halo_depth))
-  lr_size = num_buffered*(chunks(chunk)%field%y_max + 2*max(2, halo_depth))
+  bt_size = num_buffered*(chunks(chunk)%field%x_max + 2*max(2, halo_depth))*halo_depth
+  lr_size = num_buffered*(chunks(chunk)%field%y_max + 2*max(2, halo_depth))*halo_depth
 
   ! Unallocated buffers for external boundaries caused issues on some systems so they are now
   !  all allocated

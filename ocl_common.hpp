@@ -256,9 +256,6 @@ private:
     // mpi rank
     int rank;
 
-    // size of mpi buffers
-    size_t lr_mpi_buf_sz, bt_mpi_buf_sz;
-
     // desired type for opencl
     int desired_type;
 
