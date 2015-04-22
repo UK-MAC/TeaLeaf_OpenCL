@@ -86,6 +86,6 @@ const int g_rect, const int g_circ, const int g_point)
         ENQUEUE_OFFSET(generate_chunk_device);
     }
 
-    ENQUEUE_OFFSET(generate_chunk_init_u0_device);
+    ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 

@@ -91,7 +91,7 @@ private:
 
     cl::Kernel generate_chunk_device;
     cl::Kernel generate_chunk_init_device;
-    cl::Kernel generate_chunk_init_u0_device;
+    cl::Kernel generate_chunk_init_u_device;
 
     cl::Kernel initialise_chunk_first_device;
     cl::Kernel initialise_chunk_second_device;

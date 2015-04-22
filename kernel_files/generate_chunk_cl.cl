@@ -65,16 +65,16 @@ __kernel void generate_chunk
     }
 }
 
-__kernel void generate_chunk_init_u0
+__kernel void generate_chunk_init_u
 (__global const double * density0,
  __global const double * energy0,
- __global       double * u0)
+ __global       double * u)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
-        u0[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)]*density0[THARR2D(0, 0, 0)];
+        u[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)]*density0[THARR2D(0, 0, 0)];
     }
 }
 

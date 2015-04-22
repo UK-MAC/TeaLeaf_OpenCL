@@ -60,7 +60,7 @@ void CloverChunk::initProgram
 
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -2, 2, -2, 2);
-    compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init_u0", generate_chunk_init_u0_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init_u", generate_chunk_init_u_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device, -2, 2, -2, 2);
 
     compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 1, 0, 1);
@@ -441,9 +441,9 @@ void CloverChunk::initArgs
     generate_chunk_init_device.setArg(0, density);
     generate_chunk_init_device.setArg(1, energy0);
 
-    generate_chunk_init_u0_device.setArg(0, density);
-    generate_chunk_init_u0_device.setArg(1, energy0);
-    generate_chunk_init_u0_device.setArg(2, u0);
+    generate_chunk_init_u_device.setArg(0, density);
+    generate_chunk_init_u_device.setArg(1, energy0);
+    generate_chunk_init_u_device.setArg(2, u);
 
     generate_chunk_device.setArg(0, vertexx);
     generate_chunk_device.setArg(1, vertexy);

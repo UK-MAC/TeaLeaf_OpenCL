@@ -104,7 +104,7 @@ __kernel void tea_leaf_init_common
         Ky[THARR2D(0, 0, 0)] *= ry;
 
         // only inside bounds of mesh
-        if (row <= (y_max + HALO_DEPTH) && column <= (x_max + HALO_DEPTH))
+        if (row < (y_max + HALO_DEPTH) && column < (x_max + HALO_DEPTH))
         {
             u0[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
             u[THARR2D(0, 0, 0)] = energy[THARR2D(0, 0, 0)]*density[THARR2D(0, 0, 0)];
