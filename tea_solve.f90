@@ -730,9 +730,9 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   fields(FIELD_SD) = 1
 
   ! inner steps
-  DO ppcg_cur_step=1,tl_ppcg_inner_steps
+  DO ppcg_cur_step=1,tl_ppcg_inner_steps,halo_depth
     IF (profiler_on) halo_time = timer()
-    CALL update_halo(fields,1)
+    CALL update_halo(fields,halo_depth)
     !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
     IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
 
@@ -755,7 +755,7 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
           chunks(c)%field%vector_Mi,                          &
           tl_preconditioner_type)
     ELSEIF(use_opencl_kernels) THEN
-      CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step)
+      CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step, chunks(c)%chunk_neighbours)
     ENDIF
   ENDDO
 

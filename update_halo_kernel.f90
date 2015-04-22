@@ -80,15 +80,15 @@ CONTAINS
   ENDIF
 
   IF(fields(FIELD_U).EQ.1) THEN
-    call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, u, depth)
+    !call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, u, depth)
   ENDIF
 
   IF(fields(FIELD_p).EQ.1) THEN
-    call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, p, depth)
+    !call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, p, depth)
   ENDIF
 
   IF(fields(FIELD_sd).EQ.1) THEN
-    call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, sd, depth)
+    !call update_halo_cell(x_min, x_max, y_min, y_max, chunk_neighbours, sd, depth)
   ENDIF
 
 !$OMP END PARALLEL
