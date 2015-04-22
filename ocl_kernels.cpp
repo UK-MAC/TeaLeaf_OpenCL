@@ -387,8 +387,8 @@ void CloverChunk::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(halo_depth - depth, halo_depth - depth + 1);
-        update_bt_offset[depth] = cl::NDRange(halo_depth - depth + 1, halo_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(halo_depth - depth, halo_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(halo_depth - depth, halo_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",
