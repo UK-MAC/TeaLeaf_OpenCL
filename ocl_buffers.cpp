@@ -101,6 +101,7 @@ void CloverChunk::initBuffers
     ADD_BUFFER_DBG_MAP(cp);
     ADD_BUFFER_DBG_MAP(bfp);
 
+    ADD_BUFFER_DBG_MAP(vector_sd);
     ADD_BUFFER_DBG_MAP(vector_p);
     ADD_BUFFER_DBG_MAP(vector_r);
     ADD_BUFFER_DBG_MAP(vector_w);

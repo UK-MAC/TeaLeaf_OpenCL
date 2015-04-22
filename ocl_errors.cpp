@@ -104,7 +104,6 @@ void CloverChunk::enqueueKernel
             fprintf(stdout, "Local size:  [%zu %zu]\n", local_range[0], local_range[1]);
             fprintf(stdout, "Offset size: [%zu %zu]\n", offset_range[0], offset_range[1]);
             fprintf(stdout, "\n");
-            fflush(stdout);
             #endif
 
             queue.enqueueNDRangeKernel(kernel,

@@ -297,6 +297,11 @@ SUBROUTINE read_input()
     IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
   endif
 
+  if (halo_depth .lt. 2) then
+    halo_depth = 2
+    IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'halo_depth',halo_depth
+  endif
+
   IF(parallel%boss) THEN
     WRITE(g_out,*)
     IF(use_fortran_kernels) THEN

@@ -300,9 +300,10 @@ extern "C" void tea_leaf_kernel_ppcg_init_sd_ocl_
 
 extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
 (int * ppcg_cur_step,
+ int * max_steps,
  const int* chunk_neighbours)
 {
-    chunk.ppcg_inner(*ppcg_cur_step, chunk_neighbours);
+    chunk.ppcg_inner(*ppcg_cur_step, *max_steps, chunk_neighbours);
 }
 
 void CloverChunk::ppcg_init
@@ -331,9 +332,9 @@ void CloverChunk::ppcg_init_sd
 }
 
 void CloverChunk::ppcg_inner
-(int ppcg_cur_step, const int* chunk_neighbours)
+(int ppcg_cur_step, int max_steps, const int* chunk_neighbours)
 {
-    for (int step_depth = 1; step_depth < halo_depth; step_depth++)
+    for (int step_depth = 1; step_depth <= halo_depth; step_depth++)
     {
         size_t step_offset[2] = {step_depth, step_depth};
         size_t step_global_size[2] = {
@@ -362,18 +363,22 @@ void CloverChunk::ppcg_inner
         cl::NDRange step_offset_range(step_offset[0], step_offset[1]);
         cl::NDRange step_global_size_range(step_global_size[0], step_global_size[1]);
 
-        //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
         enqueueKernel(tea_leaf_ppcg_solve_update_r_device, __LINE__, __FILE__,
                       step_offset_range,
                       step_global_size_range,
                       cl::NullRange);
 
         tea_leaf_ppcg_solve_calc_sd_device.setArg(10, ppcg_cur_step - 1 + (step_depth - 1));
-        //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
+
         enqueueKernel(tea_leaf_ppcg_solve_calc_sd_device, __LINE__, __FILE__,
                       step_offset_range,
                       step_global_size_range,
                       cl::NullRange);
+
+        if (ppcg_cur_step + step_depth >= max_steps)
+        {
+            break;
+        }
     }
 }
 

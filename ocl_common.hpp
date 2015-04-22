@@ -21,9 +21,11 @@ const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 #define FIELD_u             4
 #define FIELD_p             5
 #define FIELD_sd            6
-#define NUM_FIELDS          6
+#define FIELD_r             7
+#define NUM_FIELDS          7
 #define FIELD_vector_p FIELD_p
 #define FIELD_vector_sd FIELD_sd
+#define FIELD_vector_r FIELD_r
 
 #define NUM_BUFFERED_FIELDS 3
 
@@ -361,7 +363,7 @@ public:
     void ppcg_init(const double * ch_alphas, const double * ch_betas,
         const double theta, const int n);
     void ppcg_init_sd();
-    void ppcg_inner(int, const int*);
+    void ppcg_inner(int, int, const int*);
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);

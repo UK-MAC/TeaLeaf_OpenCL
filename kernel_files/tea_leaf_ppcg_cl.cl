@@ -67,7 +67,7 @@ __kernel void tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    //if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
 
@@ -125,7 +125,8 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
                                 + beta[step]*z_l[lid];
         }
     }
-    else if (WITHIN_BOUNDS)
+    //else if (WITHIN_BOUNDS)
+    else
     {
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
