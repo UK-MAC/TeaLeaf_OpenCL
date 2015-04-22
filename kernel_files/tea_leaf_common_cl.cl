@@ -89,11 +89,11 @@ __kernel void tea_leaf_init_common
          *  are set to 0 outside of the bounds of the mesh anyway, but this is
          *  more consistent and possibly prevent future bugs
          */
-        if (row < (y_min + HALO_DEPTH - 1))
+        if (row < (HALO_DEPTH))
         {
             dens_up = 0;
         }
-        if (column < (x_min + HALO_DEPTH - 1))
+        if (column < (HALO_DEPTH))
         {
             dens_left = 0;
         }

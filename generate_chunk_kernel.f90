@@ -127,8 +127,8 @@ SUBROUTINE generate_chunk_kernel(x_min,x_max,y_min,y_max, &
   ENDDO
 
 !$OMP DO 
-  DO k=y_min-1, y_max+1
-    DO j=x_min-1, x_max+1
+  DO k=y_min, y_max
+    DO j=x_min, x_max
       u0(j,k) =  energy0(j,k) * density(j,k)
     ENDDO
   ENDDO

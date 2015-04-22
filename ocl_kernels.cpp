@@ -16,9 +16,7 @@ void CloverChunk::initProgram
     options << "-DPRECONDITIONER=" << preconditioner_type << " ";
 
     // pass in these values so you don't have to pass them in to every kernel
-    options << "-Dx_min=" << x_min << " ";
     options << "-Dx_max=" << x_max << " ";
-    options << "-Dy_min=" << y_min << " ";
     options << "-Dy_max=" << y_max << " ";
 
     options << "-DJACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
@@ -62,6 +60,7 @@ void CloverChunk::initProgram
 
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -2, 2, -2, 2);
+    compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init_u0", generate_chunk_init_u0_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device, -2, 2, -2, 2);
 
     compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 1, 0, 1);
@@ -442,13 +441,16 @@ void CloverChunk::initArgs
     generate_chunk_init_device.setArg(0, density);
     generate_chunk_init_device.setArg(1, energy0);
 
+    generate_chunk_init_u0_device.setArg(0, density);
+    generate_chunk_init_u0_device.setArg(1, energy0);
+    generate_chunk_init_u0_device.setArg(2, u0);
+
     generate_chunk_device.setArg(0, vertexx);
     generate_chunk_device.setArg(1, vertexy);
     generate_chunk_device.setArg(2, cellx);
     generate_chunk_device.setArg(3, celly);
     generate_chunk_device.setArg(4, density);
     generate_chunk_device.setArg(5, energy0);
-    generate_chunk_device.setArg(6, u);
 
     // field summary
     field_summary_device.setArg(0, volume);
