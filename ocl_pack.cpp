@@ -3,22 +3,22 @@
 
 extern "C" void ocl_pack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
- int * face, double * buffer)
+ int * face, double * host_buffer)
 {
-    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, buffer);
+    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, host_buffer);
 }
 
 extern "C" void ocl_unpack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
- int * face, double * buffer)
+ int * face, double * host_buffer)
 {
-    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, buffer);
+    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, host_buffer);
 }
 
 void CloverChunk::packUnpackAllBuffers
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
  const int depth, const int face, const int pack,
- double * buffer)
+ double * host_buffer)
 {
     const int n_exchanged = std::accumulate(fields, fields + NUM_FIELDS, 0);
 
@@ -28,21 +28,21 @@ void CloverChunk::packUnpackAllBuffers
     }
 
     // which buffer is being used for this operation
-    cl::Buffer * side_buffer = NULL;
+    cl::Buffer * device_buffer = NULL;
 
     switch (face)
     {
     case CHUNK_LEFT:
-        side_buffer = &left_buffer;
+        device_buffer = &left_buffer;
         break;
     case CHUNK_RIGHT:
-        side_buffer = &right_buffer;
+        device_buffer = &right_buffer;
         break;
     case CHUNK_BOTTOM:
-        side_buffer = &bottom_buffer;
+        device_buffer = &bottom_buffer;
         break;
     case CHUNK_TOP:
-        side_buffer = &top_buffer;
+        device_buffer = &top_buffer;
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
@@ -92,7 +92,7 @@ void CloverChunk::packUnpackAllBuffers
         }
     }
 
-    pack_kernel->setArg(3, *side_buffer);
+    pack_kernel->setArg(3, *device_buffer);
     pack_kernel->setArg(4, depth);
 
     // size of this buffer
@@ -122,9 +122,9 @@ void CloverChunk::packUnpackAllBuffers
 
     if (!pack)
     {
-        queue.enqueueWriteBuffer(*side_buffer, CL_TRUE, 0,
-            n_exchanged*depth*side_size,
-            buffer);
+        queue.enqueueWriteBuffer(*device_buffer, CL_TRUE, 0,
+            n_exchanged*side_size*sizeof(double),
+            host_buffer);
     }
 
     for (int ii = 0; ii < NUM_FIELDS; ii++)
@@ -197,9 +197,9 @@ void CloverChunk::packUnpackAllBuffers
     if (pack)
     {
         queue.finish();
-        queue.enqueueReadBuffer(*side_buffer, CL_TRUE, 0,
-            n_exchanged*depth*side_size,
-            buffer);
+        queue.enqueueReadBuffer(*device_buffer, CL_TRUE, 0,
+            n_exchanged*side_size*sizeof(double),
+            host_buffer);
     }
 }
 
