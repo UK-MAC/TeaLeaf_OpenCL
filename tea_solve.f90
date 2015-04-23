@@ -93,7 +93,7 @@ SUBROUTINE tea_leaf()
       fields(FIELD_ENERGY1) = 1
       fields(FIELD_DENSITY) = 1
       IF (profiler_on) halo_time=timer()
-      CALL update_halo(fields,2)
+      CALL update_halo(fields,halo_depth)
       !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
 
       IF (profiler_on) init_time=timer()

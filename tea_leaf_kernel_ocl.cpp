@@ -268,6 +268,9 @@ void CloverChunk::tea_leaf_init_common
     tea_leaf_init_common_device.setArg(7, *ry);
     tea_leaf_init_common_device.setArg(8, coefficient);
     ENQUEUE_OFFSET(tea_leaf_init_common_device);
+
+    generate_chunk_init_u_device.setArg(1, energy1);
+    ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 
 // both
