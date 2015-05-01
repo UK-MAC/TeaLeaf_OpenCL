@@ -86,7 +86,8 @@ SUBROUTINE read_input()
   tl_use_jacobi = .TRUE.
   verbose_on = .FALSE.
 
-  halo_depth=2
+  halo_exchange_depth=2
+  halo_allocate_depth=2
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
@@ -221,7 +222,9 @@ SUBROUTINE read_input()
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'
       CASE('halo_depth')
-        halo_depth = parse_getival(parse_getword(.TRUE.))
+        halo_exchange_depth = parse_getival(parse_getword(.TRUE.))
+        IF(halo_exchange_depth .lt. 1) CALL report_error('read_input', 'Invalid halo exchange depth specified')
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'halo_depth',halo_exchange_depth
       CASE('tl_max_iters')
         max_iters = parse_getival(parse_getword(.TRUE.))
       CASE('tl_eps')
@@ -297,9 +300,10 @@ SUBROUTINE read_input()
     IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
   endif
 
-  if (halo_depth .lt. 2) then
-    halo_depth = 2
-    IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'halo_depth',halo_depth
+  if (halo_exchange_depth .lt. 2) then
+    halo_allocate_depth = 2
+  else
+    halo_allocate_depth = halo_exchange_depth
   endif
 
   IF(parallel%boss) THEN

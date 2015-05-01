@@ -154,17 +154,11 @@ void CloverChunk::initOcl
     desired_type = typeMatch(type_name);
 
     int file_halo_depth = readInt(input, "halo_depth");
-    file_halo_depth = (file_halo_depth < 0) ? 2 : file_halo_depth;
 
-    if (file_halo_depth < 2 && file_halo_depth >= 0)
-    {
-        fprintf(stderr, "Halo depth in file set too low - defaulting to 2\n");
-        halo_depth = 2;
-    }
-    else
-    {
-        halo_depth = file_halo_depth;
-    }
+    // No error checking - assume fortran does it correctly
+    halo_exchange_depth = file_halo_depth;
+
+    halo_allocate_depth = std::max(file_halo_depth, 2);
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");

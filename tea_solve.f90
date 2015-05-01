@@ -93,7 +93,7 @@ SUBROUTINE tea_leaf()
       fields(FIELD_ENERGY1) = 1
       fields(FIELD_DENSITY) = 1
       IF (profiler_on) halo_time=timer()
-      CALL update_halo(fields,halo_depth)
+      CALL update_halo(fields,halo_exchange_depth)
       !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
 
       IF (profiler_on) init_time=timer()
@@ -731,9 +731,9 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   fields(FIELD_R) = 1
 
   ! inner steps
-  DO ppcg_cur_step=1,tl_ppcg_inner_steps,halo_depth
+  DO ppcg_cur_step=1,tl_ppcg_inner_steps,halo_exchange_depth
     IF (profiler_on) halo_time = timer()
-    CALL update_halo(fields,halo_depth)
+    CALL update_halo(fields,halo_exchange_depth)
     !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
     IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
 

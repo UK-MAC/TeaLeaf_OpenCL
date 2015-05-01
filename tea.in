@@ -22,7 +22,7 @@ tl_eps=1.0e-10
 
 !use_fortran_kernels
 
-halo_depth=2
+halo_depth=1
 opencl_vendor=any
 opencl_type=gpu
 *endtea
