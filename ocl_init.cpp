@@ -77,6 +77,14 @@ TeaCLContext::TeaCLContext
     }
 }
 
+static void stripString
+(std::string & input_string)
+{
+    // trim whitespace from a string
+    input_string.erase(input_string.find_last_not_of(" \n\r\t")+1);
+    input_string.erase(input_string.begin(), input_string.begin()+input_string.find_first_not_of(" \n\r\t"));
+}
+
 static void listPlatforms
 (std::vector<cl::Platform>& platforms)
 {
@@ -100,9 +108,7 @@ static void listPlatforms
             cl_device_type dtype;
             devices.at(ii).getInfo(CL_DEVICE_NAME, &devname);
             devices.at(ii).getInfo(CL_DEVICE_TYPE, &dtype);
-            // trim whitespace
-            devname.erase(devname.find_last_not_of(" \n\r\t")+1);
-            devname.erase(devname.begin(), devname.begin()+devname.find_first_not_of(" \n\r\t"));
+            stripString(devname);
 
             std::string dtype_str = strType(dtype);
             fprintf(stdout, " Device %zu: %s (%s)\n", ii, devname.c_str(), dtype_str.c_str());
@@ -138,9 +144,6 @@ void TeaCLContext::initOcl
         // should never happen
         DIE("Input file not found\n");
     }
-
-    // use first device whatever happens (ignore MPI rank) for running across different platforms
-    bool usefirst = paramEnabled(input, "opencl_usefirst");
 
     profiler_on = paramEnabled(input, "profiler_on");
 
@@ -347,6 +350,91 @@ void TeaCLContext::initOcl
         }
     }
 
+    // get affinity string in the form "0 1 3" etc
+    std::string opencl_affinity = readString(input, "opencl_affinity");
+
+    std::vector<int> tile_device;
+
+    if (opencl_affinity.find("opencl_affinity") != std::string::npos)
+    {
+        // string whitespace
+        stripString(opencl_affinity);
+
+        // split into tokens by whitespace
+        std::stringstream affinity_stream(opencl_affinity);
+        std::string token;
+        std::vector<std::string> tokens;
+        while (std::getline(affinity_stream, token, ' '))
+        {
+            tokens.push_back(token);
+        }
+
+        // make a vector of device numbers to take
+        std::vector<int> device_numbers;
+        for (int ii = 0; ii < tokens.size(); ii++)
+        {
+            std::stringstream converter(tokens.at(ii));
+
+            int affinity_int;
+            if (converter >> affinity_int)
+            {
+                device_numbers.push_back(affinity_int);
+            }
+            else
+            {
+                DIE("Invalid opencl_affinity string specified: %s\n", opencl_affinity.c_str());
+            }
+        }
+
+        // then get how they want to be placed
+        std::string opencl_place = readString(input, "opencl_place");
+
+        if (opencl_place.find("scatter") != std::string::npos)
+        {
+            // scatter alternately over all devices to be used
+            for (int ii = 0; ii < n_tiles; ii++)
+            {
+                tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
+            }
+        }
+        else
+        {
+            int per_device = n_tiles/device_numbers.size();
+            int mod_device = n_tiles % device_numbers.size();
+
+            // otherwise compact
+            if (n_tiles <= device_numbers.size())
+            {
+                // same number, or less - just place in order
+                for (int ii = 0; ii < n_tiles; ii++)
+                {
+                    tile_device.push_back(device_numbers.at(ii));
+                }
+            }
+            else if (mod_device == 0)
+            {
+                // divides evenly - place equally
+                for (int ii = 0; ii < per_device; ii++)
+                {
+                    tile_device.push_back(device_numbers.at(ii));
+                }
+            }
+            else
+            {
+                // place more on first device
+                for (int ii = 0; ii < per_device; ii++)
+                {
+                    tile_device.push_back(device_numbers.at(ii));
+
+                    if (ii < mod_device)
+                    {
+                        tile_device.push_back(device_numbers.at(ii));
+                    }
+                }
+            }
+        }
+    }
+
 #if defined(MPI_HDR)
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
@@ -359,62 +447,12 @@ void TeaCLContext::initOcl
         if (rank == cur_rank)
         {
 #endif
-            // index of device to use
-            int actual_device = 0;
-
             // get devices - just choose the first one
-            std::vector<cl::Device> devices;
-            context.getInfo(CL_CONTEXT_DEVICES, &devices);
+            std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
-            if (usefirst)
+            for (int ii = 0; ii < n_tiles; ii++)
             {
-                // always use specified device and ignore rank
-                actual_device = preferred_device;
-            }
-            else
-            {
-                actual_device = preferred_device + (rank % devices.size());
-            }
-
-            std::string devname;
-
-            if (preferred_device < 0)
-            {
-                // if none specified or invalid choice, choose 0
-                fprintf(stdout, "No device specified, choosing device 0\n");
-                actual_device = 0;
-                device = devices.at(actual_device);
-            }
-            else if (actual_device >= devices.size())
-            {
-                DIE("Device %d was selected in rank %d but there are only %zu available\n",
-                    actual_device, rank, devices.size());
-            }
-            else
-            {
-                device = devices.at(actual_device);
-            }
-
-            device.getInfo(CL_DEVICE_NAME, &devname);
-
-            fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
-                actual_device, devname.c_str(), rank);
-
-            // choose reduction based on device type
-            switch (desired_type)
-            {
-            case CL_DEVICE_TYPE_GPU : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-                break;
-            case CL_DEVICE_TYPE_CPU : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
-                break;
-            case CL_DEVICE_TYPE_ACCELERATOR : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
-                break;
-            default :
-                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-                break;
+               tiles.at(ii).initTileQueue();
             }
 #if defined(MPI_HDR)
         }
@@ -424,16 +462,21 @@ void TeaCLContext::initOcl
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    // initialise command queue
-    if (profiler_on)
+    // choose reduction based on device type
+    switch (desired_type)
     {
-        // turn on profiling
-        queue = cl::CommandQueue(context, device,
-                                 CL_QUEUE_PROFILING_ENABLE, NULL);
-    }
-    else
-    {
-        queue = cl::CommandQueue(context, device);
+    case CL_DEVICE_TYPE_GPU : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        break;
+    case CL_DEVICE_TYPE_CPU : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
+        break;
+    case CL_DEVICE_TYPE_ACCELERATOR : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
+        break;
+    default :
+        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        break;
     }
 }
 
