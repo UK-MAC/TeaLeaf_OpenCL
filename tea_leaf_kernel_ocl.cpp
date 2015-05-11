@@ -342,8 +342,8 @@ void CloverChunk::ppcg_inner
     {
         size_t step_offset[2] = {step_depth, step_depth};
         size_t step_global_size[2] = {
-            x_max + (halo_exchange_depth-step_depth)*2,
-            y_max + (halo_exchange_depth-step_depth)*2};
+            x_max + (halo_allocate_depth-step_depth)*2,
+            y_max + (halo_allocate_depth-step_depth)*2};
 
         if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
         {
