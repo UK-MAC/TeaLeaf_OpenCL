@@ -2,7 +2,7 @@
 #include <sstream>
 #include <fstream>
 
-void CloverChunk::initProgram
+void TeaCLContext::initProgram
 (void)
 {
     // options
@@ -125,7 +125,7 @@ void CloverChunk::initProgram
     }
 }
 
-CloverChunk::launch_specs_t CloverChunk::findPaddingSize
+TeaCLContext::launch_specs_t TeaCLContext::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
     size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
@@ -138,7 +138,7 @@ CloverChunk::launch_specs_t CloverChunk::findPaddingSize
     return cur_specs;
 }
 
-void CloverChunk::compileKernel
+void TeaCLContext::compileKernel
 (std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
@@ -214,6 +214,7 @@ void CloverChunk::compileKernel
         DIE("Error %d (%s) in creating %s kernel\n",
             e.err(), e.what(), kernel_name);
     }
+
     cl::detail::errHandler(
         clGetKernelWorkGroupInfo(kernel(),
                                  device(),
@@ -221,6 +222,7 @@ void CloverChunk::compileKernel
                                  sizeof(size_t),
                                  &max_wg_size,
                                  NULL));
+
     if ((LOCAL_X*LOCAL_Y) > max_wg_size)
     {
         DIE("Work group size %zux%zu is too big for kernel %s"
@@ -233,7 +235,7 @@ void CloverChunk::compileKernel
     fflush(DBGOUT);
 }
 
-cl::Program CloverChunk::compileProgram
+cl::Program TeaCLContext::compileProgram
 (const std::string& source,
  const std::string& options)
 {
@@ -286,7 +288,7 @@ cl::Program CloverChunk::compileProgram
     return program;
 }
 
-void CloverChunk::initSizes
+void TeaCLContext::initSizes
 (void)
 {
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
@@ -404,7 +406,7 @@ void CloverChunk::initSizes
     fprintf(DBGOUT, "Update halo parameters calculated\n");
 }
 
-void CloverChunk::initArgs
+void TeaCLContext::initArgs
 (void)
 {
     #define SETARG_CHECK(knl, idx, buf) \

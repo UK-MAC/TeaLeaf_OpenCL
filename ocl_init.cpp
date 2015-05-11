@@ -8,18 +8,18 @@
 #include <iostream>
 #include <algorithm>
 
-CloverChunk chunk;
+TeaCLContext tea_context;
 
 extern "C" void initialise_ocl_
 (int* in_x_min, int* in_x_max,
  int* in_y_min, int* in_y_max)
 {
-    chunk = CloverChunk(in_x_min, in_x_max,
-                        in_y_min, in_y_max);
+    tea_context = TeaCLContext(in_x_min, in_x_max,
+        in_y_min, in_y_max);
 }
 
 // default ctor
-CloverChunk::CloverChunk
+TeaCLContext::TeaCLContext
 (void)
 {
     ;
@@ -27,7 +27,7 @@ CloverChunk::CloverChunk
 
 extern "C" void timer_c_(double*);
 
-CloverChunk::CloverChunk
+TeaCLContext::TeaCLContext
 (int* in_x_min, int* in_x_max,
  int* in_y_min, int* in_y_max)
 :x_min(*in_x_min),
@@ -110,7 +110,7 @@ static void listPlatforms
     }
 }
 
-void CloverChunk::initOcl
+void TeaCLContext::initOcl
 (void)
 {
     std::vector<cl::Platform> platforms;

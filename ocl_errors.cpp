@@ -63,7 +63,7 @@ std::string errToString(cl_int err)
     }
 }
 
-void CloverChunk::enqueueKernel
+void TeaCLContext::enqueueKernel
 (cl::Kernel const& kernel,
  int line, const char* file,
  const cl::NDRange offset_range,
@@ -182,7 +182,7 @@ void CloverChunk::enqueueKernel
 }
 
 // called when something goes wrong
-void CloverChunk::cloverDie
+void TeaCLContext::cloverDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");
@@ -208,7 +208,7 @@ void CloverChunk::cloverDie
 }
 
 // print out timing info when done
-CloverChunk::~CloverChunk
+TeaCLContext::~TeaCLContext
 (void)
 {
     if (profiler_on && !rank)
@@ -227,7 +227,7 @@ CloverChunk::~CloverChunk
     }
 }
 
-std::vector<double> CloverChunk::dumpArray
+std::vector<double> TeaCLContext::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to allocate for 2d array

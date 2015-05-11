@@ -175,8 +175,8 @@ FORTRAN_FILES=\
 	diffuse.o
 
 OCL_FILES=\
-	ocl_pack.o \
 	ocl_init.o \
+	ocl_pack.o \
 	ocl_strings.o \
 	ocl_buffers.o \
 	ocl_errors.o \

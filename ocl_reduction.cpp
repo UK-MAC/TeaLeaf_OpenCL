@@ -4,7 +4,7 @@
 #include <sstream>
 #include <cmath>
 
-void CloverChunk::initReduction
+void TeaCLContext::initReduction
 (void)
 {
     /*
@@ -163,7 +163,6 @@ void CloverChunk::initReduction
         MAKE_REDUCE_KNL(sum, double, 0.0);
         MAKE_REDUCE_KNL(max, double, 0.0);
         MAKE_REDUCE_KNL(min, double, DBL_MAX);
-        MAKE_REDUCE_KNL(max, int, 0);
 
         fprintf(DBGOUT, "%zu/", reduction_global_size);
         reduction_global_size /= reduction_local_size;
