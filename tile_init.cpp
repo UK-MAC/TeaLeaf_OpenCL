@@ -1,18 +1,17 @@
 #include "ocl_common.hpp"
 
-void TeaCLTile::initTileQueue
-(int device_id, bool profiler_on, cl::Context context)
-{
+TeaCLTile::TeaCLTile
+(int* in_x_min, int* in_x_max,
+ int* in_y_min, int* in_y_max)
+:x_min(*in_x_min),
+ x_max(*in_x_max),
+ y_min(*in_y_min),
+ y_max(*in_y_max)
 
-    if (actual_device >= devices.size())
-    {
-        DIE("Device %d was selected in rank %d but there are only %zu available\n",
-            actual_device, rank, devices.size());
-    }
-    else
-    {
-        device = devices.at(actual_device);
-    }
+void TeaCLTile::initTileQueue
+(bool profiler_on, cl::Device chosen_device, cl::Context context)
+{
+    device = chosen_device;
 
     std::string devname;
     device.getInfo(CL_DEVICE_NAME, &devname);
