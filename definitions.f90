@@ -64,7 +64,6 @@ MODULE definitions_module
    INTEGER      :: test_problem
    LOGICAL      :: complete
 
-   LOGICAL      :: use_fortran_kernels
    LOGICAL      :: use_opencl_kernels
    LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg

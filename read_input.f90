@@ -59,7 +59,6 @@ SUBROUTINE read_input()
   max_iters=1000
   eps=1.0e-10
 
-  use_fortran_kernels=.FALSE.
   use_opencl_kernels=.TRUE.
   coefficient = CONDUCTIVITY
   profiler_on=.FALSE.
@@ -190,11 +189,7 @@ SUBROUTINE read_input()
           END SELECT
           IF(parallel%boss)WRITE(g_out,"(1x,a25,'  ',a25)")'tl_preconditioner_type',word
         enddo
-      CASE('use_fortran_kernels')
-        use_fortran_kernels=.TRUE.
-        use_opencl_kernels=.FALSE.
       CASE('use_opencl_kernels')
-        use_fortran_kernels=.FALSE.
         use_opencl_kernels=.TRUE.
       CASE('verbose_on')
         verbose_on=.TRUE.
@@ -306,11 +301,12 @@ SUBROUTINE read_input()
     halo_allocate_depth = halo_exchange_depth
   endif
 
+  if ((halo_allocate_depth .ne. 2) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
+    call report_error('read_input', 'Unable to use nonstandard halo depth with block jacobi preconditioner')
+  endif
+
   IF(parallel%boss) THEN
     WRITE(g_out,*)
-    IF(use_fortran_kernels) THEN
-      WRITE(g_out,"(1x,a)")'Using Fortran Kernels'
-    ENDIF
     ELSEIF(use_opencl_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using OpenCL Kernels'
     WRITE(g_out,*)

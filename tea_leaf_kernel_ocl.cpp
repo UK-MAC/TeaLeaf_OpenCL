@@ -1,4 +1,5 @@
 #include "ocl_common.hpp"
+#include "ocl_reduction.hpp"
 
 #include <cassert>
 #include <cmath>

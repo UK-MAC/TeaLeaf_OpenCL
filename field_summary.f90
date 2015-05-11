@@ -27,7 +27,6 @@
 SUBROUTINE field_summary()
 
   USE tea_module
-  USE field_summary_kernel_module
 
   IMPLICIT NONE
 
@@ -48,27 +47,13 @@ SUBROUTINE field_summary()
   ENDIF
 
   IF(profiler_on) kernel_time=timer()
-  IF(use_fortran_kernels)THEN
-    DO c=1,chunks_per_task
-      IF(chunks(c)%task.EQ.parallel%task) THEN
-        CALL field_summary_kernel(chunks(c)%field%x_min,                   &
-                                  chunks(c)%field%x_max,                   &
-                                  chunks(c)%field%y_min,                   &
-                                  chunks(c)%field%y_max,                   &
-                                  chunks(c)%field%volume,                  &
-                                  chunks(c)%field%density,                 &
-                                  chunks(c)%field%energy0,                 &
-                                  chunks(c)%field%u,                       &
-                                  vol,mass,ie,temp                         )
-      ENDIF
-    ENDDO
-  ELSEIF(use_opencl_kernels)THEN
-    DO c=1,chunks_per_task
+  DO c=1,chunks_per_task
+    IF(use_opencl_kernels)THEN
       IF(chunks(c)%task.EQ.parallel%task) THEN
         CALL field_summary_kernel_ocl(vol,mass,ie,temp)
       ENDIF
-    ENDDO
-  ENDIF
+    ENDIF
+  ENDDO
 
   ! For mpi I need a reduction here
   CALL tea_sum(vol)

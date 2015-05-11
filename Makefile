@@ -153,32 +153,22 @@ C_FILES=\
 FORTRAN_FILES=\
 	data.o			\
 	definitions.o			\
-	pack_kernel.o			\
 	tea.o				\
 	report.o			\
 	timer.o			\
 	parse.o			\
 	read_input.o			\
-	initialise_chunk_kernel.o	\
 	initialise_chunk.o		\
 	build_field.o			\
-	update_halo_kernel.o		\
 	update_halo.o			\
 	start.o			\
-	generate_chunk_kernel.o	\
 	generate_chunk.o		\
 	initialise.o			\
-	field_summary_kernel.o	\
 	field_summary.o		\
 	calc_dt.o			\
 	timestep.o			\
-	set_field_kernel.o            \
 	set_field.o                   \
-	tea_leaf_common_kernels.o             \
-	tea_leaf_jacobi.o             \
-	tea_leaf_cg.o             	\
 	tea_leaf_cheby.o             	\
-	tea_leaf_ppcg.o             	\
 	tea_solve.o                   \
 	visit.o			\
 	tea_leaf.o			\

@@ -22,7 +22,6 @@
 SUBROUTINE initialise_chunk(chunk)
 
   USE tea_module
-  USE initialise_chunk_kernel_module
 
   IMPLICIT NONE
 
@@ -37,24 +36,7 @@ SUBROUTINE initialise_chunk(chunk)
 
   ymin=grid%ymin+dy*float(chunks(chunk)%field%bottom-1)
 
-  IF(use_fortran_kernels) THEN
-    CALL initialise_chunk_kernel(chunks(chunk)%field%x_min,    &
-                                 chunks(chunk)%field%x_max,    &
-                                 chunks(chunk)%field%y_min,    &
-                                 chunks(chunk)%field%y_max,    &
-                                 xmin,ymin,dx,dy,              &
-                                 chunks(chunk)%field%vertexx,  &
-                                 chunks(chunk)%field%vertexdx, &
-                                 chunks(chunk)%field%vertexy,  &
-                                 chunks(chunk)%field%vertexdy, &
-                                 chunks(chunk)%field%cellx,    &
-                                 chunks(chunk)%field%celldx,   &
-                                 chunks(chunk)%field%celly,    &
-                                 chunks(chunk)%field%celldy,   &
-                                 chunks(chunk)%field%volume,   &
-                                 chunks(chunk)%field%xarea,    &
-                                 chunks(chunk)%field%yarea     )
-  ELSEIF(use_opencl_kernels)THEN
+  IF(use_opencl_kernels)THEN
     CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
   ENDIF
 

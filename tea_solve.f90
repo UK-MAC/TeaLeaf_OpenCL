@@ -23,10 +23,6 @@ MODULE tea_leaf_module
 
   USE report_module
   USE data_module
-  USE tea_leaf_kernel_common_module
-  USE tea_leaf_kernel_jacobi_module
-  USE tea_leaf_kernel_cg_module
-  USE tea_leaf_kernel_ppcg_module
   USE tea_leaf_kernel_cheby_module
   USE update_halo_module
 
@@ -98,27 +94,7 @@ SUBROUTINE tea_leaf()
 
       IF (profiler_on) init_time=timer()
 
-      IF (use_fortran_kernels) THEN
-        rx = dt/(chunks(c)%field%celldx(chunks(c)%field%x_min)**2)
-        ry = dt/(chunks(c)%field%celldy(chunks(c)%field%y_min)**2)
-
-        CALL tea_leaf_kernel_init_common(chunks(c)%field%x_min, &
-            chunks(c)%field%x_max,                                  &
-            chunks(c)%field%y_min,                                  &
-            chunks(c)%field%y_max,                                  &
-            chunks(c)%field%density,                                &
-            chunks(c)%field%energy1,                                &
-            chunks(c)%field%u,                                      &
-            chunks(c)%field%u0,                                      &
-            chunks(c)%field%vector_r,                               &
-            chunks(c)%field%vector_w,                               &
-            chunks(c)%field%vector_Kx,                              &
-            chunks(c)%field%vector_Ky,                              &
-            chunks(c)%field%tri_cp,   &
-            chunks(c)%field%tri_bfp,    &
-            chunks(c)%field%vector_Mi,    &
-            rx, ry, tl_preconditioner_type, coefficient)
-      ELSE
+      IF (use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry)
       ENDIF
 
@@ -129,24 +105,7 @@ SUBROUTINE tea_leaf()
       !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
       IF (profiler_on) init_time = init_time + (timer()-halo_time)
 
-      IF(use_fortran_kernels) THEN
-        CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-            chunks(c)%field%x_max,                        &
-            chunks(c)%field%y_min,                        &
-            chunks(c)%field%y_max,                        &
-            chunks(c)%field%u,                            &
-            chunks(c)%field%u0,                           &
-            chunks(c)%field%vector_r,                     &
-            chunks(c)%field%vector_Kx,                    &
-            chunks(c)%field%vector_Ky,                    &
-            rx, ry)
-        CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-            chunks(c)%field%x_max,                                    &
-            chunks(c)%field%y_min,                                    &
-            chunks(c)%field%y_max,                                    &
-            chunks(c)%field%vector_r,                                 &
-            initial_residual)
-      ELSEIF(use_opencl_kernels) THEN
+      IF(use_opencl_kernels) THEN
         CALL tea_leaf_calc_residual_ocl()
         CALL tea_leaf_calc_2norm_kernel_ocl(1, initial_residual)
       ENDIF
@@ -165,25 +124,7 @@ SUBROUTINE tea_leaf()
 
       IF(tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
         ! All 3 of these solvers use the CG kernels
-        IF(use_fortran_kernels) THEN
-          CALL tea_leaf_kernel_init_cg_fortran(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                                  &
-              chunks(c)%field%y_min,                                  &
-              chunks(c)%field%y_max,                                  &
-              chunks(c)%field%density,                                &
-              chunks(c)%field%energy1,                                &
-              chunks(c)%field%u,                                      &
-              chunks(c)%field%vector_p,                               &
-              chunks(c)%field%vector_r,                               &
-              chunks(c)%field%vector_Mi,                              &
-              chunks(c)%field%vector_w,                               &
-              chunks(c)%field%vector_z,                               &
-              chunks(c)%field%vector_Kx,                              &
-              chunks(c)%field%vector_Ky,                              &
-              chunks(c)%field%tri_cp,   &
-              chunks(c)%field%tri_bfp,    &
-              rx, ry, rro, tl_preconditioner_type)
-        ELSEIF(use_opencl_kernels) THEN
+        IF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_init_cg_ocl(coefficient, dt, rx, ry, rro)
         ENDIF
 
@@ -279,25 +220,7 @@ SUBROUTINE tea_leaf()
 
                 cheby_calc_steps = 1
               ELSE
-                  IF(use_fortran_kernels) THEN
-                      CALL tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-                                  chunks(c)%field%x_max,                       &
-                                  chunks(c)%field%y_min,                       &
-                                  chunks(c)%field%y_max,                       &
-                                  chunks(c)%field%u,                           &
-                                  chunks(c)%field%u0,                          &
-                                  chunks(c)%field%vector_p,                    &
-                                  chunks(c)%field%vector_r,                    &
-                                  chunks(c)%field%vector_Mi,                   &
-                                  chunks(c)%field%vector_w,                    &
-                                  chunks(c)%field%vector_z,                    &
-                                  chunks(c)%field%vector_Kx,                   &
-                                  chunks(c)%field%vector_Ky,                   &
-                                  chunks(c)%field%tri_cp,   &
-                                  chunks(c)%field%tri_bfp,    &
-                                  ch_alphas, ch_betas, max_cheby_iters,        &
-                                  rx, ry, cheby_calc_steps, tl_preconditioner_type)
-                  ELSEIF(use_opencl_kernels) THEN
+                  IF(use_opencl_kernels) THEN
                       CALL tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
                         rx, ry, cheby_calc_steps)
                   ENDIF
@@ -308,14 +231,7 @@ SUBROUTINE tea_leaf()
                   ! chebyshev is typically O(300+)) but will greatly reduce global
                   ! synchronisations needed
                   IF ((n .GE. est_itc) .AND. (MOD(n, 10) .eq. 0)) THEN
-                    IF(use_fortran_kernels) THEN
-                      CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,&
-                            chunks(c)%field%x_max,                          &
-                            chunks(c)%field%y_min,                          &
-                            chunks(c)%field%y_max,                          &
-                            chunks(c)%field%vector_r,                       &
-                            error                                           )
-                    ELSEIF(use_opencl_kernels) THEN
+                    IF(use_opencl_kernels) THEN
                       call tea_leaf_calc_2norm_kernel_ocl(1, error)
                     ENDIF
 
@@ -336,18 +252,7 @@ SUBROUTINE tea_leaf()
               !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
               IF (profiler_on) init_time=init_time+(timer()-halo_time)
 
-              IF(use_fortran_kernels) THEN
-                CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-                    chunks(c)%field%x_max,                        &
-                    chunks(c)%field%y_min,                        &
-                    chunks(c)%field%y_max,                        &
-                    chunks(c)%field%u,                            &
-                    chunks(c)%field%u0,                           &
-                    chunks(c)%field%vector_r,                     &
-                    chunks(c)%field%vector_Kx,                    &
-                    chunks(c)%field%vector_Ky,                    &
-                    rx, ry)
-              ELSEIF(use_opencl_kernels) THEN
+              IF(use_opencl_kernels) THEN
                 CALL tea_leaf_calc_residual_ocl()
               ENDIF
 
@@ -357,17 +262,7 @@ SUBROUTINE tea_leaf()
               ENDIF
             ENDIF
 
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                                         &
-                  chunks(c)%field%y_min,                                         &
-                  chunks(c)%field%y_max,                                         &
-                  chunks(c)%field%vector_p,                                      &
-                  chunks(c)%field%vector_w,                                      &
-                  chunks(c)%field%vector_Kx,                                     &
-                  chunks(c)%field%vector_Ky,                                     &
-                  rx, ry, pw)
-            ELSEIF(use_opencl_kernels) THEN
+            IF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
             ENDIF
 
@@ -377,24 +272,7 @@ SUBROUTINE tea_leaf()
             IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
             alpha = rro/pw
 
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                                          &
-                  chunks(c)%field%y_min,                                          &
-                  chunks(c)%field%y_max,                                          &
-                  chunks(c)%field%u,                                              &
-                  chunks(c)%field%vector_p,                                       &
-                  chunks(c)%field%vector_r,                                       &
-                  chunks(c)%field%vector_Mi,                                      &
-                  chunks(c)%field%vector_w,                                       &
-                  chunks(c)%field%vector_z,                                       &
-                  chunks(c)%field%tri_cp,   &
-                  chunks(c)%field%tri_bfp,    &
-                  chunks(c)%field%vector_Kx,                              &
-                  chunks(c)%field%vector_Ky,                              &
-                  rx, ry, &
-                  alpha, rrn, tl_preconditioner_type)
-            ELSEIF(use_opencl_kernels) THEN
+            IF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
             ENDIF
 
@@ -404,15 +282,7 @@ SUBROUTINE tea_leaf()
                 rx, ry, tl_ppcg_inner_steps, c, solve_time)
             ppcg_inner_iters = ppcg_inner_iters + tl_ppcg_inner_steps
 
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_ppcg_calc_zrnorm_kernel(chunks(c)%field%x_min, &
-                    chunks(c)%field%x_max,                           &
-                    chunks(c)%field%y_min,                           &
-                    chunks(c)%field%y_max,                           &
-                    chunks(c)%field%vector_z,                        &
-                    chunks(c)%field%vector_r,                        &
-                    tl_preconditioner_type, rrn)
-            ELSEIF(use_opencl_kernels) THEN
+            IF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_ocl(2, rrn)
             ENDIF
 
@@ -423,16 +293,7 @@ SUBROUTINE tea_leaf()
 
             beta = rrn/rro
 
-            IF(use_fortran_kernels) THEN
-              CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                                         &
-                  chunks(c)%field%y_min,                                         &
-                  chunks(c)%field%y_max,                                         &
-                  chunks(c)%field%vector_p,                                      &
-                  chunks(c)%field%vector_r,                                      &
-                  chunks(c)%field%vector_z,                                      &
-                  beta, tl_preconditioner_type)
-            ELSEIF(use_opencl_kernels) THEN
+            IF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
             ENDIF
 
@@ -447,17 +308,7 @@ SUBROUTINE tea_leaf()
 
           pw = 0.0_08
 
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                                         &
-                chunks(c)%field%y_min,                                         &
-                chunks(c)%field%y_max,                                         &
-                chunks(c)%field%vector_p,                                      &
-                chunks(c)%field%vector_w,                                      &
-                chunks(c)%field%vector_Kx,                                     &
-                chunks(c)%field%vector_Ky,                                     &
-                rx, ry, pw)
-          ELSEIF(use_opencl_kernels) THEN
+          IF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_w(rx, ry, pw)
           ENDIF
 
@@ -470,24 +321,7 @@ SUBROUTINE tea_leaf()
 
           rrn = 0.0_8
 
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_ur(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                                          &
-                chunks(c)%field%y_min,                                          &
-                chunks(c)%field%y_max,                                          &
-                chunks(c)%field%u,                                              &
-                chunks(c)%field%vector_p,                                       &
-                chunks(c)%field%vector_r,                                       &
-                chunks(c)%field%vector_Mi,                                      &
-                chunks(c)%field%vector_w,                                       &
-                chunks(c)%field%vector_z,                                       &
-                chunks(c)%field%tri_cp,   &
-                chunks(c)%field%tri_bfp,    &
-                chunks(c)%field%vector_Kx,                              &
-                chunks(c)%field%vector_Ky,                              &
-                rx, ry, &
-                alpha, rrn, tl_preconditioner_type)
-          ELSEIF(use_opencl_kernels) THEN
+          IF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_ur(alpha, rrn)
           ENDIF
 
@@ -498,36 +332,14 @@ SUBROUTINE tea_leaf()
           beta = rrn/rro
           cg_betas(n) = beta
 
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_solve_cg_fortran_calc_p(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                                         &
-                chunks(c)%field%y_min,                                         &
-                chunks(c)%field%y_max,                                         &
-                chunks(c)%field%vector_p,                                      &
-                chunks(c)%field%vector_r,                                      &
-                chunks(c)%field%vector_z,                                      &
-                beta, tl_preconditioner_type)
-          ELSEIF(use_opencl_kernels) THEN
+          IF(use_opencl_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_ocl_calc_p(beta)
           ENDIF
 
           error = rrn
           rro = rrn
         ELSEIF(tl_use_jacobi) THEN
-          IF(use_fortran_kernels) THEN
-            CALL tea_leaf_kernel_jacobi_solve(chunks(c)%field%x_min,&
-                chunks(c)%field%x_max,                       &
-                chunks(c)%field%y_min,                       &
-                chunks(c)%field%y_max,                       &
-                rx,                                          &
-                ry,                                          &
-                chunks(c)%field%vector_Kx,                   &
-                chunks(c)%field%vector_Ky,                   &
-                error,                                       &
-                chunks(c)%field%u0,                          &
-                chunks(c)%field%u,                           &
-                chunks(c)%field%vector_r)
-          ELSEIF(use_opencl_kernels) THEN
+          IF(use_opencl_kernels) THEN
               CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
           ENDIF
 
@@ -569,24 +381,7 @@ SUBROUTINE tea_leaf()
         CALL update_halo(fields,1)
         !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
         IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
-        IF(use_fortran_kernels) THEN
-          CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-              chunks(c)%field%x_max,                        &
-              chunks(c)%field%y_min,                        &
-              chunks(c)%field%y_max,                        &
-              chunks(c)%field%u,                            &
-              chunks(c)%field%u0,                           &
-              chunks(c)%field%vector_r,                     &
-              chunks(c)%field%vector_Kx,                    &
-              chunks(c)%field%vector_Ky,                    &
-              rx, ry)
-          CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-              chunks(c)%field%x_max,                                    &
-              chunks(c)%field%y_min,                                    &
-              chunks(c)%field%y_max,                                    &
-              chunks(c)%field%vector_r,                                 &
-              exact_error)
-        ELSEIF(use_opencl_kernels) THEN
+        IF(use_opencl_kernels) THEN
           CALL tea_leaf_calc_residual_ocl()
           CALL tea_leaf_calc_2norm_kernel_ocl(1, exact_error)
         ENDIF
@@ -626,15 +421,7 @@ SUBROUTINE tea_leaf()
 
       ! RESET
       IF (profiler_on) reset_time=timer()
-      IF(use_fortran_kernels) THEN
-          CALL tea_leaf_kernel_finalise(chunks(c)%field%x_min, &
-              chunks(c)%field%x_max,                           &
-              chunks(c)%field%y_min,                           &
-              chunks(c)%field%y_max,                           &
-              chunks(c)%field%energy1,                         &
-              chunks(c)%field%density,                         &
-              chunks(c)%field%u)
-      ELSEIF(use_opencl_kernels) THEN
+      IF(use_opencl_kernels) THEN
           CALL tea_leaf_kernel_finalise_ocl()
       ENDIF
       IF (profiler_on) profiler%tea_reset = profiler%tea_reset + (timer() - reset_time)
@@ -696,32 +483,7 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
 
   CALL update_halo(fields,1)
 
-  IF(use_fortran_kernels) THEN
-     CALL tea_leaf_calc_residual(chunks(c)%field%x_min,&
-         chunks(c)%field%x_max,                        &
-         chunks(c)%field%y_min,                        &
-         chunks(c)%field%y_max,                        &
-         chunks(c)%field%u,                            &
-         chunks(c)%field%u0,                           &
-         chunks(c)%field%vector_r,                     &
-         chunks(c)%field%vector_Kx,                    &
-         chunks(c)%field%vector_Ky,                    &
-         rx, ry)
-    CALL tea_leaf_kernel_ppcg_init_sd(chunks(c)%field%x_min,&
-        chunks(c)%field%x_max,                              &
-        chunks(c)%field%y_min,                              &
-        chunks(c)%field%y_max,                              &
-        chunks(c)%field%vector_r,                           &
-        chunks(c)%field%vector_Kx,                        &
-        chunks(c)%field%vector_Ky,                        &
-        chunks(c)%field%vector_sd,                          &
-        chunks(c)%field%vector_z,                          &
-        chunks(c)%field%tri_cp,                          &
-        chunks(c)%field%tri_bfp,                          &
-        chunks(c)%field%vector_Mi,                          &
-        rx, ry,                          &
-        theta, tl_preconditioner_type)
-  ELSEIF(use_opencl_kernels) THEN
+  IF(use_opencl_kernels) THEN
     CALL tea_leaf_calc_residual_ocl()
     CALL tea_leaf_kernel_ppcg_init_sd_ocl()
   ENDIF
@@ -737,26 +499,7 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
     !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
     IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
 
-    IF(use_fortran_kernels) THEN
-      CALL report_error('tea_solve', 'Matrix powers not yet implemented in Fortran')
-      CALL tea_leaf_kernel_ppcg_inner(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                            &
-          chunks(c)%field%y_min,                            &
-          chunks(c)%field%y_max,                            &
-          ppcg_cur_step,                                    &
-          ch_alphas, ch_betas,                              &
-          rx, ry,                                           &
-          chunks(c)%field%u,                                &
-          chunks(c)%field%vector_r,                         &
-          chunks(c)%field%vector_Kx,                        &
-          chunks(c)%field%vector_Ky,                        &
-          chunks(c)%field%vector_sd,                        &
-          chunks(c)%field%vector_z,                          &
-          chunks(c)%field%tri_cp,                          &
-          chunks(c)%field%tri_bfp,                          &
-          chunks(c)%field%vector_Mi,                          &
-          tl_preconditioner_type)
-    ELSEIF(use_opencl_kernels) THEN
+    IF(use_opencl_kernels) THEN
       CALL tea_leaf_kernel_ppcg_inner_ocl(ppcg_cur_step, tl_ppcg_inner_steps, chunks(c)%chunk_neighbours)
     ENDIF
   ENDDO
@@ -778,14 +521,7 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
   REAL(KIND=8) :: halo_time, timer, dot_product_time, solve_time
 
   ! calculate 2 norm of u0
-  IF(use_fortran_kernels) THEN
-    CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                          &
-          chunks(c)%field%y_min,                          &
-          chunks(c)%field%y_max,                          &
-          chunks(c)%field%u0,                             &
-          bb)
-  ELSEIF(use_opencl_kernels) THEN
+  IF(use_opencl_kernels) THEN
     call tea_leaf_calc_2norm_kernel_ocl(0, bb)
   ENDIF
 
@@ -795,25 +531,7 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
   IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
   ! initialise 'p' array
-  IF(use_fortran_kernels) THEN
-    CALL tea_leaf_kernel_cheby_init(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                          &
-          chunks(c)%field%y_min,                          &
-          chunks(c)%field%y_max,                          &
-          chunks(c)%field%u,                              &
-          chunks(c)%field%u0,                             &
-          chunks(c)%field%vector_p,                       &
-          chunks(c)%field%vector_r,                       &
-          chunks(c)%field%vector_Mi,                      &
-          chunks(c)%field%vector_w,                       &
-          chunks(c)%field%vector_z,                       &
-          chunks(c)%field%vector_Kx,                      &
-          chunks(c)%field%vector_Ky,                      &
-          chunks(c)%field%tri_cp,   &
-          chunks(c)%field%tri_bfp,    &
-          ch_alphas, ch_betas, max_cheby_iters,           &
-          rx, ry, theta, error, tl_preconditioner_type)
-  ELSEIF(use_opencl_kernels) THEN
+  IF(use_opencl_kernels) THEN
     CALL tea_leaf_kernel_cheby_init_ocl(ch_alphas, ch_betas, &
       max_cheby_iters, rx, ry, theta, error)
   ENDIF
@@ -823,37 +541,12 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
   !IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
   IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
 
-  IF(use_fortran_kernels) THEN
-      CALL tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                               &
-          chunks(c)%field%y_min,                               &
-          chunks(c)%field%y_max,                               &
-          chunks(c)%field%u,                                   &
-          chunks(c)%field%u0,                                  &
-          chunks(c)%field%vector_p,                            &
-          chunks(c)%field%vector_r,                            &
-          chunks(c)%field%vector_Mi,                           &
-          chunks(c)%field%vector_w,                            &
-          chunks(c)%field%vector_z,                            &
-          chunks(c)%field%vector_Kx,                           &
-          chunks(c)%field%vector_Ky,                           &
-          chunks(c)%field%tri_cp,   &
-          chunks(c)%field%tri_bfp,    &
-          ch_alphas, ch_betas, max_cheby_iters,                &
-          rx, ry, 1, tl_preconditioner_type)
-  ELSEIF(use_opencl_kernels) THEN
+  IF(use_opencl_kernels) THEN
       CALL tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
         rx, ry, 1)
   ENDIF
 
-  IF(use_fortran_kernels) THEN
-    CALL tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,&
-          chunks(c)%field%x_max,                          &
-          chunks(c)%field%y_min,                          &
-          chunks(c)%field%y_max,                          &
-          chunks(c)%field%vector_r,                       &
-          error)
-  ELSEIF(use_opencl_kernels) THEN
+  IF(use_opencl_kernels) THEN
     CALL tea_leaf_calc_2norm_kernel_ocl(1, error)
   ENDIF
 

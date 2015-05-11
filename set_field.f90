@@ -26,7 +26,6 @@ CONTAINS
 SUBROUTINE set_field()
 
   USE tea_module
-  USE set_field_kernel_module
 
   IMPLICIT NONE
 
@@ -39,14 +38,7 @@ SUBROUTINE set_field()
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
 
-      IF(use_fortran_kernels)THEN
-        CALL set_field_kernel(chunks(c)%field%x_min,     &
-                              chunks(c)%field%x_max,     &
-                              chunks(c)%field%y_min,     &
-                              chunks(c)%field%y_max,     &
-                              chunks(c)%field%energy0,   &
-                              chunks(c)%field%energy1)
-      ELSEIF(use_opencl_kernels)THEN
+      IF(use_opencl_kernels)THEN
         CALL set_field_kernel_ocl()
       ENDIF
     ENDIF
