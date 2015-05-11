@@ -276,8 +276,13 @@ private:
     (reduce_info_vec_t& red_kernels,
      const cl::Buffer& results_buf);
 public:
-    void initTileQueue(int device_id, bool profiler_on, cl::Context context);
-}
+    void initTileQueue
+    (bool profiler_on, cl::Device chosen_device, cl::Context context);
+
+    TeaCLTile
+    (int* in_x_min, int* in_x_max,
+     int* in_y_min, int* in_y_max);
+}; // TeaCLTile
 
 class TeaCLContext
 {
@@ -418,10 +423,6 @@ public:
     // ctor
     TeaCLContext
     (void);
-
-    TeaCLContext
-    (int* in_x_min, int* in_x_max,
-     int* in_y_min, int* in_y_max);
 
     // dtor
     ~TeaCLContext

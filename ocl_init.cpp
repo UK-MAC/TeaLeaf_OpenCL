@@ -11,29 +11,15 @@
 TeaCLContext tea_context;
 
 extern "C" void initialise_ocl_
-(int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max)
-{
-    tea_context = TeaCLContext(in_x_min, in_x_max,
-        in_y_min, in_y_max);
-}
-
-// default ctor
-TeaCLContext::TeaCLContext
 (void)
 {
-    ;
+    tea_context = TeaCLContext();
 }
 
 extern "C" void timer_c_(double*);
 
 TeaCLContext::TeaCLContext
-(int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max)
-:x_min(*in_x_min),
- x_max(*in_x_max),
- y_min(*in_y_min),
- y_max(*in_y_max)
+(void)
 {
 #ifdef OCL_VERBOSE
     DBGOUT = stdout;
@@ -452,7 +438,7 @@ void TeaCLContext::initOcl
 
             for (int ii = 0; ii < n_tiles; ii++)
             {
-               tiles.at(ii).initTileQueue();
+               tiles.at(ii).initTileQueue(profiler_on, devices.at(tile_device.at(ii)), context);
             }
 #if defined(MPI_HDR)
         }
