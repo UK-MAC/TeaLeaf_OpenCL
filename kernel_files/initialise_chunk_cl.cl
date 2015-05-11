@@ -17,14 +17,14 @@ __kernel void initialise_chunk_first
     __kernel_indexes;
 
     // fill out x arrays
-    if (row == 0 && column <= (x_max + HALO_DEPTH) + 3)
+    if (row == 0 && column <= (x_max + HALO_DEPTH))
     {
         vertexx[column] = d_xmin + d_dx*(double)((((int)column) - 1) - HALO_DEPTH + 1);
         vertexdx[column] = d_dx;
     }
 
     // fill out y arrays
-    if (column == 0 && row <= (y_max + HALO_DEPTH) + 3)
+    if (column == 0 && row <= (y_max + HALO_DEPTH))
     {
         vertexy[row] = d_ymin + d_dy*(double)((((int)row) - 1) - HALO_DEPTH + 1);
         vertexdy[row] = d_dy;
@@ -34,14 +34,14 @@ __kernel void initialise_chunk_first
     const double vertexy_plusone = d_ymin + d_dy*(double)((((int)row)) - HALO_DEPTH + 1);
 
     //fill x arrays
-    if (row == 0 && column <= (x_max + HALO_DEPTH) + 2)
+    if (row == 0 && column <= (x_max + HALO_DEPTH))
     {
         cellx[column] = 0.5 * (vertexx[column] + vertexx_plusone);
         celldx[column] = d_dx;
     }
 
     //fill y arrays
-    if (column == 0 && row <= (y_max + HALO_DEPTH) + 2)
+    if (column == 0 && row <= (y_max + HALO_DEPTH))
     {
         celly[row] = 0.5 * (vertexy[row] + vertexy_plusone);
         celldy[row] = d_dy;
