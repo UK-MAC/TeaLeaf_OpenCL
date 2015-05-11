@@ -9,10 +9,7 @@
 
 #define JACOBI_BLOCK_SIZE 4
 
-// 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
-const static size_t LOCAL_X = 128/LOCAL_Y;
-const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
+#define DEFAULT_LOCAL_SIZE 128
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1
@@ -50,6 +47,11 @@ const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 #define TL_PREC_JAC_DIAG    2
 #define TL_PREC_JAC_BLOCK   3
 
+#define TEA_ENUM_JACOBI     1
+#define TEA_ENUM_CG         2
+#define TEA_ENUM_CHEBYSHEV  3
+#define TEA_ENUM_PPCG       4
+
 typedef struct cell_info {
     const int x_extra;
     const int y_extra;
@@ -74,6 +76,12 @@ typedef struct cell_info {
 
 } cell_info_t;
 
+// specific sizes and launch offsets for different kernels
+typedef struct {
+    cl::NDRange global;
+    cl::NDRange offset;
+} launch_specs_t;
+
 // reductions
 typedef struct red_t {
     cl::Kernel kernel;
@@ -84,7 +92,7 @@ typedef struct red_t {
 // vectors of kernels and work group sizes for a specific reduction
 typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
 
-class CloverChunk
+class TeaCLTile
 {
 private:
     // kernels
@@ -113,25 +121,12 @@ private:
     cl::Kernel pack_top_buffer_device;
     cl::Kernel unpack_top_buffer_device;
 
-    // main buffers, with sub buffers for each offset
-    cl::Buffer left_buffer;
-    cl::Buffer right_buffer;
-    cl::Buffer bottom_buffer;
-    cl::Buffer top_buffer;
-
-    #define TEA_ENUM_JACOBI     1
-    #define TEA_ENUM_CG         2
-    #define TEA_ENUM_CHEBYSHEV  3
-    #define TEA_ENUM_PPCG       4
-    int tea_solver;
-
     // tea leaf
     cl::Kernel tea_leaf_cg_solve_init_p_device;
     cl::Kernel tea_leaf_cg_solve_calc_w_device;
     cl::Kernel tea_leaf_cg_solve_calc_ur_device;
     cl::Kernel tea_leaf_cg_solve_calc_rrn_device;
     cl::Kernel tea_leaf_cg_solve_calc_p_device;
-    cl::Buffer vector_z;
 
     // chebyshev solver
     cl::Kernel tea_leaf_cheby_solve_init_p_device;
@@ -143,9 +138,6 @@ private:
     cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_update_r_device;
 
-    // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
-    cl::Buffer ch_alphas_device, ch_betas_device;
-
     // need more for the Kx/Ky arrays
     cl::Kernel tea_leaf_jacobi_copy_u_device;
     cl::Kernel tea_leaf_jacobi_solve_device;
@@ -153,48 +145,25 @@ private:
     cl::Kernel tea_leaf_block_init_device;
     cl::Kernel tea_leaf_block_solve_device;
     cl::Kernel tea_leaf_init_jac_diag_device;;
-    cl::Buffer cp, bfp;
-
-    cl::Buffer u, u0;
     cl::Kernel tea_leaf_finalise_device;
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
     cl::Kernel tea_leaf_calc_residual_device;
     cl::Kernel tea_leaf_init_common_device;
 
-    // tolerance specified in tea.in
-    float tolerance;
-    // type of preconditioner
-    int preconditioner_type;
+    // main buffers, with sub buffers for each offset
+    cl::Buffer left_buffer;
+    cl::Buffer right_buffer;
+    cl::Buffer bottom_buffer;
+    cl::Buffer top_buffer;
 
-    // calculate rx/ry to pass back to fortran
-    void calcrxry
-    (double dt, double * rx, double * ry);
+    // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
+    cl::Buffer ch_alphas_device, ch_betas_device;
 
-    // specific sizes and launch offsets for different kernels
-    typedef struct {
-        cl::NDRange global;
-        cl::NDRange offset;
-    } launch_specs_t;
-    std::map< std::string, launch_specs_t > launch_specs;
-
-    launch_specs_t findPaddingSize
-    (int vmin, int vmax, int hmin, int hmax);
-
-    // reduction kernels - need multiple levels
-    reduce_info_vec_t min_red_kernels_double;
-    reduce_info_vec_t max_red_kernels_double;
-    reduce_info_vec_t sum_red_kernels_double;
-    // for PdV
-    reduce_info_vec_t max_red_kernels_int;
-
-    // ocl things
-    cl::CommandQueue queue;
-    cl::Platform platform;
-    cl::Device device;
-    cl::Context context;
-
-    // for passing into kernels for changing operation based on device type
-    std::string device_type_prepro;
+    cl::Buffer cp;
+    cl::Buffer bfp;
+    cl::Buffer vector_z;
+    cl::Buffer u;
+    cl::Buffer u0;
 
     // buffers
     cl::Buffer density;
@@ -223,9 +192,6 @@ private:
     cl::Buffer vector_Ky;
     cl::Buffer vector_sd;
 
-    // for reduction in PdV
-    cl::Buffer PdV_reduce_buf;
-
     // for reduction in field_summary
     cl::Buffer reduce_buf_1;
     cl::Buffer reduce_buf_2;
@@ -234,14 +200,44 @@ private:
     cl::Buffer reduce_buf_5;
     cl::Buffer reduce_buf_6;
 
+    // values used to control operation
+    size_t x_min;
+    size_t x_max;
+    size_t y_min;
+    size_t y_max;
+
+    std::map< std::string, launch_specs_t > launch_specs;
+
+    // reduction kernels - need multiple levels
+    reduce_info_vec_t min_red_kernels_double;
+    reduce_info_vec_t max_red_kernels_double;
+    reduce_info_vec_t sum_red_kernels_double;
+
+    cl::Device device;
+    cl::CommandQueue queue;
+
     // global size for kernels
     cl::NDRange global_size;
+    cl::NDRange local_size;
+
+    /*
+    // 2 dimensional arrays - use a 2D tile for local group
+    const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
+    const static size_t LOCAL_X = 128/LOCAL_Y;
+    const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
+    */
+
+    // compile a file and the contained kernels, and check for errors
+    void compileKernel
+    (std::stringstream& options,
+     const std::string& source_name,
+     const char* kernel_name,
+     cl::Kernel& kernel,
+     int launch_x_min, int launch_x_max,
+     int launch_y_min, int launch_y_max);
+
     // number of cells reduced
     size_t reduced_cells;
-
-    // halo size
-    size_t halo_exchange_depth;
-    size_t halo_allocate_depth;
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
@@ -251,13 +247,72 @@ private:
     std::map<int, cl::NDRange> update_lr_offset;
     std::map<int, cl::NDRange> update_bt_offset;
 
-    // values used to control operation
-    size_t x_min;
-    size_t x_max;
-    size_t y_min;
-    size_t y_max;
+    std::vector<double> dumpArray
+    (const std::string& arr_name, int x_extra, int y_extra);
+    std::map<std::string, cl::Buffer> arr_names;
+
+    // enqueue a kernel
+    void enqueueKernel
+    (cl::Kernel const& kernel,
+     int line, const char* file,
+     const cl::NDRange offset,
+     const cl::NDRange global_range,
+     const cl::NDRange local_range,
+     const std::vector< cl::Event > * const events=NULL,
+     cl::Event * const event=NULL) ;
+
+    // TODO
+    #define ENQUEUE_OFFSET(knl)                        \
+;
+        // \
+        enqueueKernel(knl, __LINE__, __FILE__,         \
+                      launch_specs.at(#knl).offset,    \
+                      launch_specs.at(#knl).global,    \
+                      local_size);
+
+    // reduction
+    template <typename T>
+    T reduceValue
+    (reduce_info_vec_t& red_kernels,
+     const cl::Buffer& results_buf);
+public:
+    void initTileQueue(int device_id, bool profiler_on, cl::Context context);
+}
+
+class TeaCLContext
+{
+private:
+    int tea_solver;
+
+    // tolerance specified in tea.in
+    float tolerance;
+    // type of preconditioner
+    int preconditioner_type;
+
+    // calculate rx/ry to pass back to fortran
+    void calcrxry
+    (double dt, double * rx, double * ry);
+
+    launch_specs_t findPaddingSize
+    (int vmin, int vmax, int hmin, int hmax);
+
+    // ocl things
+    cl::Platform platform;
+    cl::Context context;
+
+    // for passing into kernels for changing operation based on device type
+    std::string device_type_prepro;
+
+    // halo size
+    size_t halo_exchange_depth;
+    size_t halo_allocate_depth;
+
     // mpi rank
     int rank;
+
+    // number of tiles
+    int n_tiles;
+    std::vector<TeaCLTile> tiles;
 
     // desired type for opencl
     int desired_type;
@@ -272,22 +327,12 @@ private:
     // Where to send debug output
     FILE* DBGOUT;
 
-    // compile a file and the contained kernels, and check for errors
-    void compileKernel
-    (std::stringstream& options,
-     const std::string& source_name,
-     const char* kernel_name,
-     cl::Kernel& kernel,
-     int launch_x_min, int launch_x_max,
-     int launch_y_min, int launch_y_max);
     cl::Program compileProgram
     (const std::string& source,
      const std::string& options);
+
     // keep track of built programs to avoid rebuilding them
     std::map<std::string, cl::Program> built_programs;
-    std::vector<double> dumpArray
-    (const std::string& arr_name, int x_extra, int y_extra);
-    std::map<std::string, cl::Buffer> arr_names;
 
     /*
      *  initialisation subroutines
@@ -371,43 +416,23 @@ public:
     void tea_leaf_init_common(int, double, double*, double*);
 
     // ctor
-    CloverChunk
+    TeaCLContext
     (void);
-    CloverChunk
+
+    TeaCLContext
     (int* in_x_min, int* in_x_max,
      int* in_y_min, int* in_y_max);
+
     // dtor
-    ~CloverChunk
+    ~TeaCLContext
     (void);
-
-    // enqueue a kernel
-    void enqueueKernel
-    (cl::Kernel const& kernel,
-     int line, const char* file,
-     const cl::NDRange offset,
-     const cl::NDRange global_range,
-     const cl::NDRange local_range,
-     const std::vector< cl::Event > * const events=NULL,
-     cl::Event * const event=NULL) ;
-
-    #define ENQUEUE_OFFSET(knl)                        \
-        enqueueKernel(knl, __LINE__, __FILE__,         \
-                      launch_specs.at(#knl).offset,    \
-                      launch_specs.at(#knl).global,    \
-                      local_group_size);
-
-    // reduction
-    template <typename T>
-    T reduceValue
-    (reduce_info_vec_t& red_kernels,
-     const cl::Buffer& results_buf);
 
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
 };
 
-extern CloverChunk chunk;
+extern TeaCLContext tea_context;
 
 class KernelCompileError : std::exception
 {

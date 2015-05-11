@@ -8,10 +8,10 @@ extern "C" void update_halo_kernel_ocl_
 const int* fields,
 const int* depth)
 {
-    chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
+    tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
-void CloverChunk::update_array
+void TeaCLContext::update_array
 (cl::Buffer& cur_array,
 const cell_info_t& array_type,
 const int* chunk_neighbours,
@@ -45,7 +45,7 @@ int depth)
     CHECK_LAUNCH(right, lr)
 }
 
-void CloverChunk::update_halo_kernel
+void TeaCLContext::update_halo_kernel
 (const int* fields,
 int depth,
 const int* chunk_neighbours)

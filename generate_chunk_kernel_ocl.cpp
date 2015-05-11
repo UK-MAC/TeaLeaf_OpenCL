@@ -16,13 +16,13 @@ const int* g_rect,
 const int* g_circ,
 const int* g_point)
 {
-    chunk.generate_chunk_kernel(
+    tea_context.generate_chunk_kernel(
         * number_of_states, state_density, state_energy,
         state_xmin, state_xmax, state_ymin, state_ymax,
         state_radius, state_geometry, * g_rect, * g_circ, *g_point);
 }
 
-void CloverChunk::generate_chunk_kernel
+void TeaCLContext::generate_chunk_kernel
 (const int number_of_states, 
 const double* state_density, const double* state_energy,
 const double* state_xmin, const double* state_xmax,

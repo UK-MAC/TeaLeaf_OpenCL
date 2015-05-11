@@ -1,6 +1,6 @@
 #include "ocl_common.hpp"
 
-void CloverChunk::initBuffers
+void TeaCLContext::initBuffers
 (void)
 {
     size_t total_cells = (x_max+2*halo_allocate_depth+1) * (y_max+2*halo_allocate_depth+1);
