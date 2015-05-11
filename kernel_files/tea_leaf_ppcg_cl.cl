@@ -67,7 +67,8 @@ __kernel void tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    //if (WITHIN_BOUNDS)
+    // either matrix powers is enabled, or block jacobi is
+    if (HALO_DEPTH >= 2 || WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
 
@@ -114,8 +115,10 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         barrier(CLK_LOCAL_MEM_FENCE);
         if (loc_row == 0)
         {
-        if (WITHIN_BOUNDS)
-            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            if (WITHIN_BOUNDS)
+            {
+                block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -125,8 +128,7 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
                                 + beta[step]*z_l[lid];
         }
     }
-    //else if (WITHIN_BOUNDS)
-    else
+    else if (HALO_DEPTH >= 2 || WITHIN_BOUNDS)
     {
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {

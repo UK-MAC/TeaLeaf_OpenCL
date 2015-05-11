@@ -85,7 +85,7 @@ SUBROUTINE read_input()
   tl_use_jacobi = .TRUE.
   verbose_on = .FALSE.
 
-  halo_exchange_depth=2
+  halo_exchange_depth=1
   halo_allocate_depth=2
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
@@ -301,7 +301,7 @@ SUBROUTINE read_input()
     halo_allocate_depth = halo_exchange_depth
   endif
 
-  if ((halo_allocate_depth .ne. 2) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
+  if ((halo_exchange_depth .gt. 1) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
     call report_error('read_input', 'Unable to use nonstandard halo depth with block jacobi preconditioner')
   endif
 
