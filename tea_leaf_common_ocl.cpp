@@ -29,43 +29,49 @@ extern "C" void tea_leaf_calc_residual_ocl_
 void TeaCLContext::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
-    if (norm_array == 0)
+    FOR_EACH_TILE
     {
-        // norm of u0
-        tea_leaf_calc_2norm_device.setArg(0, u0);
-        tea_leaf_calc_2norm_device.setArg(1, u0);
-    }
-    else if (norm_array == 1)
-    {
-        // norm of r
-        tea_leaf_calc_2norm_device.setArg(0, vector_r);
-        tea_leaf_calc_2norm_device.setArg(1, vector_r);
-    }
-    else if (norm_array == 2)
-    {
-        // ddot(z, r)
-        tea_leaf_calc_2norm_device.setArg(0, vector_r);
+        if (norm_array == 0)
+        {
+            // norm of u0
+            tile->tea_leaf_calc_2norm_device.setArg(0, tile->u0);
+            tile->tea_leaf_calc_2norm_device.setArg(1, tile->u0);
+        }
+        else if (norm_array == 1)
+        {
+            // norm of r
+            tile->tea_leaf_calc_2norm_device.setArg(0, tile->vector_r);
+            tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_r);
+        }
+        else if (norm_array == 2)
+        {
+            // ddot(z, r)
+            tile->tea_leaf_calc_2norm_device.setArg(0, tile->vector_r);
 
-        if (preconditioner_type == TL_PREC_JAC_BLOCK)
-        {
-            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+            if (preconditioner_type == TL_PREC_JAC_BLOCK)
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_z);
+            }
+            else if (preconditioner_type == TL_PREC_JAC_DIAG)
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_z);
+            }
+            else if (preconditioner_type == TL_PREC_NONE)
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_r);
+            }
         }
-        else if (preconditioner_type == TL_PREC_JAC_DIAG)
+        else
         {
-            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+            DIE("Invalid value '%d' for norm_array passed, should be 0 for u0, 1 for r, 2 for r*z", norm_array);
         }
-        else if (preconditioner_type == TL_PREC_NONE)
-        {
-            tea_leaf_calc_2norm_device.setArg(1, vector_r);
-        }
-    }
-    else
-    {
-        DIE("Invalid value '%d' for norm_array passed, should be 0 for u0, 1 for r, 2 for r*z", norm_array);
     }
 
     ENQUEUE_OFFSET(tea_leaf_calc_2norm_device);
-    *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
+
+    std::vector<int> indexes(1, 1);
+    std::vector<double> reduced_values = sumReduceValues<double>(indexes);
+    *norm = reduced_values.at(0);
 }
 
 void TeaCLContext::tea_leaf_init_common
@@ -78,12 +84,16 @@ void TeaCLContext::tea_leaf_init_common
 
     calcrxry(dt, rx, ry);
 
-    tea_leaf_init_common_device.setArg(6, *rx);
-    tea_leaf_init_common_device.setArg(7, *ry);
-    tea_leaf_init_common_device.setArg(8, coefficient);
-    ENQUEUE_OFFSET(tea_leaf_init_common_device);
+    FOR_EACH_TILE
+    {
+        tile->tea_leaf_init_common_device.setArg(6, *rx);
+        tile->tea_leaf_init_common_device.setArg(7, *ry);
+        tile->tea_leaf_init_common_device.setArg(8, coefficient);
 
-    generate_chunk_init_u_device.setArg(1, energy1);
+        tile->generate_chunk_init_u_device.setArg(1, tile->energy1);
+    }
+
+    ENQUEUE_OFFSET(tea_leaf_init_common_device);
     ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 
@@ -104,26 +114,31 @@ void TeaCLContext::tea_leaf_calc_residual
 void TeaCLContext::calcrxry
 (double dt, double * rx, double * ry)
 {
-    // make sure intialise chunk has finished
-    queue.finish();
-
-    double dx, dy;
-
-    try
+    FOR_EACH_TILE
     {
-        // celldx/celldy never change, but done for consistency with fortran
-        queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dx);
-        queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dy);
-    }
-    catch (cl::Error e)
-    {
-        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
-            e.err(), e.what());
-    }
+        // make sure intialise chunk has finished
+        tile->queue.finish();
 
-    *rx = dt/(dx*dx);
-    *ry = dt/(dy*dy);
+        double dx, dy;
+
+        try
+        {
+            // celldx/celldy never change, but done for consistency with fortran
+            tile->queue.enqueueReadBuffer(tile->celldx, CL_TRUE,
+                sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dx);
+            tile->queue.enqueueReadBuffer(tile->celldy, CL_TRUE,
+                sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dy);
+        }
+        catch (cl::Error e)
+        {
+            DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
+                e.err(), e.what());
+        }
+
+        *rx = dt/(dx*dx);
+        *ry = dt/(dy*dy);
+
+        break;
+    }
 }
 

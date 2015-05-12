@@ -213,9 +213,9 @@ TeaCLContext::~TeaCLContext
 {
     if (profiler_on && !rank)
     {
+        /*
         fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
 
-        /*
         TODO
         std::map<std::string, double>::iterator ii = kernel_times.begin();
         std::map<std::string, int>::iterator jj = kernel_calls.begin();

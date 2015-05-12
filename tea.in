@@ -23,4 +23,8 @@ tl_eps=1.0e-10
 halo_depth=1
 opencl_vendor=any
 opencl_type=cpu
+
+opencl_affinity=0 1
+opencl_place=compact
+tiles=20
 *endtea

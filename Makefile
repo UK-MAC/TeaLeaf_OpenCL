@@ -125,7 +125,7 @@ endif
 MPICXX_LIB=#-lmpi_cxx
 
 LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
-CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -g
+CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -ggdb -fno-inline
 
 ifdef VERBOSE
 CXXFLAGS+=-D OCL_VERBOSE
@@ -175,7 +175,6 @@ FORTRAN_FILES=\
 	diffuse.o
 
 OCL_FILES=\
-	field_summary_kernel_ocl.o \
 	ocl_init.o \
 	ocl_pack.o \
 	ocl_strings.o \
@@ -183,8 +182,12 @@ OCL_FILES=\
 	ocl_errors.o \
 	ocl_kernels.o \
 	ocl_reduction.o \
+	tea_leaf_common_ocl.o \
+	tea_leaf_cg_ocl.o \
+	tea_leaf_cheby_ocl.o \
+	tea_leaf_ppcg_ocl.o \
+	field_summary_kernel_ocl.o \
 	set_field_kernel_ocl.o \
-	tea_leaf_kernel_ocl.o \
 	generate_chunk_kernel_ocl.o \
 	update_halo_kernel_ocl.o \
 	initialise_chunk_kernel_ocl.o
