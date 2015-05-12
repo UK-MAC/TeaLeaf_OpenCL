@@ -1,0 +1,399 @@
+#ifndef __CL_TYPES_HDR
+#define __CL_TYPES_HDR
+
+#include "CL/cl.hpp"
+
+#include <map>
+
+typedef struct cell_info {
+    const int x_extra;
+    const int y_extra;
+    const int x_invert;
+    const int y_invert;
+    const int x_face;
+    const int y_face;
+    const int grid_type;
+
+    cell_info
+    (int in_x_extra, int in_y_extra,
+    int in_x_invert, int in_y_invert,
+    int in_x_face, int in_y_face,
+    int in_grid_type)
+    :x_extra(in_x_extra), y_extra(in_y_extra),
+    x_invert(in_x_invert), y_invert(in_y_invert),
+    x_face(in_x_face), y_face(in_y_face),
+    grid_type(in_grid_type)
+    {
+        ;
+    }
+
+} cell_info_t;
+
+// specific sizes and launch offsets for different kernels
+typedef struct {
+    cl::NDRange global;
+    cl::NDRange offset;
+} launch_specs_t;
+
+// reductions
+typedef struct red_t {
+    cl::Kernel kernel;
+    cl::NDRange global_size;
+    cl::NDRange local_size;
+} reduce_kernel_info_t;
+
+// vectors of kernels and work group sizes for a specific reduction
+typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
+
+class TeaCLTile
+{
+    friend class TeaCLContext;
+private:
+    // kernels
+    cl::Kernel set_field_device;
+    cl::Kernel field_summary_device;
+
+    cl::Kernel generate_chunk_device;
+    cl::Kernel generate_chunk_init_device;
+    cl::Kernel generate_chunk_init_u_device;
+
+    cl::Kernel initialise_chunk_first_device;
+    cl::Kernel initialise_chunk_second_device;
+
+    // halo updates
+    cl::Kernel update_halo_top_device;
+    cl::Kernel update_halo_bottom_device;
+    cl::Kernel update_halo_left_device;
+    cl::Kernel update_halo_right_device;
+    // mpi packing
+    cl::Kernel pack_left_buffer_device;
+    cl::Kernel unpack_left_buffer_device;
+    cl::Kernel pack_right_buffer_device;
+    cl::Kernel unpack_right_buffer_device;
+    cl::Kernel pack_bottom_buffer_device;
+    cl::Kernel unpack_bottom_buffer_device;
+    cl::Kernel pack_top_buffer_device;
+    cl::Kernel unpack_top_buffer_device;
+
+    // tea leaf
+    cl::Kernel tea_leaf_cg_solve_init_p_device;
+    cl::Kernel tea_leaf_cg_solve_calc_w_device;
+    cl::Kernel tea_leaf_cg_solve_calc_ur_device;
+    cl::Kernel tea_leaf_cg_solve_calc_rrn_device;
+    cl::Kernel tea_leaf_cg_solve_calc_p_device;
+
+    // chebyshev solver
+    cl::Kernel tea_leaf_cheby_solve_init_p_device;
+    cl::Kernel tea_leaf_cheby_solve_calc_u_device;
+    cl::Kernel tea_leaf_cheby_solve_calc_p_device;
+    cl::Kernel tea_leaf_calc_2norm_device;
+
+    cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
+    cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
+    cl::Kernel tea_leaf_ppcg_solve_update_r_device;
+
+    // need more for the Kx/Ky arrays
+    cl::Kernel tea_leaf_jacobi_copy_u_device;
+    cl::Kernel tea_leaf_jacobi_solve_device;
+
+    cl::Kernel tea_leaf_block_init_device;
+    cl::Kernel tea_leaf_block_solve_device;
+    cl::Kernel tea_leaf_init_jac_diag_device;;
+    cl::Kernel tea_leaf_finalise_device;
+    // TODO could be used by all - precalculate diagonal + scale Kx/Ky
+    cl::Kernel tea_leaf_calc_residual_device;
+    cl::Kernel tea_leaf_init_common_device;
+
+    // main buffers, with sub buffers for each offset
+    cl::Buffer left_buffer;
+    cl::Buffer right_buffer;
+    cl::Buffer bottom_buffer;
+    cl::Buffer top_buffer;
+
+    // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
+    cl::Buffer ch_alphas_device, ch_betas_device;
+
+    cl::Buffer cp;
+    cl::Buffer bfp;
+    cl::Buffer vector_z;
+    cl::Buffer u;
+    cl::Buffer u0;
+
+    // buffers
+    cl::Buffer density;
+    cl::Buffer energy0;
+    cl::Buffer energy1;
+    cl::Buffer volume;
+
+    cl::Buffer cellx;
+    cl::Buffer celly;
+    cl::Buffer celldx;
+    cl::Buffer celldy;
+    cl::Buffer vertexx;
+    cl::Buffer vertexy;
+    cl::Buffer vertexdx;
+    cl::Buffer vertexdy;
+
+    cl::Buffer xarea;
+    cl::Buffer yarea;
+
+    // generic work arrays
+    cl::Buffer vector_p;
+    cl::Buffer vector_r;
+    cl::Buffer vector_w;
+    cl::Buffer vector_Mi;
+    cl::Buffer vector_Kx;
+    cl::Buffer vector_Ky;
+    cl::Buffer vector_sd;
+
+    // for reduction in field_summary
+    cl::Buffer reduce_buf_1;
+    cl::Buffer reduce_buf_2;
+    cl::Buffer reduce_buf_3;
+    cl::Buffer reduce_buf_4;
+    cl::Buffer reduce_buf_5;
+    cl::Buffer reduce_buf_6;
+
+    // values used to control operation
+    size_t x_min;
+    size_t x_max;
+    size_t y_min;
+    size_t y_max;
+
+    std::map< std::string, launch_specs_t > launch_specs;
+
+    // reduction kernels - need multiple levels
+    reduce_info_vec_t min_red_kernels_double;
+    reduce_info_vec_t max_red_kernels_double;
+    reduce_info_vec_t sum_red_kernels_double;
+
+    cl::Device device;
+    cl::CommandQueue queue;
+
+    // global size for kernels
+    cl::NDRange global_size;
+    cl::NDRange local_size;
+
+    /*
+    // 2 dimensional arrays - use a 2D tile for local group
+    const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
+    const static size_t LOCAL_X = 128/LOCAL_Y;
+    const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
+    */
+
+    // compile a file and the contained kernels, and check for errors
+    void compileKernel
+    (std::stringstream& options,
+     const std::string& source_name,
+     const char* kernel_name,
+     cl::Kernel& kernel,
+     int launch_x_min, int launch_x_max,
+     int launch_y_min, int launch_y_max);
+
+    // number of cells reduced
+    size_t reduced_cells;
+
+    // sizes for launching update halo kernels - l/r and u/d updates
+    std::map<int, cl::NDRange> update_lr_global_size;
+    std::map<int, cl::NDRange> update_bt_global_size;
+    std::map<int, cl::NDRange> update_lr_local_size;
+    std::map<int, cl::NDRange> update_bt_local_size;
+    std::map<int, cl::NDRange> update_lr_offset;
+    std::map<int, cl::NDRange> update_bt_offset;
+
+    std::vector<double> dumpArray
+    (const std::string& arr_name, int x_extra, int y_extra);
+    std::map<std::string, cl::Buffer> arr_names;
+
+    // enqueue a kernel
+    void enqueueKernel
+    (cl::Kernel const& kernel,
+     int line, const char* file,
+     const cl::NDRange offset,
+     const cl::NDRange global_range,
+     const cl::NDRange local_range,
+     const std::vector< cl::Event > * const events=NULL,
+     cl::Event * const event=NULL) ;
+
+    // TODO
+    #define ENQUEUE_OFFSET(knl)                        \
+;
+        // \
+        enqueueKernel(knl, __LINE__, __FILE__,         \
+                      launch_specs.at(#knl).offset,    \
+                      launch_specs.at(#knl).global,    \
+                      local_size);
+
+    // reduction
+    template <typename T>
+    T reduceValue
+    (reduce_info_vec_t& red_kernels,
+     const cl::Buffer& results_buf);
+
+    void initTileQueue
+    (bool profiler_on, cl::Device chosen_device, cl::Context context);
+
+    void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
+public:
+    TeaCLTile
+    (int in_x_min, int in_x_max,
+     int in_y_min, int in_y_max);
+}; // TeaCLTile
+
+class TeaCLContext
+{
+private:
+    int tea_solver;
+
+    // tolerance specified in tea.in
+    float tolerance;
+    // type of preconditioner
+    int preconditioner_type;
+
+    // calculate rx/ry to pass back to fortran
+    void calcrxry
+    (double dt, double * rx, double * ry);
+
+    launch_specs_t findPaddingSize
+    (int vmin, int vmax, int hmin, int hmax);
+
+    // ocl things
+    cl::Platform platform;
+    cl::Context context;
+
+    // for passing into kernels for changing operation based on device type
+    std::string device_type_prepro;
+
+    // halo size
+    size_t halo_exchange_depth;
+    size_t halo_allocate_depth;
+
+    // mpi rank
+    int rank;
+
+    // number of tiles
+    size_t n_tiles;
+    std::vector<TeaCLTile> tiles;
+    std::vector<TeaCLTile>::iterator typedef tileit;
+
+    // desired type for opencl
+    int desired_type;
+
+    // if profiling
+    bool profiler_on;
+    // for recording times if profiling is on
+    std::map<std::string, double> kernel_times;
+    // recording number of times each kernel was called
+    std::map<std::string, int> kernel_calls;
+
+    // Where to send debug output
+    FILE* DBGOUT;
+
+    cl::Program compileProgram
+    (const std::string& source,
+     const std::string& options);
+
+    // keep track of built programs to avoid rebuilding them
+    std::map<std::string, cl::Program> built_programs;
+
+    /*
+     *  initialisation subroutines
+     */
+
+    // initialise context, queue, etc
+    void initOcl
+    (void);
+    // initialise all program stuff, kernels, etc
+    void initProgram
+    (void);
+    // intialise local/global sizes
+    void initSizes
+    (void);
+    // initialise buffers for device
+    void initBuffers
+    (void);
+    // initialise all the arguments for each kernel
+    void initArgs
+    (void);
+    // create reduction kernels
+    void initReduction
+    (void);
+public:
+    void field_summary_kernel(double* vol, double* mass,
+        double* ie, double* temp);
+
+    void generate_chunk_kernel(const int number_of_states, 
+        const double* state_density, const double* state_energy,
+        const double* state_xmin, const double* state_xmax,
+        const double* state_ymin, const double* state_ymax,
+        const double* state_radius, const int* state_geometry,
+        const int g_rect, const int g_circ, const int g_point);
+
+    void initialise_chunk_kernel(double d_xmin, double d_ymin,
+        double d_dx, double d_dy);
+
+    void update_halo_kernel(const int* fields, int depth,
+        const int* chunk_neighbours);
+    void update_array
+    (cl::Buffer& cur_array,
+    const cell_info_t& array_type,
+    const int* chunk_neighbours,
+    int depth);
+
+    void set_field_kernel();
+
+    // Tea leaf
+    void tea_leaf_init_jacobi(int, double, double*, double*);
+    void tea_leaf_kernel_jacobi(double, double, double*);
+
+    void tea_leaf_init_cg(int, double, double*, double*, double*);
+    void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
+    void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
+    void tea_leaf_kernel_cg_calc_p(double beta);
+
+    void tea_leaf_cheby_copy_u
+    (void);
+    void tea_leaf_calc_2norm_kernel
+    (int norm_array, double* norm);
+    void tea_leaf_kernel_cheby_init
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const double theta, double* error);
+    void tea_leaf_kernel_cheby_iterate
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const int cheby_calc_steps);
+
+    void ppcg_init(const double * ch_alphas, const double * ch_betas,
+        const double theta, const int n);
+    void ppcg_init_sd();
+    void ppcg_inner(int, int, const int*);
+
+    void tea_leaf_finalise();
+    void tea_leaf_calc_residual(void);
+    void tea_leaf_init_common(int, double, double*, double*);
+
+    // ctor
+    TeaCLContext
+    (void);
+
+    // dtor
+    ~TeaCLContext
+    (void);
+
+    void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
+};
+
+class KernelCompileError : std::exception
+{
+private:
+    const std::string _err;
+public:
+    KernelCompileError(const char* err):_err(err){}
+    ~KernelCompileError() throw(){}
+    const char* what() const throw() {return this->_err.c_str();}
+};
+
+#endif
