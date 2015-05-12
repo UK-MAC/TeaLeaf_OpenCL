@@ -5,6 +5,25 @@
 void TeaCLContext::initProgram
 (void)
 {
+    if (!rank)
+    {
+        fprintf(stdout, "Compiling kernels (may take some time)...");
+    }
+
+    FOR_EACH_TILE
+    {
+        tile->initProgram();
+    }
+
+    if (!rank)
+    {
+        fprintf(stdout, "done.\n");
+    }
+}
+
+void TeaCLTile::initProgram
+(void)
+{
     // options
     std::stringstream options("");
 
@@ -42,18 +61,10 @@ void TeaCLContext::initProgram
     // include current directory
     options << "-I. ";
 
-    // device type in the form "-D..."
-    options << device_type_prepro;
-
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
     options << "-DHALO_DEPTH=" << halo_allocate_depth << " ";
 
-    if (!rank)
-    {
-        fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
-        fprintf(stdout, "Compiling kernels (may take some time)...");
-        fflush(stdout);
-    }
+    fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
 
     // launch with special work group sizes to cover the whole grid
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_allocate_depth, halo_allocate_depth, -halo_allocate_depth, halo_allocate_depth);
@@ -117,15 +128,9 @@ void TeaCLContext::initProgram
 
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
-
-    if (!rank)
-    {
-        fprintf(stdout, "done.\n");
-        fprintf(DBGOUT, "All kernels compiled\n");
-    }
 }
 
-TeaCLContext::launch_specs_t TeaCLContext::findPaddingSize
+launch_specs_t TeaCLTile::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
     size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
@@ -138,7 +143,60 @@ TeaCLContext::launch_specs_t TeaCLContext::findPaddingSize
     return cur_specs;
 }
 
-void TeaCLContext::compileKernel
+cl::Program TeaCLTile::compileProgram
+(const std::string& source,
+ const std::string& options)
+{
+    // catches any warnings/errors in the build
+    std::stringstream errstream("");
+
+    // very verbose
+    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
+    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
+    fflush(DBGOUT);
+    cl::Program program;
+
+    cl::Program::Sources sources;
+    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
+
+    try
+    {
+        program = cl::Program(context, sources);
+        std::vector<cl::Device> dev_vec(1, device);
+        program.build(dev_vec, options.c_str());
+    }
+    catch (cl::Error e)
+    {
+        fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
+
+        try
+        {
+            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        }
+        catch (cl::Error ie)
+        {
+            DIE("Error %d in retrieving build info\n", e.err());
+        }
+
+        std::string errs(errstream.str());
+        //DIE("%s\n", errs.c_str());
+        throw KernelCompileError(errs.c_str());
+    }
+
+    // return
+    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    std::string errs(errstream.str());
+
+    // some will print out an empty warning log
+    if (errs.size() > 10)
+    {
+        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
+    }
+
+    return program;
+}
+
+void TeaCLTile::compileKernel
 (std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
@@ -157,6 +215,9 @@ void TeaCLContext::compileKernel
 
     std::stringstream options_orig;
     options_orig << options_orig_knl.str();
+
+    // device type in the form "-D..."
+    options_orig << device_type_prepro;
 
     options_orig << "-D KERNEL_X_MIN=" << launch_x_min << " ";
     options_orig << "-D KERNEL_X_MAX=" << launch_x_max << " ";
@@ -233,59 +294,6 @@ void TeaCLContext::compileKernel
 
     fprintf(DBGOUT, "Done\n");
     fflush(DBGOUT);
-}
-
-cl::Program TeaCLContext::compileProgram
-(const std::string& source,
- const std::string& options)
-{
-    // catches any warnings/errors in the build
-    std::stringstream errstream("");
-
-    // very verbose
-    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
-    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
-    fflush(DBGOUT);
-    cl::Program program;
-
-    cl::Program::Sources sources;
-    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
-
-    try
-    {
-        program = cl::Program(context, sources);
-        std::vector<cl::Device> dev_vec(1, device);
-        program.build(dev_vec, options.c_str());
-    }
-    catch (cl::Error e)
-    {
-        fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
-
-        try
-        {
-            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        }
-        catch (cl::Error ie)
-        {
-            DIE("Error %d in retrieving build info\n", e.err());
-        }
-
-        std::string errs(errstream.str());
-        //DIE("%s\n", errs.c_str());
-        throw KernelCompileError(errs.c_str());
-    }
-
-    // return
-    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    std::string errs(errstream.str());
-
-    // some will print out an empty warning log
-    if (errs.size() > 10)
-    {
-        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
-    }
-
-    return program;
 }
 
 void TeaCLContext::initSizes
@@ -407,6 +415,17 @@ void TeaCLContext::initSizes
 }
 
 void TeaCLContext::initArgs
+(void)
+{
+    FOR_EACH_TILE
+    {
+        tile->initArgs();
+    }
+
+    fprintf(DBGOUT, "Kernel arguments set\n");
+}
+
+void TeaCLTile::initArgs
 (void)
 {
     #define SETARG_CHECK(knl, idx, buf) \
@@ -615,7 +634,5 @@ void TeaCLContext::initArgs
     tea_leaf_init_jac_diag_device.setArg(0, vector_Mi);
     tea_leaf_init_jac_diag_device.setArg(1, vector_Kx);
     tea_leaf_init_jac_diag_device.setArg(2, vector_Ky);
-
-    fprintf(DBGOUT, "Kernel arguments set\n");
 }
 

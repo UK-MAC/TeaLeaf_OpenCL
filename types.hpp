@@ -168,11 +168,22 @@ private:
     reduce_info_vec_t sum_red_kernels_double;
 
     cl::Device device;
+    cl::Context context;
     cl::CommandQueue queue;
 
     // global size for kernels
     cl::NDRange global_size;
     cl::NDRange local_size;
+
+    // if profiling
+    bool profiler_on;
+    // for recording times if profiling is on
+    std::map<std::string, double> kernel_times;
+    // recording number of times each kernel was called
+    std::map<std::string, int> kernel_calls;
+    // type of preconditioner
+    int preconditioner_type;
+    int tea_solver;
 
     /*
     // 2 dimensional arrays - use a 2D tile for local group
@@ -215,6 +226,10 @@ private:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL) ;
 
+    // halo size
+    size_t halo_exchange_depth;
+    size_t halo_allocate_depth;
+
     // TODO
     #define ENQUEUE_OFFSET(knl)                        \
 ;
@@ -232,6 +247,26 @@ private:
 
     void initTileQueue
     (bool profiler_on, cl::Device chosen_device, cl::Context context);
+
+    launch_specs_t findPaddingSize
+    (int vmin, int vmax, int hmin, int hmax);
+
+    cl::Program compileProgram
+    (const std::string& source,
+     const std::string& options);
+
+    // initialise buffers for device
+    void initBuffers
+    (void);
+    // create reduction kernels
+    void initReduction
+    (void);
+    // initialise all program stuff, kernels, etc
+    void initProgram
+    (void);
+    // initialise all the arguments for each kernel
+    void initArgs
+    (void);
 
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
@@ -256,9 +291,6 @@ private:
     void calcrxry
     (double dt, double * rx, double * ry);
 
-    launch_specs_t findPaddingSize
-    (int vmin, int vmax, int hmin, int hmax);
-
     // ocl things
     cl::Platform platform;
     cl::Context context;
@@ -278,22 +310,17 @@ private:
     std::vector<TeaCLTile> tiles;
     std::vector<TeaCLTile>::iterator typedef tileit;
 
+    #define FOR_EACH_TILE \
+        for (tileit tile = tiles.begin(); tile < tiles.end(); tile++)
+
     // desired type for opencl
     int desired_type;
 
     // if profiling
     bool profiler_on;
-    // for recording times if profiling is on
-    std::map<std::string, double> kernel_times;
-    // recording number of times each kernel was called
-    std::map<std::string, int> kernel_calls;
 
     // Where to send debug output
     FILE* DBGOUT;
-
-    cl::Program compileProgram
-    (const std::string& source,
-     const std::string& options);
 
     // keep track of built programs to avoid rebuilding them
     std::map<std::string, cl::Program> built_programs;

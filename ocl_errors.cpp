@@ -1,4 +1,4 @@
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
 #include "mpi.h"
 #endif
 #include "ocl_common.hpp"
@@ -63,7 +63,7 @@ std::string errToString(cl_int err)
     }
 }
 
-void TeaCLContext::enqueueKernel
+void TeaCLTile::enqueueKernel
 (cl::Kernel const& kernel,
  int line, const char* file,
  const cl::NDRange offset_range,
@@ -182,7 +182,7 @@ void TeaCLContext::enqueueKernel
 }
 
 // called when something goes wrong
-void TeaCLContext::cloverDie
+void cloverDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");
@@ -200,7 +200,7 @@ void TeaCLContext::cloverDie
 
     fprintf(stderr, "\nExiting\n");
 
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
     MPI_Abort(MPI_COMM_WORLD, 1);
 #else
     exit(1);
@@ -215,6 +215,8 @@ TeaCLContext::~TeaCLContext
     {
         fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
 
+        /*
+        TODO
         std::map<std::string, double>::iterator ii = kernel_times.begin();
         std::map<std::string, int>::iterator jj = kernel_calls.begin();
 
@@ -224,10 +226,11 @@ TeaCLContext::~TeaCLContext
             fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
                 ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
         }
+        */
     }
 }
 
-std::vector<double> TeaCLContext::dumpArray
+std::vector<double> TeaCLTile::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to allocate for 2d array

@@ -1,4 +1,6 @@
 #include "ocl_common.hpp"
+
+#include <algorithm>
 #include <numeric>
 
 extern "C" void ocl_pack_buffers_
@@ -20,12 +22,18 @@ void TeaCLContext::packUnpackAllBuffers
  const int depth, const int face, const int pack,
  double * host_buffer)
 {
-    const int n_exchanged = std::accumulate(fields, fields + NUM_FIELDS, 0);
-
-    if (n_exchanged < 1)
+    FOR_EACH_TILE
     {
-        return;
+        tile->packUnpackAllBuffers(fields, offsets, depth, face, pack, host_buffer);
     }
+}
+
+void TeaCLTile::packUnpackAllBuffers
+(int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
+ const int depth, const int face, const int pack,
+ double * host_buffer)
+{
+    const int n_exchanged = std::accumulate(fields, fields + NUM_FIELDS, 0);
 
     // which buffer is being used for this operation
     cl::Buffer * device_buffer = NULL;

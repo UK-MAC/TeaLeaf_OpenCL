@@ -7,6 +7,15 @@
 void TeaCLContext::initReduction
 (void)
 {
+    FOR_EACH_TILE
+    {
+        tile->initReduction();
+    }
+}
+
+void TeaCLTile::initReduction
+(void)
+{
     /*
      *  create a reduction kernel, one for each layer, with the right parameters
      */
@@ -49,8 +58,6 @@ void TeaCLContext::initReduction
         // original total number of elements to reduce
         options << "-D ORIG_ELEMS_TO_REDUCE=" << total_to_reduce << " ";
 
-        // device type in the form "-D..."
-        options << device_type_prepro;
         options << "-w ";
 
         // the actual number of elements that needs to be reduced in this stage
