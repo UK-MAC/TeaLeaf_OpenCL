@@ -125,9 +125,9 @@ void TeaCLContext::calcrxry
         {
             // celldx/celldy never change, but done for consistency with fortran
             tile->queue.enqueueReadBuffer(tile->celldx, CL_TRUE,
-                sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dx);
+                sizeof(double)*(1 + run_flags.halo_allocate_depth), sizeof(double), &dx);
             tile->queue.enqueueReadBuffer(tile->celldy, CL_TRUE,
-                sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dy);
+                sizeof(double)*(1 + run_flags.halo_allocate_depth), sizeof(double), &dy);
         }
         catch (cl::Error e)
         {

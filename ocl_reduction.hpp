@@ -90,6 +90,8 @@ std::vector<T> TeaCLContext::sumReduceValues
         cl::Event::waitForEvents(copy_events.at(ii));
         results.at(ii) = std::accumulate(reduced_values.at(ii).begin(), reduced_values.at(ii).end(), 0.0);
     }
+
+    return results;
 }
 
 #endif

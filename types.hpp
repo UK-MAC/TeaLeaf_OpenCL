@@ -36,11 +36,26 @@ typedef struct {
 } launch_specs_t;
 
 // reductions
-typedef struct red_t {
+typedef struct {
     cl::Kernel kernel;
     cl::NDRange global_size;
     cl::NDRange local_size;
 } reduce_kernel_info_t;
+
+typedef struct {
+    // if profiling
+    bool profiler_on;
+    // type of preconditioner
+    int preconditioner_type;
+    // which solver to use, enumerated
+    int tea_solver;
+    // total number of cells
+    size_t x_cells;
+    size_t y_cells;
+    // halo size
+    size_t halo_exchange_depth;
+    size_t halo_allocate_depth;
+} run_flags_t;
 
 // vectors of kernels and work group sizes for a specific reduction
 typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
@@ -154,12 +169,6 @@ private:
     cl::Buffer reduce_buf_5;
     cl::Buffer reduce_buf_6;
 
-    // values used to control operation
-    size_t x_min;
-    size_t x_max;
-    size_t y_min;
-    size_t y_max;
-
     std::map< std::string, launch_specs_t > launch_specs;
 
     // reduction kernels - need multiple levels
@@ -173,15 +182,10 @@ private:
     cl::NDRange global_size;
     cl::NDRange local_size;
 
-    // if profiling
-    bool profiler_on;
     // for recording times if profiling is on
     std::map<std::string, double> kernel_times;
     // recording number of times each kernel was called
     std::map<std::string, int> kernel_calls;
-    // type of preconditioner
-    int preconditioner_type;
-    int tea_solver;
 
     /*
     // 2 dimensional arrays - use a 2D tile for local group
@@ -201,6 +205,8 @@ private:
 
     // number of cells reduced
     size_t reduced_cells;
+    size_t tile_x_cells;
+    size_t tile_y_cells;
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
@@ -227,10 +233,6 @@ private:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL) ;
 
-    // halo size
-    size_t halo_exchange_depth;
-    size_t halo_allocate_depth;
-
     // TODO
     #define ENQUEUE_OFFSET(knl)                        \
 ;
@@ -252,7 +254,7 @@ private:
      T* result, cl::Event* copy_event);
 
     void initTileQueue
-    (bool profiler_on, cl::Device chosen_device, cl::Context context);
+    (run_flags_t run_flags, cl::Device chosen_device, cl::Context context);
 
     launch_specs_t findPaddingSize
     (int vmin, int vmax, int hmin, int hmax);
@@ -288,16 +290,18 @@ private:
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
+
+    run_flags_t run_flags;
 public:
     TeaCLTile
-    (int in_x_min, int in_x_max,
-     int in_y_min, int in_y_max);
+    (run_flags_t run_flags, int x_cells, int y_cells);
+
 }; // TeaCLTile
 
 class TeaCLContext
 {
 private:
-    int tea_solver;
+    run_flags_t run_flags;
 
     // tolerance specified in tea.in
     float tolerance;
@@ -312,10 +316,6 @@ private:
     cl::Platform platform;
     cl::Context context;
 
-    // halo size
-    size_t halo_exchange_depth;
-    size_t halo_allocate_depth;
-
     // mpi rank
     int rank;
 
@@ -326,9 +326,6 @@ private:
 
     #define FOR_EACH_TILE \
         for (tileit tile = tiles.begin(); tile < tiles.end(); tile++)
-
-    // if profiling
-    bool profiler_on;
 
     /*
      *  initialisation subroutines
@@ -405,10 +402,6 @@ public:
     void tea_leaf_init_common(int, double, double*, double*);
 
     void initialise(void);
-
-    // ctor
-    TeaCLContext
-    (void);
 
     // dtor
     ~TeaCLContext

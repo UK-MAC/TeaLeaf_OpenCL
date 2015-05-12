@@ -74,7 +74,7 @@ void TeaCLTile::enqueueKernel
 {
     try
     {
-        if (profiler_on)
+        if (run_flags.profiler_on)
         {
             // time it
             cl::Event *prof_event;
@@ -211,7 +211,7 @@ void cloverDie
 TeaCLContext::~TeaCLContext
 (void)
 {
-    if (profiler_on && !rank)
+    if (run_flags.profiler_on && !rank)
     {
         /*
         fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
@@ -235,8 +235,8 @@ std::vector<double> TeaCLTile::dumpArray
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 2*halo_allocate_depth + x_extra)       \
-        * ((y_max) + 2*halo_allocate_depth + y_extra)       \
+        ( ((run_flags.x_cells) + 2*run_flags.halo_allocate_depth + x_extra)       \
+        * ((run_flags.y_cells) + 2*run_flags.halo_allocate_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

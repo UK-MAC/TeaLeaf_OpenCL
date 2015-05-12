@@ -32,17 +32,17 @@ void TeaCLTile::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    options << "-DPRECONDITIONER=" << preconditioner_type << " ";
+    options << "-DPRECONDITIONER=" << run_flags.preconditioner_type << " ";
 
     // pass in these values so you don't have to pass them in to every kernel
-    options << "-Dx_max=" << x_max << " ";
-    options << "-Dy_max=" << y_max << " ";
+    options << "-Dx_max=" << tile_x_cells << " ";
+    options << "-Dy_max=" << tile_y_cells << " ";
 
     options << "-DJACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
 
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge
     // rather expensive check so don't always do it
-    if (y_max % JACOBI_BLOCK_SIZE)
+    if (tile_y_cells % JACOBI_BLOCK_SIZE)
     {
         options << "-DBLOCK_TOP_CHECK ";
     }
@@ -52,22 +52,16 @@ void TeaCLTile::initProgram
     options << "-DLOCAL_X=" << LOCAL_X << " ";
     options << "-DLOCAL_Y=" << LOCAL_Y << " ";
 
-    // for update halo
-    options << "-DCELL_DATA=" << CELL_DATA << " ";
-    options << "-DVERTEX_DATA=" << VERTEX_DATA << " ";
-    options << "-DX_FACE_DATA=" << X_FACE_DATA << " ";
-    options << "-DY_FACE_DATA=" << Y_FACE_DATA << " ";
-
     // include current directory
     options << "-I. ";
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << halo_allocate_depth << " ";
+    options << "-DHALO_DEPTH=" << run_flags.halo_allocate_depth << " ";
 
-    fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
+    //fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
 
     // launch with special work group sizes to cover the whole grid
-    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_allocate_depth, halo_allocate_depth, -halo_allocate_depth, halo_allocate_depth);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -run_flags.halo_allocate_depth, run_flags.halo_allocate_depth, -run_flags.halo_allocate_depth, run_flags.halo_allocate_depth);
 
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -2, 2, -2, 2);
@@ -91,22 +85,22 @@ void TeaCLTile::initProgram
     compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_top_buffer", pack_top_buffer_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_top_buffer", unpack_top_buffer_device, 0, 0, 0, 0);
 
-    if (tea_solver == TEA_ENUM_CG ||
-    tea_solver == TEA_ENUM_CHEBYSHEV ||
-    tea_solver == TEA_ENUM_PPCG)
+    if (run_flags.tea_solver == TEA_ENUM_CG ||
+    run_flags.tea_solver == TEA_ENUM_CHEBYSHEV ||
+    run_flags.tea_solver == TEA_ENUM_PPCG)
     {
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_w", tea_leaf_cg_solve_calc_w_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_ur", tea_leaf_cg_solve_calc_ur_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_calc_p", tea_leaf_cg_solve_calc_p_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_cg_cl.cl", "tea_leaf_cg_solve_init_p", tea_leaf_cg_solve_init_p_device, 0, 0, 0, 0);
 
-        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        if (run_flags.tea_solver == TEA_ENUM_CHEBYSHEV)
         {
             compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_init_p", tea_leaf_cheby_solve_init_p_device, 0, 0, 0, 0);
             compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_u", tea_leaf_cheby_solve_calc_u_device, 0, 0, 0, 0);
             compileKernel(options, "./kernel_files/tea_leaf_cheby_cl.cl", "tea_leaf_cheby_solve_calc_p", tea_leaf_cheby_solve_calc_p_device, 0, 0, 0, 0);
         }
-        else if (tea_solver == TEA_ENUM_PPCG)
+        else if (run_flags.tea_solver == TEA_ENUM_PPCG)
         {
             compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_sd", tea_leaf_ppcg_solve_init_sd_device, 0, 0, 0, 0);
             compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device, 0, 0, 0, 0);
@@ -126,20 +120,20 @@ void TeaCLTile::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
 
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-run_flags.halo_exchange_depth, run_flags.halo_exchange_depth, 1-run_flags.halo_exchange_depth, run_flags.halo_exchange_depth);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -run_flags.halo_exchange_depth, run_flags.halo_exchange_depth, -run_flags.halo_exchange_depth, run_flags.halo_exchange_depth);
 }
 
 launch_specs_t TeaCLTile::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
-    size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
+    size_t global_horz_size = (-(hmin)) + (hmax) + tile_x_cells;
     while (global_horz_size % LOCAL_X) global_horz_size++;
-    size_t global_vert_size = (-(vmin)) + (vmax) + y_max;
+    size_t global_vert_size = (-(vmin)) + (vmax) + tile_y_cells;
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((halo_allocate_depth) + (hmin), (halo_allocate_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((run_flags.halo_allocate_depth) + (hmin), (run_flags.halo_allocate_depth) + (vmin));
     return cur_specs;
 }
 
@@ -327,10 +321,10 @@ void TeaCLTile::initSizes
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    const size_t glob_x = x_max+4 +
-        (((x_max+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+4)%LOCAL_X)));
-    const size_t glob_y = y_max+4 +
-        (((y_max+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+4)%LOCAL_Y)));
+    const size_t glob_x = tile_x_cells+4 +
+        (((tile_x_cells+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells+4)%LOCAL_X)));
+    const size_t glob_y = tile_y_cells+4 +
+        (((tile_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells+4)%LOCAL_Y)));
 
     fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
@@ -341,10 +335,10 @@ void TeaCLTile::initSizes
      *  that doesn't include these halo cells for the reduction which should
      *  speed it up a bit
      */
-    const size_t red_x = x_max +
-        (((x_max)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max)%LOCAL_X)));
-    const size_t red_y = y_max +
-        (((y_max)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max)%LOCAL_Y)));
+    const size_t red_x = tile_x_cells +
+        (((tile_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells)%LOCAL_X)));
+    const size_t red_y = tile_y_cells +
+        (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 
     /*
@@ -384,8 +378,8 @@ void TeaCLTile::initSizes
     update_bt_local_size[2] = cl::NDRange(local_row_size, 2);
 
     // start off doing minimum amount of work
-    size_t global_bt_update_size = x_max + 4;
-    size_t global_lr_update_size = y_max + 4;
+    size_t global_bt_update_size = tile_x_cells + 4;
+    size_t global_lr_update_size = tile_y_cells + 4;
 
     // increase just to fit in with local work group sizes
     while (global_bt_update_size % local_row_size)
@@ -399,8 +393,8 @@ void TeaCLTile::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = x_max + 2*halo_allocate_depth;
-    size_t global_lr_pack_size = y_max + 2*halo_allocate_depth;
+    size_t global_bt_pack_size = tile_x_cells + 2*run_flags.halo_allocate_depth;
+    size_t global_lr_pack_size = tile_y_cells + 2*run_flags.halo_allocate_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)
@@ -408,12 +402,12 @@ void TeaCLTile::initSizes
     while (global_lr_pack_size % local_column_size)
         global_lr_pack_size++;
 
-    update_lr_global_size[halo_exchange_depth] = cl::NDRange(halo_exchange_depth, global_lr_pack_size);
-    update_bt_global_size[halo_exchange_depth] = cl::NDRange(global_bt_pack_size, halo_exchange_depth);
+    update_lr_global_size[run_flags.halo_exchange_depth] = cl::NDRange(run_flags.halo_exchange_depth, global_lr_pack_size);
+    update_bt_global_size[run_flags.halo_exchange_depth] = cl::NDRange(global_bt_pack_size, run_flags.halo_exchange_depth);
 
     // use same local size as depth 1
-    update_lr_local_size[halo_exchange_depth] = update_lr_local_size[1];
-    update_bt_local_size[halo_exchange_depth] = update_bt_local_size[1];
+    update_lr_local_size[run_flags.halo_exchange_depth] = update_lr_local_size[1];
+    update_bt_local_size[run_flags.halo_exchange_depth] = update_bt_local_size[1];
 
     //for (int depth = 0; depth < 2; depth++)
     std::map<int, cl::NDRange>::iterator typedef irangeit;
@@ -422,8 +416,8 @@ void TeaCLTile::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(halo_allocate_depth - depth, halo_allocate_depth - depth);
-        update_bt_offset[depth] = cl::NDRange(halo_allocate_depth - depth, halo_allocate_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",
@@ -512,9 +506,9 @@ void TeaCLTile::initArgs
     // no parameters set for update_halo here
 
     // tealeaf
-    if (tea_solver == TEA_ENUM_CG ||
-    tea_solver == TEA_ENUM_CHEBYSHEV ||
-    tea_solver == TEA_ENUM_PPCG)
+    if (run_flags.tea_solver == TEA_ENUM_CG ||
+    run_flags.tea_solver == TEA_ENUM_CHEBYSHEV ||
+    run_flags.tea_solver == TEA_ENUM_PPCG)
     {
         /*
          *  reduce_buf_1 = bb
@@ -551,7 +545,7 @@ void TeaCLTile::initArgs
         tea_leaf_cg_solve_calc_p_device.setArg(2, vector_r);
         tea_leaf_cg_solve_calc_p_device.setArg(3, vector_z);
 
-        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        if (run_flags.tea_solver == TEA_ENUM_CHEBYSHEV)
         {
             tea_leaf_cheby_solve_init_p_device.setArg(0, u);
             tea_leaf_cheby_solve_init_p_device.setArg(1, u0);
@@ -578,7 +572,7 @@ void TeaCLTile::initArgs
             tea_leaf_cheby_solve_calc_p_device.setArg(8, vector_Kx);
             tea_leaf_cheby_solve_calc_p_device.setArg(9, vector_Ky);
         }
-        else if (tea_solver == TEA_ENUM_PPCG)
+        else if (run_flags.tea_solver == TEA_ENUM_PPCG)
         {
             tea_leaf_ppcg_solve_init_sd_device.setArg(0, vector_r);
             tea_leaf_ppcg_solve_init_sd_device.setArg(1, vector_sd);
