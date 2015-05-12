@@ -22,5 +22,9 @@ tl_eps=1.0e-12
 !profiler_on
 halo_depth=2
 opencl_vendor=any
-opencl_type=gpu
+opencl_type=cpu
+
+opencl_affinity=0 1
+opencl_place=compact
+tiles=20
 *endtea

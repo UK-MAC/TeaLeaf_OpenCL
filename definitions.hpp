@@ -51,4 +51,8 @@
 #define TEA_ENUM_CHEBYSHEV  3
 #define TEA_ENUM_PPCG       4
 
+// same as in fortran
+#define CONDUCTIVITY 1
+#define RECIP_CONDUCTIVITY 2
+
 #endif

@@ -35,10 +35,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
     chunks(chunk)%field%y_max=y_cells
 
     IF (use_opencl_kernels) THEN
-      CALL initialise_ocl(chunks(chunk)%field%x_min, &
-                          chunks(chunk)%field%x_max, &
-                          chunks(chunk)%field%y_min, &
-                          chunks(chunk)%field%y_max)
+      CALL initialise_ocl()
     ENDIF
   
 END SUBROUTINE build_field

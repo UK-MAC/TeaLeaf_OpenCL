@@ -11,7 +11,7 @@ const int* depth)
     tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
-void TeaCLContext::update_array
+void TeaCLTile::update_array
 (cl::Buffer& cur_array,
 const cell_info_t& array_type,
 const int* chunk_neighbours,
@@ -53,11 +53,14 @@ const int* chunk_neighbours)
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
     if(fields[FIELD_ ## arr - 1] == 1)                      \
     {                                                       \
-        update_array(arr, type, chunk_neighbours, depth);   \
+        tile->update_array(tile->arr, type, chunk_neighbours, depth);   \
     }
 
-    HALO_UPDATE_RESIDENT(density, CELL);
-    HALO_UPDATE_RESIDENT(energy0, CELL);
-    HALO_UPDATE_RESIDENT(energy1, CELL);
+    FOR_EACH_TILE
+    {
+        HALO_UPDATE_RESIDENT(density, CELL);
+        HALO_UPDATE_RESIDENT(energy0, CELL);
+        HALO_UPDATE_RESIDENT(energy1, CELL);
+    }
 }
 

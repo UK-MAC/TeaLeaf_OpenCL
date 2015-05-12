@@ -14,11 +14,17 @@ extern "C" void initialise_ocl_
 (void)
 {
     tea_context = TeaCLContext();
+    tea_context.initialise();
 }
 
 extern "C" void timer_c_(double*);
 
 TeaCLContext::TeaCLContext
+(void)
+{
+}
+
+void TeaCLContext::initialise
 (void)
 {
 #if !defined(OCL_NO_MPI)
@@ -135,7 +141,16 @@ void TeaCLContext::initOcl
 
     int file_halo_depth = readInt(input, "halo_depth");
 
-    n_tiles = readInt(input, "tiles");
+    int file_n_tiles = readInt(input, "tiles");
+
+    if (file_n_tiles < 0)
+    {
+        DIE("Invalid number of tiles %d specified", file_n_tiles);
+    }
+    else
+    {
+        n_tiles = file_n_tiles;
+    }
 
     // No error checking - assume fortran does it correctly
     halo_exchange_depth = file_halo_depth;
@@ -334,7 +349,7 @@ void TeaCLContext::initOcl
 
     std::vector<int> tile_device;
 
-    if (opencl_affinity.find("opencl_affinity") != std::string::npos)
+    if (opencl_affinity.find("opencl_affinity") == std::string::npos)
     {
         // string whitespace
         stripString(opencl_affinity);
@@ -365,6 +380,14 @@ void TeaCLContext::initOcl
             }
         }
 
+        for (int ii = 0; ii < device_numbers.size(); ii++)
+        {
+            if (device_numbers.at(ii) < 0)
+            {
+                DIE("Device id of less than 1 specified in opencl_affinity");
+            }
+        }
+
         // then get how they want to be placed
         std::string opencl_place = readString(input, "opencl_place");
 
@@ -385,36 +408,42 @@ void TeaCLContext::initOcl
             if (n_tiles <= device_numbers.size())
             {
                 // same number, or less - just place in order
-                for (size_t ii = 0; ii < n_tiles; ii++)
+                for (size_t ii = 0; ii <= n_tiles; ii++)
                 {
-                    tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
+                    tile_device.push_back(device_numbers.at(ii));
                 }
             }
             else if (mod_device == 0)
             {
                 // divides evenly - place equally
-                for (size_t ii = 0; ii < per_device; ii++)
+                for (size_t ii = 0; ii < n_tiles/per_device; ii++)
                 {
-                    tile_device.push_back(device_numbers.at(ii));
+                    for (size_t jj = 0; jj < per_device; jj++)
+                    {
+                        tile_device.push_back(device_numbers.at(ii));
+                    }
                 }
             }
             else
             {
                 // place more on first device
-                for (size_t ii = 0; ii < per_device; ii++)
+                for (size_t ii = 0; ii < device_numbers.size(); ii++)
                 {
-                    tile_device.push_back(device_numbers.at(ii));
+                    for (size_t jj = 0; jj < per_device; jj++)
+                    {
+                        tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
+                    }
 
                     if (ii < mod_device)
                     {
-                        tile_device.push_back(device_numbers.at(ii));
+                        tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
                     }
                 }
             }
         }
     }
 
-    tiles.assign(n_tiles, TeaCLTile(1, 10, 1, 10));
+    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(1, 10, 1, 10));
 
 #if !defined(OCL_NO_MPI)
     // gets devices one at a time to prevent conflicts (on emerald)
@@ -430,6 +459,11 @@ void TeaCLContext::initOcl
 #endif
             // get devices - just choose the first one
             std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
+
+            if (*std::max_element(tile_device.begin(), tile_device.end()) >= devices.size())
+            {
+                DIE("opencl_affinity was set to use more devices than are available");
+            }
 
             for (size_t ii = 0; ii < n_tiles; ii++)
             {

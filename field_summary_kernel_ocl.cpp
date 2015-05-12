@@ -13,11 +13,8 @@ void TeaCLContext::field_summary_kernel
     //ENQUEUE(field_summary_device);
     ENQUEUE_OFFSET(field_summary_device);
 
-    std::vector<int> indexes;
-    indexes.push_back(1);
-    indexes.push_back(2);
-    indexes.push_back(3);
-    indexes.push_back(4);
+    int vindexes[] = {1, 2, 3, 4};
+    std::vector<int> indexes(vindexes, vindexes+4);
     std::vector<double> reduced_values = sumReduceValues<double>(indexes);
 
     *vol = reduced_values.at(0);

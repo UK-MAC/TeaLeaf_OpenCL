@@ -276,6 +276,15 @@ private:
     void initSizes
     (void);
 
+    void update_array
+    (cl::Buffer& cur_array,
+    const cell_info_t& array_type,
+    const int* chunk_neighbours,
+    int depth);
+
+    void tea_leaf_calc_2norm_set_vector
+    (int norm_array);
+
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
@@ -363,11 +372,6 @@ public:
 
     void update_halo_kernel(const int* fields, int depth,
         const int* chunk_neighbours);
-    void update_array
-    (cl::Buffer& cur_array,
-    const cell_info_t& array_type,
-    const int* chunk_neighbours,
-    int depth);
 
     void set_field_kernel();
 
@@ -399,6 +403,8 @@ public:
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);
     void tea_leaf_init_common(int, double, double*, double*);
+
+    void initialise(void);
 
     // ctor
     TeaCLContext
