@@ -19,11 +19,6 @@ extern "C" void initialise_ocl_
 
 extern "C" void timer_c_(double*);
 
-TeaCLContext::TeaCLContext
-(void)
-{
-}
-
 void TeaCLContext::initialise
 (void)
 {
@@ -128,7 +123,7 @@ void TeaCLContext::initOcl
         DIE("Input file not found\n");
     }
 
-    profiler_on = paramEnabled(input, "profiler_on");
+    run_flags.profiler_on = paramEnabled(input, "profiler_on");
 
     std::string desired_vendor = readString(input, "opencl_vendor");
 
@@ -153,9 +148,9 @@ void TeaCLContext::initOcl
     }
 
     // No error checking - assume fortran does it correctly
-    halo_exchange_depth = file_halo_depth;
+    run_flags.halo_exchange_depth = file_halo_depth;
 
-    halo_allocate_depth = std::max(file_halo_depth, 2);
+    run_flags.halo_allocate_depth = std::max(file_halo_depth, 2);
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
@@ -166,27 +161,27 @@ void TeaCLContext::initOcl
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_ppcg)
     {
-        tea_solver = TEA_ENUM_PPCG;
+        run_flags.tea_solver = TEA_ENUM_PPCG;
         if(!rank)fprintf(stdout, "PPCG\n");
     }
     else if (tl_use_chebyshev)
     {
-        tea_solver = TEA_ENUM_CHEBYSHEV;
+        run_flags.tea_solver = TEA_ENUM_CHEBYSHEV;
         if(!rank)fprintf(stdout, "Chebyshev + CG\n");
     }
     else if (tl_use_cg)
     {
-        tea_solver = TEA_ENUM_CG;
+        run_flags.tea_solver = TEA_ENUM_CG;
         if(!rank)fprintf(stdout, "Conjugate gradient\n");
     }
     else if (tl_use_jacobi)
     {
-        tea_solver = TEA_ENUM_JACOBI;
+        run_flags.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi\n");
     }
     else
     {
-        tea_solver = TEA_ENUM_JACOBI;
+        run_flags.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
@@ -443,7 +438,7 @@ void TeaCLContext::initOcl
         }
     }
 
-    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(1, 10, 1, 10));
+    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(run_flags, 10, 10));
 
 #if !defined(OCL_NO_MPI)
     // gets devices one at a time to prevent conflicts (on emerald)
@@ -478,7 +473,7 @@ void TeaCLContext::initOcl
                    device_num = tile_device.at(ii);
                }
 
-               tiles.at(ii).initTileQueue(profiler_on, devices.at(device_num), context);
+               tiles.at(ii).initTileQueue(run_flags, devices.at(device_num), context);
             }
 #if !defined(OCL_NO_MPI)
         }
@@ -490,17 +485,16 @@ void TeaCLContext::initOcl
 }
 
 TeaCLTile::TeaCLTile
-(int in_x_min, int in_x_max,
- int in_y_min, int in_y_max)
-:x_min(in_x_min),
- x_max(in_x_max),
- y_min(in_y_min),
- y_max(in_y_max)
+(run_flags_t run_flags, int x_cells, int y_cells)
+:tile_x_cells(x_cells),
+ tile_y_cells(y_cells),
+ run_flags(run_flags)
 {
+    ;
 }
 
 void TeaCLTile::initTileQueue
-(bool profiler_on, cl::Device chosen_device, cl::Context context)
+(run_flags_t run_flags, cl::Device chosen_device, cl::Context context)
 {
     device = chosen_device;
 
@@ -511,7 +505,7 @@ void TeaCLTile::initTileQueue
     //    actual_device, devname.c_str(), rank);
 
     // initialise command queue
-    if (profiler_on)
+    if (run_flags.profiler_on)
     {
         // turn on profiling
         queue = cl::CommandQueue(context, device,
