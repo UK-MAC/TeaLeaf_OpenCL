@@ -175,15 +175,15 @@ FORTRAN_FILES=\
 	diffuse.o
 
 OCL_FILES=\
-	ocl_kernels.o \
+	field_summary_kernel_ocl.o \
 	ocl_init.o \
 	ocl_pack.o \
 	ocl_strings.o \
 	ocl_buffers.o \
 	ocl_errors.o \
+	ocl_kernels.o \
 	ocl_reduction.o \
 	set_field_kernel_ocl.o \
-	field_summary_kernel_ocl.o \
 	tea_leaf_kernel_ocl.o \
 	generate_chunk_kernel_ocl.o \
 	update_halo_kernel_ocl.o \

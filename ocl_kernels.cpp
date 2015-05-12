@@ -216,8 +216,24 @@ void TeaCLTile::compileKernel
     std::stringstream options_orig;
     options_orig << options_orig_knl.str();
 
-    // device type in the form "-D..."
-    options_orig << device_type_prepro;
+    // get device type in the form "-D..."
+    cl_uint device_type = device.getInfo<CL_DEVICE_TYPE>();
+
+    switch (device_type)
+    {
+    case CL_DEVICE_TYPE_GPU :
+        options_orig << "-DCL_DEVICE_TYPE_GPU ";
+        break;
+    case CL_DEVICE_TYPE_CPU :
+        options_orig << "-DCL_DEVICE_TYPE_CPU ";
+        break;
+    case CL_DEVICE_TYPE_ACCELERATOR :
+        options_orig << "-DCL_DEVICE_TYPE_ACCELERATOR ";
+        break;
+    default :
+        options_orig << "-DCL_DEVICE_TYPE_GPU ";
+        break;
+    }
 
     options_orig << "-D KERNEL_X_MIN=" << launch_x_min << " ";
     options_orig << "-D KERNEL_X_MAX=" << launch_x_max << " ";
@@ -297,6 +313,15 @@ void TeaCLTile::compileKernel
 }
 
 void TeaCLContext::initSizes
+(void)
+{
+    FOR_EACH_TILE
+    {
+        tile->initSizes();
+    }
+}
+
+void TeaCLTile::initSizes
 (void)
 {
     fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);

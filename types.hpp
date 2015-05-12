@@ -163,8 +163,6 @@ private:
     std::map< std::string, launch_specs_t > launch_specs;
 
     // reduction kernels - need multiple levels
-    reduce_info_vec_t min_red_kernels_double;
-    reduce_info_vec_t max_red_kernels_double;
     reduce_info_vec_t sum_red_kernels_double;
 
     cl::Device device;
@@ -212,6 +210,9 @@ private:
     std::map<int, cl::NDRange> update_lr_offset;
     std::map<int, cl::NDRange> update_bt_offset;
 
+    // keep track of built programs to avoid rebuilding them
+    std::map<std::string, cl::Program> built_programs;
+
     std::vector<double> dumpArray
     (const std::string& arr_name, int x_extra, int y_extra);
     std::map<std::string, cl::Buffer> arr_names;
@@ -241,9 +242,14 @@ private:
 
     // reduction
     template <typename T>
-    T reduceValue
+    void sumReduceValue
+    (int buffer, T* result, cl::Event* event);
+
+    template <typename T>
+    void reduceValue
     (reduce_info_vec_t& red_kernels,
-     const cl::Buffer& results_buf);
+     const cl::Buffer& results_buf,
+     T* result, cl::Event* copy_event);
 
     void initTileQueue
     (bool profiler_on, cl::Device chosen_device, cl::Context context);
@@ -266,6 +272,8 @@ private:
     (void);
     // initialise all the arguments for each kernel
     void initArgs
+    (void);
+    void initSizes
     (void);
 
     void packUnpackAllBuffers
@@ -295,9 +303,6 @@ private:
     cl::Platform platform;
     cl::Context context;
 
-    // for passing into kernels for changing operation based on device type
-    std::string device_type_prepro;
-
     // halo size
     size_t halo_exchange_depth;
     size_t halo_allocate_depth;
@@ -313,17 +318,8 @@ private:
     #define FOR_EACH_TILE \
         for (tileit tile = tiles.begin(); tile < tiles.end(); tile++)
 
-    // desired type for opencl
-    int desired_type;
-
     // if profiling
     bool profiler_on;
-
-    // Where to send debug output
-    FILE* DBGOUT;
-
-    // keep track of built programs to avoid rebuilding them
-    std::map<std::string, cl::Program> built_programs;
 
     /*
      *  initialisation subroutines
@@ -347,6 +343,10 @@ private:
     // create reduction kernels
     void initReduction
     (void);
+
+    template <typename T>
+    std::vector<T> sumReduceValues
+    (const std::vector<int>& buffers);
 public:
     void field_summary_kernel(double* vol, double* mass,
         double* ie, double* temp);

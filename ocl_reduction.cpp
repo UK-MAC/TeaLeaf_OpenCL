@@ -168,8 +168,6 @@ void TeaCLTile::initReduction
         }
 
         MAKE_REDUCE_KNL(sum, double, 0.0);
-        MAKE_REDUCE_KNL(max, double, 0.0);
-        MAKE_REDUCE_KNL(min, double, DBL_MAX);
 
         fprintf(DBGOUT, "%zu/", reduction_global_size);
         reduction_global_size /= reduction_local_size;

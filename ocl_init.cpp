@@ -131,9 +131,11 @@ void TeaCLContext::initOcl
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
 
     std::string type_name = readString(input, "opencl_type");
-    desired_type = typeMatch(type_name);
+    int desired_type = typeMatch(type_name);
 
     int file_halo_depth = readInt(input, "halo_depth");
+
+    n_tiles = readInt(input, "tiles");
 
     // No error checking - assume fortran does it correctly
     halo_exchange_depth = file_halo_depth;
@@ -451,23 +453,6 @@ void TeaCLContext::initOcl
 
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    // choose reduction based on device type
-    switch (desired_type)
-    {
-    case CL_DEVICE_TYPE_GPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-        break;
-    case CL_DEVICE_TYPE_CPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
-        break;
-    case CL_DEVICE_TYPE_ACCELERATOR : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
-        break;
-    default :
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-        break;
-    }
 }
 
 TeaCLTile::TeaCLTile
