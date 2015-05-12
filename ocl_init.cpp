@@ -438,7 +438,7 @@ void TeaCLContext::initOcl
         }
     }
 
-    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(run_flags, 10, 10));
+    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(run_flags, context, 10, 10));
 
 #if !defined(OCL_NO_MPI)
     // gets devices one at a time to prevent conflicts (on emerald)
@@ -485,9 +485,10 @@ void TeaCLContext::initOcl
 }
 
 TeaCLTile::TeaCLTile
-(run_flags_t run_flags, int x_cells, int y_cells)
+(run_flags_t run_flags, cl::Context context, int x_cells, int y_cells)
 :tile_x_cells(x_cells),
  tile_y_cells(y_cells),
+ context(context),
  run_flags(run_flags)
 {
     ;
