@@ -5,6 +5,8 @@
 
 #include <map>
 
+#define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
+
 typedef struct cell_info {
     const int x_extra;
     const int y_extra;

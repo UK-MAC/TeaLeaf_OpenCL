@@ -47,16 +47,22 @@ void TeaCLTile::sumReduceValue
     {
     case 1:
         results_buf = reduce_buf_1;
+        break;
     case 2:
         results_buf = reduce_buf_2;
+        break;
     case 3:
         results_buf = reduce_buf_3;
+        break;
     case 4:
         results_buf = reduce_buf_4;
+        break;
     case 5:
         results_buf = reduce_buf_5;
+        break;
     case 6:
         results_buf = reduce_buf_6;
+        break;
     default:
         DIE("Invalid buffer index %d passed to reduceValue", buffer);
     }
@@ -68,6 +74,7 @@ template <typename T>
 std::vector<T> TeaCLContext::sumReduceValues
 (const std::vector<int>& buffer_indexes)
 {
+    // one vector per buffer to be reduced, each with one vector per tile
     std::vector<std::vector<T> > reduced_values(buffer_indexes.size(), std::vector<T>(tiles.size()));
     std::vector<std::vector<cl::Event> > copy_events(buffer_indexes.size(), std::vector<cl::Event>(tiles.size()));
 
