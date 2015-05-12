@@ -182,7 +182,8 @@ cl::Program TeaCLTile::compileProgram
     // some will print out an empty warning log
     if (errs.size() > 10)
     {
-        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
+        // FIXME
+        //fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
     }
 
     return program;
@@ -235,7 +236,8 @@ void TeaCLTile::compileKernel
     std::string kernel_additional = std::string(kernel_name) + std::string("_device");
     launch_specs[kernel_additional] = findPaddingSize(launch_x_min, launch_x_max, launch_y_min, launch_y_max);
 
-    fprintf(DBGOUT, "Compiling %s...", kernel_name);
+    // FIXME
+    //fprintf(DBGOUT, "Compiling %s...", kernel_name);
     cl::Program program;
 
 #if defined(PHI_SOURCE_PROFILING)
@@ -300,8 +302,8 @@ void TeaCLTile::compileKernel
                 max_wg_size);
     }
 
-    fprintf(DBGOUT, "Done\n");
-    fflush(DBGOUT);
+    // FIXME
+    //fprintf(DBGOUT, "Done\n");
 }
 
 void TeaCLContext::initSizes

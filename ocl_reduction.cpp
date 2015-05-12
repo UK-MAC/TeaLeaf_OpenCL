@@ -19,14 +19,14 @@ void TeaCLTile::initReduction
     /*
      *  create a reduction kernel, one for each layer, with the right parameters
      */
-    fprintf(DBGOUT, "\n---- Reduction ----\n");
+    //fprintf(DBGOUT, "\n---- Reduction ----\n");
 
     // each work group reduces to 1 value inside each kernel
     const size_t total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
 
-    fprintf(DBGOUT, "Total cells to reduce = %zu\n", reduced_cells);
+    //fprintf(DBGOUT, "Total cells to reduce = %zu\n", reduced_cells);
     size_t reduction_global_size = total_to_reduce;
-    fprintf(DBGOUT, "Reduction within work group reduces to = %zu\n", reduction_global_size);
+    //fprintf(DBGOUT, "Reduction within work group reduces to = %zu\n", reduction_global_size);
 
     // each thread can load 2 values to reduce at once
     //reduction_global_size /= 2;
@@ -64,8 +64,8 @@ void TeaCLTile::initReduction
         const size_t stage_elems_to_reduce = reduction_global_size;
         options << "-D ELEMS_TO_REDUCE=" << stage_elems_to_reduce << " ";
 
-        fprintf(DBGOUT, "\n\nStage %d:\n", ii);
-        fprintf(DBGOUT, "%zu elements remaining to reduce\n", stage_elems_to_reduce);
+        //fprintf(DBGOUT, "\n\nStage %d:\n", ii);
+        //fprintf(DBGOUT, "%zu elements remaining to reduce\n", stage_elems_to_reduce);
 
         /*
          *  To get the local size to use at this stage, figure out the largest
@@ -117,8 +117,8 @@ void TeaCLTile::initReduction
             reduction_global_size = reduction_local_size;
         }
 
-        fprintf(DBGOUT, "Padded total number of threads to launch is %zu\n", reduction_global_size);
-        fprintf(DBGOUT, "Local size for reduction is %zu\n", reduction_local_size);
+        //fprintf(DBGOUT, "Padded total number of threads to launch is %zu\n", reduction_global_size);
+        //fprintf(DBGOUT, "Local size for reduction is %zu\n", reduction_local_size);
 
         options << "-D GLOBAL_SZ=" << reduction_global_size << " ";
         options << "-D LOCAL_SZ=" << reduction_local_size << " ";
@@ -141,10 +141,10 @@ void TeaCLTile::initReduction
             options << "-D red_" << #name << " ";                   \
             options << "-D reduce_t="#data_type << " ";             \
             options << "-D INIT_RED_VAL=" << #init_val << " ";      \
-            fprintf(DBGOUT, "Making reduction kernel '%s_%s' ",     \
+            /*fprintf(DBGOUT, "Making reduction kernel '%s_%s' ",     \
                     #name, #data_type);                             \
             fprintf(DBGOUT, "with options string:\n%s\n",           \
-                    options.str().c_str());                         \
+                    options.str().c_str());*/                         \
             try                                                     \
             {                                                       \
                 compileKernel(options,                              \
@@ -157,21 +157,21 @@ void TeaCLTile::initReduction
                 DIE("Errors in compiling reduction %s_%s:\n%s\n",   \
                     #name, #data_type, err.what());                 \
             }                                                       \
-            fprintf(DBGOUT, "Kernel '%s_%s' successfully built\n",  \
-                    #name, #data_type);                             \
             reduce_kernel_info_t info;                              \
             info.kernel = name##_##data_type;                       \
             info.global_size = cl::NDRange(reduction_global_size);  \
             info.local_size = cl::NDRange(reduction_local_size);    \
             name##_red_kernels_##data_type.push_back(info);         \
-            fprintf(DBGOUT, "\n");                                  \
+            /*fprintf(DBGOUT, "Kernel '%s_%s' successfully built\n",  \
+                    #name, #data_type);                             \
+            fprintf(DBGOUT, "\n");*/                                  \
         }
 
         MAKE_REDUCE_KNL(sum, double, 0.0);
 
-        fprintf(DBGOUT, "%zu/", reduction_global_size);
+        //fprintf(DBGOUT, "%zu/", reduction_global_size);
         reduction_global_size /= reduction_local_size;
-        fprintf(DBGOUT, "%zu = %zu remaining\n", reduction_local_size, reduction_global_size);
+        //fprintf(DBGOUT, "%zu = %zu remaining\n", reduction_local_size, reduction_global_size);
 
         if (reduction_global_size <= 1)
         {
@@ -179,6 +179,6 @@ void TeaCLTile::initReduction
         }
     }
 
-    fprintf(DBGOUT, "---- Reduction ----\n\n");
+    //fprintf(DBGOUT, "---- Reduction ----\n\n");
 }
 
