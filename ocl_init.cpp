@@ -1,4 +1,4 @@
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
 #include "mpi.h"
 #endif
 #include "ocl_common.hpp"
@@ -21,16 +21,7 @@ extern "C" void timer_c_(double*);
 TeaCLContext::TeaCLContext
 (void)
 {
-#ifdef OCL_VERBOSE
-    DBGOUT = stdout;
-#else
-    if (NULL == (DBGOUT = fopen("/dev/null", "w")))
-    {
-        DIE("Unable to open /dev/null to discard output\n");
-    }
-#endif
-
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
     rank = 0;
@@ -51,7 +42,7 @@ TeaCLContext::TeaCLContext
     initBuffers();
     initArgs();
 
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     if (!rank)
@@ -357,7 +348,7 @@ void TeaCLContext::initOcl
 
         // make a vector of device numbers to take
         std::vector<int> device_numbers;
-        for (int ii = 0; ii < tokens.size(); ii++)
+        for (size_t ii = 0; ii < tokens.size(); ii++)
         {
             std::stringstream converter(tokens.at(ii));
 
@@ -378,29 +369,29 @@ void TeaCLContext::initOcl
         if (opencl_place.find("scatter") != std::string::npos)
         {
             // scatter alternately over all devices to be used
-            for (int ii = 0; ii < n_tiles; ii++)
+            for (size_t ii = 0; ii < n_tiles; ii++)
             {
                 tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
             }
         }
         else
         {
-            int per_device = n_tiles/device_numbers.size();
-            int mod_device = n_tiles % device_numbers.size();
+            size_t per_device = n_tiles/device_numbers.size();
+            size_t mod_device = n_tiles % device_numbers.size();
 
             // otherwise compact
             if (n_tiles <= device_numbers.size())
             {
                 // same number, or less - just place in order
-                for (int ii = 0; ii < n_tiles; ii++)
+                for (size_t ii = 0; ii < n_tiles; ii++)
                 {
-                    tile_device.push_back(device_numbers.at(ii));
+                    tile_device.push_back(device_numbers.at(ii % device_numbers.size()));
                 }
             }
             else if (mod_device == 0)
             {
                 // divides evenly - place equally
-                for (int ii = 0; ii < per_device; ii++)
+                for (size_t ii = 0; ii < per_device; ii++)
                 {
                     tile_device.push_back(device_numbers.at(ii));
                 }
@@ -408,7 +399,7 @@ void TeaCLContext::initOcl
             else
             {
                 // place more on first device
-                for (int ii = 0; ii < per_device; ii++)
+                for (size_t ii = 0; ii < per_device; ii++)
                 {
                     tile_device.push_back(device_numbers.at(ii));
 
@@ -421,7 +412,9 @@ void TeaCLContext::initOcl
         }
     }
 
-#if defined(MPI_HDR)
+    tiles.assign(n_tiles, TeaCLTile(1, 10, 1, 10));
+
+#if !defined(OCL_NO_MPI)
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
 
@@ -436,11 +429,22 @@ void TeaCLContext::initOcl
             // get devices - just choose the first one
             std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
-            for (int ii = 0; ii < n_tiles; ii++)
+            for (size_t ii = 0; ii < n_tiles; ii++)
             {
-               tiles.at(ii).initTileQueue(profiler_on, devices.at(tile_device.at(ii)), context);
+               int device_num;
+
+               if (tile_device.size() == 0)
+               {
+                   device_num = ii % devices.size();
+               }
+               else
+               {
+                   device_num = tile_device.at(ii);
+               }
+
+               tiles.at(ii).initTileQueue(profiler_on, devices.at(device_num), context);
             }
-#if defined(MPI_HDR)
+#if !defined(OCL_NO_MPI)
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
@@ -463,6 +467,40 @@ void TeaCLContext::initOcl
     default :
         device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
         break;
+    }
+}
+
+TeaCLTile::TeaCLTile
+(int in_x_min, int in_x_max,
+ int in_y_min, int in_y_max)
+:x_min(in_x_min),
+ x_max(in_x_max),
+ y_min(in_y_min),
+ y_max(in_y_max)
+{
+}
+
+void TeaCLTile::initTileQueue
+(bool profiler_on, cl::Device chosen_device, cl::Context context)
+{
+    device = chosen_device;
+
+    std::string devname;
+    device.getInfo(CL_DEVICE_NAME, &devname);
+
+    //fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
+    //    actual_device, devname.c_str(), rank);
+
+    // initialise command queue
+    if (profiler_on)
+    {
+        // turn on profiling
+        queue = cl::CommandQueue(context, device,
+                                 CL_QUEUE_PROFILING_ENABLE, NULL);
+    }
+    else
+    {
+        queue = cl::CommandQueue(context, device);
     }
 }
 
