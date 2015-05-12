@@ -294,7 +294,7 @@ private:
     run_flags_t run_flags;
 public:
     TeaCLTile
-    (run_flags_t run_flags, int x_cells, int y_cells);
+    (run_flags_t run_flags, cl::Context context, int x_cells, int y_cells);
 
 }; // TeaCLTile
 

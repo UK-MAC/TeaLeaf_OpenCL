@@ -49,8 +49,6 @@ void TeaCLTile::initProgram
 
     // local sizes
     options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
-    options << "-DLOCAL_X=" << LOCAL_X << " ";
-    options << "-DLOCAL_Y=" << LOCAL_Y << " ";
 
     // include current directory
     options << "-I. ";
