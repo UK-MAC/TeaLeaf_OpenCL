@@ -249,8 +249,8 @@ std::vector<double> TeaCLTile::dumpArray
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((run_flags.x_cells) + 2*run_flags.halo_allocate_depth + x_extra)       \
-        * ((run_flags.y_cells) + 2*run_flags.halo_allocate_depth + y_extra)       \
+        ( ((tile_x_cells) + 2*run_flags.halo_allocate_depth + x_extra)       \
+        * ((tile_y_cells) + 2*run_flags.halo_allocate_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

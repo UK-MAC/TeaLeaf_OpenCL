@@ -43,6 +43,8 @@ void TeaCLContext::tea_leaf_init_cg
 
         ENQUEUE(tea_leaf_cg_solve_init_p_device);
     }
+
+    *rro = sumReduceValues<double>(std::vector<int>(1, 2)).at(0);
 }
 
 void TeaCLContext::tea_leaf_kernel_cg_calc_w
