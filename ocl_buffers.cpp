@@ -1,11 +1,23 @@
+#include "mpi.h"
 #include "ocl_common.hpp"
 
 void TeaCLContext::initBuffers
 (void)
 {
+    if (!rank)
+    {
+        fprintf(stdout, "Allocating buffers\n");
+    }
+
     FOR_EACH_TILE
     {
         tile->initBuffers();
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!rank)
+    {
+        fprintf(stdout, "Buffers allocated\n");
     }
 }
 
@@ -95,8 +107,6 @@ void TeaCLTile::initBuffers
     BUF_ALLOC(right_buffer, NUM_BUFFERED_FIELDS*lr_mpi_buf_sz);
     BUF_ALLOC(bottom_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
     BUF_ALLOC(top_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
-
-    fprintf(DBGOUT, "Buffers allocated\n");
 
     #undef BUF2D_ALLOC
     #undef BUF1DX_ALLOC

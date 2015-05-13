@@ -1,3 +1,4 @@
+#include "mpi.h"
 #include "ocl_common.hpp"
 #include <sstream>
 #include <fstream>
@@ -14,6 +15,8 @@ void TeaCLContext::initProgram
     {
         tile->initProgram();
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     if (!rank)
     {
@@ -309,16 +312,28 @@ void TeaCLTile::compileKernel
 void TeaCLContext::initSizes
 (void)
 {
+    if (!rank)
+    {
+        fprintf(DBGOUT, "Calculating appropriate work group sizes\n");
+    }
+
     FOR_EACH_TILE
     {
         tile->initSizes();
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(DBGOUT, "Sizes calculated\n");
     }
 }
 
 void TeaCLTile::initSizes
 (void)
 {
-    fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
+    //fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
     const size_t glob_x = tile_x_cells+4 +
@@ -326,7 +341,7 @@ void TeaCLTile::initSizes
     const size_t glob_y = tile_y_cells+4 +
         (((tile_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells+4)%LOCAL_Y)));
 
-    fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
+    //fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
 
     /*
@@ -355,7 +370,7 @@ void TeaCLTile::initSizes
                                  sizeof(size_t),
                                  &max_update_wg_sz,
                                  NULL));
-    fprintf(DBGOUT, "Max work group size for update halo is %zu\n", max_update_wg_sz);
+    //fprintf(DBGOUT, "Max work group size for update halo is %zu\n", max_update_wg_sz);
 
     // ideally multiple of 32 for nvidia, ideally multiple of 64 for amd
     size_t local_row_size = 64;
@@ -419,6 +434,7 @@ void TeaCLTile::initSizes
         update_lr_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
         update_bt_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
 
+        /*
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",
             update_lr_global_size[depth][0], update_lr_global_size[depth][1],
@@ -428,9 +444,8 @@ void TeaCLTile::initSizes
             update_bt_global_size[depth][0], update_bt_global_size[depth][1],
             update_bt_local_size[depth][0], update_bt_local_size[depth][1],
             update_bt_offset[depth][0], update_bt_offset[depth][1]);
+        */
     }
-
-    fprintf(DBGOUT, "Update halo parameters calculated\n");
 }
 
 void TeaCLContext::initArgs

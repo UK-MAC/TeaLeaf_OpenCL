@@ -207,13 +207,13 @@ private:
 
     // number of cells reduced
     size_t reduced_cells;
-    size_t tile_x_cells;
-    size_t tile_y_cells;
+    int tile_x_cells;
+    int tile_y_cells;
 
     // relative to the entire chunk assigned to this rank, where each tile is
-    size_t left, right, bottom, top;
+    int left, right, bottom, top;
     // Coordinates
-    int coords;
+    int coords[2];
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
@@ -301,8 +301,9 @@ private:
     run_flags_t run_flags;
 public:
     TeaCLTile
-    (run_flags_t run_flags, cl::Context context, int x_cells, int y_cells);
-
+    (run_flags_t run_flags, cl::Context context,
+     int x_pos, int y_pos,
+     int left, int right, int bottom, int top);
 }; // TeaCLTile
 
 class TeaCLContext
