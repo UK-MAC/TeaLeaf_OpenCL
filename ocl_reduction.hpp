@@ -26,20 +26,31 @@ void TeaCLTile::reduceValue
     }
 
     // copy back the result and return
-    /*
+#if 0
     queue.enqueueReadBuffer(results_buf,
-                            CL_FALSE,
+                            CL_TRUE,
                             0,
                             sizeof(T),
                             result,
-                            kernel_events,
+                            NULL,
                             copy_event);
-    */
-
-    clEnqueueReadBuffer(queue(), results_buf(), CL_FALSE, 0, sizeof(T), result,
+#else
+    int err;
+    err = clEnqueueReadBuffer(queue(),
+        results_buf(),
+        CL_FALSE,
+        0,
+        sizeof(T),
+        result,
         1,
         &(*kernel_event)(),
         &(*copy_event)());
+
+    if (CL_SUCCESS != err)
+    {
+        DIE("Error number %d in copying back reduction result", err);
+    }
+#endif
 }
 
 template <typename T>

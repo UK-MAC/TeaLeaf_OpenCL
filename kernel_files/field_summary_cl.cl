@@ -17,10 +17,6 @@ __kernel void field_summary
     __local double mass_shared[BLOCK_SZ];
     __local double ie_shared[BLOCK_SZ];
     __local double temp_shared[BLOCK_SZ];
-    vol_shared[lid] = 0.0;
-    mass_shared[lid] = 0.0;
-    ie_shared[lid] = 0.0;
-    temp_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
     {
@@ -31,6 +27,13 @@ __kernel void field_summary
         mass_shared[lid] = cell_mass;
         ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
+    }
+    else
+    {
+        vol_shared[lid] = 0.0;
+        mass_shared[lid] = 0.0;
+        ie_shared[lid] = 0.0;
+        temp_shared[lid] = 0.0;
     }
 
     REDUCTION(vol_shared, vol, SUM)

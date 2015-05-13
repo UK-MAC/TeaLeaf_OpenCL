@@ -347,6 +347,7 @@ void TeaCLTile::initSizes
 
     //fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
+    local_size = cl::NDRange(LOCAL_X, LOCAL_Y);
 
     /*
      *  all the reductions only operate on the inner cells, because the halo
