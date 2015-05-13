@@ -237,7 +237,6 @@ private:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL);
 
-    // TODO
     #define ENQUEUE(knl)                                    \
         tile->enqueueKernel(tile->knl, __LINE__, __FILE__,  \
                       tile->launch_specs.at(#knl).offset,   \

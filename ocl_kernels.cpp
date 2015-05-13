@@ -480,18 +480,18 @@ void TeaCLTile::initArgs
         }
 
     // initialise chunk
-    initialise_chunk_first_device.setArg(4, vertexx);
-    initialise_chunk_first_device.setArg(5, vertexdx);
-    initialise_chunk_first_device.setArg(6, vertexy);
-    initialise_chunk_first_device.setArg(7, vertexdy);
-    initialise_chunk_first_device.setArg(8, cellx);
-    initialise_chunk_first_device.setArg(9, celldx);
-    initialise_chunk_first_device.setArg(10, celly);
-    initialise_chunk_first_device.setArg(11, celldy);
+    initialise_chunk_first_device.setArg(0, vertexx);
+    initialise_chunk_first_device.setArg(1, vertexdx);
+    initialise_chunk_first_device.setArg(2, vertexy);
+    initialise_chunk_first_device.setArg(3, vertexdy);
+    initialise_chunk_first_device.setArg(4, cellx);
+    initialise_chunk_first_device.setArg(5, celldx);
+    initialise_chunk_first_device.setArg(6, celly);
+    initialise_chunk_first_device.setArg(7, celldy);
 
-    initialise_chunk_second_device.setArg(4, volume);
-    initialise_chunk_second_device.setArg(5, xarea);
-    initialise_chunk_second_device.setArg(6, yarea);
+    initialise_chunk_second_device.setArg(2, volume);
+    initialise_chunk_second_device.setArg(3, xarea);
+    initialise_chunk_second_device.setArg(4, yarea);
 
     // set field
     set_field_device.setArg(0, energy0);

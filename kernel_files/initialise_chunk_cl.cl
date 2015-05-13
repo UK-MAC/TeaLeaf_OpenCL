@@ -1,18 +1,18 @@
 #include <kernel_files/macros_cl.cl>
 
 __kernel void initialise_chunk_first
-(const double d_xmin,
- const double d_ymin,
- const double d_dx,
- const double d_dy,
- __global       double * __restrict const vertexx,
+(__global       double * __restrict const vertexx,
  __global       double * __restrict const vertexdx,
  __global       double * __restrict const vertexy,
  __global       double * __restrict const vertexdy,
  __global       double * __restrict const cellx,
  __global       double * __restrict const celldx,
  __global       double * __restrict const celly,
- __global       double * __restrict const celldy)
+ __global       double * __restrict const celldy,
+ const double d_xmin,
+ const double d_ymin,
+ const double d_dx,
+ const double d_dy)
 {
     __kernel_indexes;
 
@@ -49,9 +49,7 @@ __kernel void initialise_chunk_first
 }
 
 __kernel void initialise_chunk_second
-(const double d_xmin,
- const double d_ymin,
- const double d_dx,
+(const double d_dx,
  const double d_dy,
  __global       double * __restrict const volume, 
  __global       double * __restrict const xarea, 
