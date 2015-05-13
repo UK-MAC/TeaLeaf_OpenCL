@@ -207,20 +207,40 @@ TeaCLContext::~TeaCLContext
 {
     if (run_flags.profiler_on && !rank)
     {
-        /*
         fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
 
-        TODO
-        std::map<std::string, double>::iterator ii = kernel_times.begin();
-        std::map<std::string, int>::iterator jj = kernel_calls.begin();
+        std::map<std::string, double> all_kernel_times;
+        std::map<std::string, int> all_kernel_calls;
 
-        for (ii = kernel_times.begin(), jj = kernel_calls.begin();
-            ii != kernel_times.end(); ii++, jj++)
+        std::map<std::string, double>::iterator ii;
+        std::map<std::string, int>::iterator jj;
+
+        FOR_EACH_TILE
+        {
+            for (ii = tile->kernel_times.begin(), jj = tile->kernel_calls.begin();
+                ii != tile->kernel_times.end(); ii++, jj++)
+            {
+                std::string func_name = ii->first;
+
+                if (all_kernel_times.end() != all_kernel_times.find(func_name))
+                {
+                    all_kernel_calls.at(func_name) += jj->second;
+                    all_kernel_times.at(func_name) += ii->second;
+                }
+                else
+                {
+                    all_kernel_calls[func_name] = jj->second;
+                    all_kernel_times[func_name] = ii->second;
+                }
+            }
+        }
+
+        for (ii = all_kernel_times.begin(), jj = all_kernel_calls.begin();
+            ii != all_kernel_times.end(); ii++, jj++)
         {
             fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
                 ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
         }
-        */
     }
 }
 

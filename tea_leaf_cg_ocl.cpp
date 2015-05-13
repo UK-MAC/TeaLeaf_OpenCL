@@ -1,4 +1,5 @@
 #include "ocl_common.hpp"
+#include "ocl_reduction.hpp"
 
 // CG solver functions
 extern "C" void tea_leaf_kernel_init_cg_ocl_

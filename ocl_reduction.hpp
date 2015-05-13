@@ -82,6 +82,11 @@ std::vector<T> TeaCLContext::sumReduceValues
     {
         for (size_t tt = 0; tt < tiles.size(); tt++)
         {
+            /*
+             *  for each buffer that needs to be reduced, make each tile
+             *  individually do the reduction and enqueue a copy into the
+             *  relative part of the array.
+             */
             TeaCLTile tile = tiles.at(tt);
             tile.sumReduceValue<T>(
                 buffer_indexes.at(ii),
@@ -94,8 +99,12 @@ std::vector<T> TeaCLContext::sumReduceValues
 
     for (size_t ii = 0; ii < buffer_indexes.size(); ii++)
     {
+        /*
+         *  Then, for each element that needs to be reduced, wait on events for
+         *  all tiles and do a quick local reduction
+         */
         cl::Event::waitForEvents(copy_events.at(ii));
-        results.at(ii) = std::accumulate(reduced_values.at(ii).begin(), reduced_values.at(ii).end(), 0.0);
+        results.at(ii) = std::accumulate(reduced_values.at(ii).begin(), reduced_values.at(ii).end(), T(0.0));
     }
 
     return results;

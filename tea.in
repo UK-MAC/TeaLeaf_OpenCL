@@ -16,15 +16,15 @@ tl_max_iters=10000
  test_problem 6
 tl_use_cg
 tl_preconditioner_type=none
-tl_ppcg_inner_steps=249
 tl_check_result
-tl_eps=1.0e-12
-!profiler_on
-halo_depth=2
+tl_eps=1.0e-10
+profiler_on
+
+halo_depth=1
 opencl_vendor=any
 opencl_type=cpu
 
 opencl_affinity=0
 opencl_place=compact
-tiles=16
+tiles=4
 *endtea
