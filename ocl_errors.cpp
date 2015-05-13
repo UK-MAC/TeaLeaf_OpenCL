@@ -1,6 +1,4 @@
-#if !defined(OCL_NO_MPI)
 #include "mpi.h"
-#endif
 #include "ocl_common.hpp"
 
 #include <cstdio>
@@ -200,11 +198,7 @@ void cloverDie
 
     fprintf(stderr, "\nExiting\n");
 
-#if !defined(OCL_NO_MPI)
     MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-    exit(1);
-#endif
 }
 
 // print out timing info when done

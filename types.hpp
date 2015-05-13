@@ -210,6 +210,11 @@ private:
     size_t tile_x_cells;
     size_t tile_y_cells;
 
+    // relative to the entire chunk assigned to this rank, where each tile is
+    size_t left, right, bottom, top;
+    // Coordinates
+    int coords;
+
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
     std::map<int, cl::NDRange> update_bt_global_size;

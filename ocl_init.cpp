@@ -1,6 +1,4 @@
-#if !defined(OCL_NO_MPI)
 #include "mpi.h"
-#endif
 #include "ocl_common.hpp"
 #include "ocl_strings.hpp"
 
@@ -22,11 +20,7 @@ extern "C" void timer_c_(double*);
 void TeaCLContext::initialise
 (void)
 {
-#if !defined(OCL_NO_MPI)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
-    rank = 0;
-#endif
 
     double t0;
     timer_c_(&t0);
@@ -43,9 +37,8 @@ void TeaCLContext::initialise
     initBuffers();
     initArgs();
 
-#if !defined(OCL_NO_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
+
     if (!rank)
     {
         double t1;
@@ -440,7 +433,6 @@ void TeaCLContext::initOcl
 
     tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(run_flags, context, 10, 10));
 
-#if !defined(OCL_NO_MPI)
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
 
@@ -451,7 +443,6 @@ void TeaCLContext::initOcl
     {
         if (rank == cur_rank)
         {
-#endif
             // get devices - just choose the first one
             std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
@@ -475,13 +466,11 @@ void TeaCLContext::initOcl
 
                tiles.at(ii).initTileQueue(run_flags, devices.at(device_num), context);
             }
-#if !defined(OCL_NO_MPI)
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
 
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
 }
 
 TeaCLTile::TeaCLTile
