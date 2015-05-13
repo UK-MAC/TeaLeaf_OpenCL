@@ -25,7 +25,6 @@ void TeaCLTile::initBuffers
 (void)
 {
     size_t total_cells = (run_flags.x_cells+2*run_flags.halo_allocate_depth+1) * (run_flags.y_cells+2*run_flags.halo_allocate_depth+1);
-    const std::vector<double> zeros(total_cells, 0.0);
 
     #define BUF_ALLOC(name, buf_sz)                 \
         try                                         \
@@ -33,11 +32,6 @@ void TeaCLTile::initBuffers
             name = cl::Buffer(context,              \
                               CL_MEM_READ_WRITE,    \
                               (buf_sz));            \
-            queue.enqueueWriteBuffer(name,          \
-                                     CL_TRUE,       \
-                                     0,             \
-                                     (buf_sz),      \
-                                     &zeros[0]);    \
         }                                           \
         catch (cl::Error e)                         \
         {                                           \
@@ -91,12 +85,21 @@ void TeaCLTile::initBuffers
 
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
-    BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_2, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
+    size_t reduce_buf_sz = 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y));
+    BUF_ALLOC(reduce_buf_1, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_2, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_3, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_4, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_5, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_6, reduce_buf_sz);
+
+    const std::vector<double> zeros(total_cells, 0.0);
+    queue.enqueueWriteBuffer(reduce_buf_1, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_2, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_3, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_4, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_5, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_6, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
 
     // size of one side of mesh, plus one extra on the side for each depth, times the number of halos to be exchanged
     size_t lr_mpi_buf_sz = sizeof(double)*(run_flags.y_cells + 2*run_flags.halo_allocate_depth)*run_flags.halo_allocate_depth;

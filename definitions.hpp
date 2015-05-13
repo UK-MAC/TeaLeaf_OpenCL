@@ -7,7 +7,7 @@
 
 // FIXME Change these to make more sense
 #define DBGOUT stderr
-#define LOCAL_Y (4)
+#define LOCAL_Y (JACOBI_BLOCK_SIZE)
 #define LOCAL_X (DEFAULT_LOCAL_SIZE/LOCAL_Y)
 
 // used in update_halo and for copying back to host for mpi transfers
