@@ -50,15 +50,15 @@ void TeaCLContext::tea_leaf_init_cg
 
     if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
-        ENQUEUE_OFFSET(tea_leaf_block_init_device);
-        ENQUEUE_OFFSET(tea_leaf_block_solve_device);
+        ENQUEUE(tea_leaf_block_init_device);
+        ENQUEUE(tea_leaf_block_solve_device);
     }
     else if (preconditioner_type == TL_PREC_JAC_DIAG)
     {
-        ENQUEUE_OFFSET(tea_leaf_init_jac_diag_device);
+        ENQUEUE(tea_leaf_init_jac_diag_device);
     }
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_init_p_device);
+    ENQUEUE(tea_leaf_cg_solve_init_p_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 #endif // RTAG
@@ -69,7 +69,7 @@ void TeaCLContext::tea_leaf_kernel_cg_calc_w
 {
 #if 0 // RTAG
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
+    ENQUEUE(tea_leaf_cg_solve_calc_w_device);
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 
 #endif //RTAG
@@ -82,7 +82,7 @@ void TeaCLContext::tea_leaf_kernel_cg_calc_ur
 
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
+    ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
 
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 
@@ -96,7 +96,7 @@ void TeaCLContext::tea_leaf_kernel_cg_calc_p
 
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
 
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
+    ENQUEUE(tea_leaf_cg_solve_calc_p_device);
 
 #endif //RTAG
 }

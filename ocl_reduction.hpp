@@ -78,6 +78,11 @@ std::vector<T> TeaCLContext::sumReduceValues
     std::vector<std::vector<T> > reduced_values(buffer_indexes.size(), std::vector<T>(tiles.size()));
     std::vector<std::vector<cl::Event> > copy_events(buffer_indexes.size(), std::vector<cl::Event>(tiles.size()));
 
+    FOR_EACH_TILE
+    {
+        tile->queue.finish();
+    }
+
     for (size_t ii = 0; ii < buffer_indexes.size(); ii++)
     {
         for (size_t tt = 0; tt < tiles.size(); tt++)

@@ -10,8 +10,10 @@ extern "C" void field_summary_kernel_ocl_
 void TeaCLContext::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)
 {
-    //ENQUEUE(field_summary_device);
-    ENQUEUE_OFFSET(field_summary_device);
+    FOR_EACH_TILE
+    {
+        ENQUEUE(field_summary_device);
+    }
 
     int vindexes[] = {1, 2, 3, 4};
     std::vector<int> indexes(vindexes, vindexes+4);

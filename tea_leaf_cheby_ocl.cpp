@@ -53,9 +53,9 @@ void TeaCLContext::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_init_p_device.setArg(11, rx);
     tea_leaf_cheby_solve_init_p_device.setArg(12, ry);
 
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_init_p_device);
+    ENQUEUE(tea_leaf_cheby_solve_init_p_device);
 
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
+    ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
 #endif //RTAG
 }
 
@@ -67,8 +67,8 @@ void TeaCLContext::tea_leaf_kernel_cheby_iterate
 
     tea_leaf_cheby_solve_calc_p_device.setArg(14, cheby_calc_step-1);
 
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
+    ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
+    ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
 
 #endif //RTAG
 }

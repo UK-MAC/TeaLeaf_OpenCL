@@ -67,7 +67,9 @@ void TeaCLContext::tea_leaf_calc_2norm_kernel
         }
     }
 
-    ENQUEUE_OFFSET(tea_leaf_calc_2norm_device);
+#if 0 // RTAG
+    ENQUEUE(tea_leaf_calc_2norm_device);
+#endif // RTAG
 
     std::vector<int> indexes(1, 1);
     std::vector<double> reduced_values = sumReduceValues<double>(indexes);
@@ -93,21 +95,29 @@ void TeaCLContext::tea_leaf_init_common
         tile->generate_chunk_init_u_device.setArg(1, tile->energy1);
     }
 
-    ENQUEUE_OFFSET(tea_leaf_init_common_device);
-    ENQUEUE_OFFSET(generate_chunk_init_u_device);
+#if 0 // RTAG
+    ENQUEUE(tea_leaf_init_common_device);
+#endif // RTAG
+#if 0 // RTAG
+    ENQUEUE(generate_chunk_init_u_device);
+#endif // RTAG
 }
 
 // both
 void TeaCLContext::tea_leaf_finalise
 (void)
 {
-    ENQUEUE_OFFSET(tea_leaf_finalise_device);
+#if 0 // RTAG
+    ENQUEUE(tea_leaf_finalise_device);
+#endif // RTAG
 }
 
 void TeaCLContext::tea_leaf_calc_residual
 (void)
 {
-    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+#if 0 // RTAG
+    ENQUEUE(tea_leaf_calc_residual_device);
+#endif // RTAG
 }
 
 // copy back dx/dy and calculate rx/ry
