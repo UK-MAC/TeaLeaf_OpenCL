@@ -26,5 +26,5 @@ opencl_type=cpu
 
 opencl_affinity=0
 opencl_place=compact
-tiles=2
+tiles=16
 *endtea

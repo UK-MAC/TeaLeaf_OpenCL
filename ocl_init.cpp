@@ -431,7 +431,37 @@ void TeaCLContext::initOcl
         }
     }
 
-    tiles = std::vector<TeaCLTile>(n_tiles, TeaCLTile(run_flags, context, 10, 10));
+    // Use MPI to split tiles, then reverse it because we want it in C friendly order
+    int dims_f_order[] = {0, 0};
+    MPI_Dims_create(n_tiles, 2, dims_f_order);
+    int dims[] = {dims_f_order[1], dims_f_order[0]};
+
+    run_flags.x_cells = readInt(input, "x_cells");
+    run_flags.y_cells = readInt(input, "y_cells");
+
+    for (int xx = 0; xx < dims[0]; xx++)
+    {
+        for (int yy = 0; yy < dims[1]; yy++)
+        {
+            int delta_x = run_flags.x_cells/dims[0];
+            int delta_y = run_flags.y_cells/dims[1];
+            int mod_x = run_flags.x_cells % dims[0];
+            int mod_y = run_flags.y_cells % dims[1];
+
+            int left = xx*delta_x;
+            left += (xx < mod_x) ? xx : mod_x;
+            int right = left + delta_x - 1;
+            right += (xx < mod_x) ? 1 : 0;
+
+            int bottom = yy*delta_y;
+            bottom += (yy < mod_y) ? yy : mod_y;
+            int top = bottom + delta_y - 1;
+            top += (yy < mod_y) ? 1 : 0;
+
+            tiles.push_back(TeaCLTile(run_flags, context,
+                xx, yy, left, right, bottom, top));
+        }
+    }
 
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
@@ -474,13 +504,16 @@ void TeaCLContext::initOcl
 }
 
 TeaCLTile::TeaCLTile
-(run_flags_t run_flags, cl::Context context, int x_cells, int y_cells)
-:tile_x_cells(x_cells),
- tile_y_cells(y_cells),
- context(context),
- run_flags(run_flags)
+(run_flags_t run_flags, cl::Context context,
+ int x_pos, int y_pos,
+ int left, int right, int bottom, int top)
+:context(context),
+ run_flags(run_flags),
+ left(left), right(right), bottom(bottom), top(top),
+ tile_x_cells(right-left), tile_y_cells(top-bottom)
 {
-    ;
+    coords[0] = x_pos;
+    coords[1] = y_pos;
 }
 
 void TeaCLTile::initTileQueue

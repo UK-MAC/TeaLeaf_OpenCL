@@ -133,8 +133,6 @@ void TeaCLTile::initReduction
         options << "-D RED_LOAD_THRESHOLD=" << 0 << " ";
         options << "-I. ";
 
-        fprintf(DBGOUT, "\n");
-
         // name of reduction kernel, data type, what the reduction does
         #define MAKE_REDUCE_KNL(name, data_type, init_val)          \
         {                                                           \
