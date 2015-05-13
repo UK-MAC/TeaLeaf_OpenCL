@@ -11,6 +11,18 @@ const int* depth)
     tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
+int TeaCLTile::isExternal
+(int face) const
+{
+    return tile_external_faces[face - 1];
+}
+
+void TeaCLTile::setExternal
+(int face)
+{
+    tile_external_faces[face - 1] = 1;
+}
+
 void TeaCLTile::update_array
 (cl::Buffer& cur_array,
 const cell_info_t& array_type,
@@ -37,12 +49,50 @@ int depth)
                       update_##dir##_offset[depth], \
                       update_##dir##_global_size[depth], \
                       update_##dir##_local_size[depth]); \
+    } \
+    else if (tile_external_faces[CHUNK_ ## face - 1] == 0)   \
+    {                                                           \
+        pack_##face##_buffer_device.setArg(0, array_type.x_extra);    \
+        pack_##face##_buffer_device.setArg(1, array_type.y_extra);    \
+        pack_##face##_buffer_device.setArg(2, cur_array);         \
+        pack_##face##_buffer_device.setArg(3, face##_buffer); \
+        pack_##face##_buffer_device.setArg(4, depth);             \
+        pack_##face##_buffer_device.setArg(5, 0);         \
     }
 
     CHECK_LAUNCH(bottom, bt)
     CHECK_LAUNCH(top, bt)
     CHECK_LAUNCH(left, lr)
     CHECK_LAUNCH(right, lr)
+
+    #undef CHECK_LAUNCH
+}
+
+void TeaCLTile::unpackInternal
+(cl::Buffer& cur_array,
+ cl::Buffer& transferred_left,
+ cl::Buffer& transferred_right,
+ cl::Buffer& transferred_bottom,
+ cl::Buffer& transferred_top,
+ const cell_info_t& array_type,
+ int depth)
+{
+    #define CHECK_UNPACK(face, dir)                       \
+    if (tile_external_faces[CHUNK_ ## face - 1] == 0)   \
+    {                                                           \
+        unpack_##face##_buffer_device.setArg(0, array_type.x_extra);    \
+        unpack_##face##_buffer_device.setArg(1, array_type.y_extra);    \
+        unpack_##face##_buffer_device.setArg(2, cur_array);         \
+        unpack_##face##_buffer_device.setArg(3, transferred_##face); \
+        unpack_##face##_buffer_device.setArg(4, depth);             \
+        unpack_##face##_buffer_device.setArg(5, 0);         \
+    }
+
+    CHECK_UNPACK(bottom, bt)
+    CHECK_UNPACK(top, bt)
+    CHECK_UNPACK(left, lr)
+    CHECK_UNPACK(right, lr)
+    #undef CHECK_UNPACK
 }
 
 void TeaCLContext::update_halo_kernel
@@ -61,6 +111,10 @@ const int* chunk_neighbours)
         HALO_UPDATE_RESIDENT(density, CELL);
         HALO_UPDATE_RESIDENT(energy0, CELL);
         HALO_UPDATE_RESIDENT(energy1, CELL);
+
+        tile->queue.finish();
     }
+
+    // TODO migrate mem objects, unpack
 }
 
