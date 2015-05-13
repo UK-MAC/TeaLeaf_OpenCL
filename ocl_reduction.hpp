@@ -9,10 +9,8 @@ template <typename T>
 void TeaCLTile::reduceValue
 (reduce_info_vec_t& red_kernels,
  const cl::Buffer& results_buf,
- T* result, cl::Event* copy_event)
+ T* result, cl::Event* copy_event, cl::Event* kernel_event)
 {
-    std::vector<cl::Event> kernel_events(red_kernels.size());
-
     // enqueue the kernels in order
     for (size_t ii = 0; ii < red_kernels.size(); ii++)
     {
@@ -24,22 +22,29 @@ void TeaCLTile::reduceValue
             red_kernels.at(ii).global_size,
             red_kernels.at(ii).local_size,
             NULL,
-            &kernel_events.at(ii));
+            kernel_event);
     }
 
     // copy back the result and return
+    /*
     queue.enqueueReadBuffer(results_buf,
-                            CL_TRUE,
+                            CL_FALSE,
                             0,
                             sizeof(T),
-                            &result,
-                            &kernel_events,
+                            result,
+                            kernel_events,
                             copy_event);
+    */
+
+    clEnqueueReadBuffer(queue(), results_buf(), CL_FALSE, 0, sizeof(T), result,
+        1,
+        &(*kernel_event)(),
+        &(*copy_event)());
 }
 
 template <typename T>
 void TeaCLTile::sumReduceValue
-(int buffer, T* result, cl::Event* copy_event)
+(int buffer, T* result, cl::Event* copy_event, cl::Event* kernel_event)
 {
     cl::Buffer results_buf;
 
@@ -67,7 +72,7 @@ void TeaCLTile::sumReduceValue
         DIE("Invalid buffer index %d passed to reduceValue", buffer);
     }
 
-    reduceValue(sum_red_kernels_double, results_buf, result, copy_event);
+    reduceValue(sum_red_kernels_double, results_buf, result, copy_event, kernel_event);
 }
 
 template <typename T>
@@ -77,6 +82,7 @@ std::vector<T> TeaCLContext::sumReduceValues
     // one vector per buffer to be reduced, each with one vector per tile
     std::vector<std::vector<T> > reduced_values(buffer_indexes.size(), std::vector<T>(tiles.size()));
     std::vector<std::vector<cl::Event> > copy_events(buffer_indexes.size(), std::vector<cl::Event>(tiles.size()));
+    std::vector<std::vector<cl::Event> > kernel_events(buffer_indexes.size(), std::vector<cl::Event>(tiles.size()));
 
     FOR_EACH_TILE
     {
@@ -96,7 +102,8 @@ std::vector<T> TeaCLContext::sumReduceValues
             tile.sumReduceValue<T>(
                 buffer_indexes.at(ii),
                 &reduced_values.at(ii).at(tt),
-                &copy_events.at(ii).at(tt));
+                &copy_events.at(ii).at(tt),
+                &kernel_events.at(ii).at(tt));
         }
     }
 

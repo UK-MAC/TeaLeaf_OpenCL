@@ -396,7 +396,7 @@ void TeaCLContext::initOcl
             if (n_tiles <= device_numbers.size())
             {
                 // same number, or less - just place in order
-                for (size_t ii = 0; ii <= n_tiles; ii++)
+                for (size_t ii = 0; ii < n_tiles; ii++)
                 {
                     tile_device.push_back(device_numbers.at(ii));
                 }
@@ -506,11 +506,11 @@ void TeaCLContext::initOcl
 TeaCLTile::TeaCLTile
 (run_flags_t run_flags, cl::Context context,
  int x_pos, int y_pos,
- int left, int right, int bottom, int top)
+ int in_left, int in_right, int in_bottom, int in_top)
 :context(context),
- run_flags(run_flags),
- left(left), right(right), bottom(bottom), top(top),
- tile_x_cells(right-left), tile_y_cells(top-bottom)
+ tile_x_cells(in_right - in_left + 1), tile_y_cells(in_top - in_bottom + 1),
+ left(in_left), right(in_right), bottom(in_bottom), top(in_top),
+ run_flags(run_flags)
 {
     coords[0] = x_pos;
     coords[1] = y_pos;

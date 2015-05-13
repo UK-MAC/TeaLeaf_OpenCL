@@ -257,6 +257,10 @@ void TeaCLTile::compileKernel
     std::string options(options_orig.str());
 #endif
 
+    // keep track of built programs to avoid rebuilding them
+    // This can be global across all kernels, so static
+    static std::map<std::string, cl::Program> built_programs;
+
     if (built_programs.find(source_name + options) == built_programs.end())
     {
         try
@@ -336,9 +340,9 @@ void TeaCLTile::initSizes
     //fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    const size_t glob_x = tile_x_cells+4 +
+    const int glob_x = tile_x_cells+4 +
         (((tile_x_cells+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells+4)%LOCAL_X)));
-    const size_t glob_y = tile_y_cells+4 +
+    const int glob_y = tile_y_cells+4 +
         (((tile_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells+4)%LOCAL_Y)));
 
     //fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
@@ -350,9 +354,9 @@ void TeaCLTile::initSizes
      *  that doesn't include these halo cells for the reduction which should
      *  speed it up a bit
      */
-    const size_t red_x = tile_x_cells +
+    const int red_x = tile_x_cells +
         (((tile_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells)%LOCAL_X)));
-    const size_t red_y = tile_y_cells +
+    const int red_y = tile_y_cells +
         (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 

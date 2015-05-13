@@ -206,7 +206,7 @@ private:
      int launch_y_min, int launch_y_max);
 
     // number of cells reduced
-    size_t reduced_cells;
+    int reduced_cells;
     int tile_x_cells;
     int tile_y_cells;
 
@@ -223,9 +223,6 @@ private:
     std::map<int, cl::NDRange> update_lr_offset;
     std::map<int, cl::NDRange> update_bt_offset;
 
-    // keep track of built programs to avoid rebuilding them
-    std::map<std::string, cl::Program> built_programs;
-
     std::vector<double> dumpArray
     (const std::string& arr_name, int x_extra, int y_extra);
     std::map<std::string, cl::Buffer> arr_names;
@@ -238,7 +235,7 @@ private:
      const cl::NDRange global_range,
      const cl::NDRange local_range,
      const std::vector< cl::Event > * const events=NULL,
-     cl::Event * const event=NULL) ;
+     cl::Event * const event=NULL);
 
     // TODO
     #define ENQUEUE(knl)                                    \
@@ -250,13 +247,13 @@ private:
     // reduction
     template <typename T>
     void sumReduceValue
-    (int buffer, T* result, cl::Event* event);
+    (int buffer, T* result, cl::Event* event, cl::Event*);
 
     template <typename T>
     void reduceValue
     (reduce_info_vec_t& red_kernels,
      const cl::Buffer& results_buf,
-     T* result, cl::Event* copy_event);
+     T* result, cl::Event* copy_event, cl::Event*);
 
     void initTileQueue
     (run_flags_t run_flags, cl::Device chosen_device, cl::Context context);
