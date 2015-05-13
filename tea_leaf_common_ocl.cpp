@@ -65,15 +65,11 @@ void TeaCLContext::tea_leaf_calc_2norm_kernel
         {
             DIE("Invalid value '%d' for norm_array passed, should be 0 for u0, 1 for r, 2 for r*z", norm_array);
         }
+
+        ENQUEUE(tea_leaf_calc_2norm_device);
     }
 
-#if 0 // RTAG
-    ENQUEUE(tea_leaf_calc_2norm_device);
-#endif // RTAG
-
-    std::vector<int> indexes(1, 1);
-    std::vector<double> reduced_values = sumReduceValues<double>(indexes);
-    *norm = reduced_values.at(0);
+    *norm = sumReduceValues<double>(std::vector<int>(1, 1)).at(0);
 }
 
 void TeaCLContext::tea_leaf_init_common
@@ -93,31 +89,29 @@ void TeaCLContext::tea_leaf_init_common
         tile->tea_leaf_init_common_device.setArg(8, coefficient);
 
         tile->generate_chunk_init_u_device.setArg(1, tile->energy1);
-    }
 
-#if 0 // RTAG
-    ENQUEUE(tea_leaf_init_common_device);
-#endif // RTAG
-#if 0 // RTAG
-    ENQUEUE(generate_chunk_init_u_device);
-#endif // RTAG
+        ENQUEUE(tea_leaf_init_common_device);
+        ENQUEUE(generate_chunk_init_u_device);
+    }
 }
 
 // both
 void TeaCLContext::tea_leaf_finalise
 (void)
 {
-#if 0 // RTAG
-    ENQUEUE(tea_leaf_finalise_device);
-#endif // RTAG
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_finalise_device);
+    }
 }
 
 void TeaCLContext::tea_leaf_calc_residual
 (void)
 {
-#if 0 // RTAG
-    ENQUEUE(tea_leaf_calc_residual_device);
-#endif // RTAG
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_calc_residual_device);
+    }
 }
 
 // copy back dx/dy and calculate rx/ry
