@@ -64,8 +64,7 @@ const int g_rect, const int g_circ, const int g_point)
         tile->generate_chunk_init_device.setArg(2, tmp_state_density);
         tile->generate_chunk_init_device.setArg(3, tmp_state_energy);
 
-        //ENQUEUE(generate_chunk_init_device);
-        ENQUEUE_OFFSET(generate_chunk_init_device);
+        ENQUEUE(generate_chunk_init_device);
 
         tile->generate_chunk_device.setArg(6, tmp_state_density);
         tile->generate_chunk_device.setArg(7, tmp_state_energy);
@@ -79,23 +78,19 @@ const int g_rect, const int g_circ, const int g_point)
         tile->generate_chunk_device.setArg(14, g_rect);
         tile->generate_chunk_device.setArg(15, g_circ);
         tile->generate_chunk_device.setArg(16, g_point);
-    }
 
-    for (int state = 1; state < number_of_states; state++)
-    {
-        FOR_EACH_TILE
+        for (int state = 1; state < number_of_states; state++)
         {
             tile->generate_chunk_device.setArg(17, state);
-        }
 
-        //ENQUEUE(generate_chunk_device);
-        ENQUEUE_OFFSET(generate_chunk_device);
+            ENQUEUE(generate_chunk_device);
+        }
     }
 
     FOR_EACH_TILE
     {
         tile->generate_chunk_init_u_device.setArg(1, tile->energy0);
+        ENQUEUE(generate_chunk_init_u_device);
     }
-    ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 

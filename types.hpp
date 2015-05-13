@@ -241,13 +241,11 @@ private:
      cl::Event * const event=NULL) ;
 
     // TODO
-    #define ENQUEUE_OFFSET(knl)                        \
-;
-        // \
-        enqueueKernel(knl, __LINE__, __FILE__,         \
-                      launch_specs.at(#knl).offset,    \
-                      launch_specs.at(#knl).global,    \
-                      local_size);
+    #define ENQUEUE(knl)                                    \
+        tile->enqueueKernel(tile->knl, __LINE__, __FILE__,  \
+                      tile->launch_specs.at(#knl).offset,   \
+                      tile->launch_specs.at(#knl).global,   \
+                      tile->local_size);
 
     // reduction
     template <typename T>

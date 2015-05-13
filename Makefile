@@ -182,15 +182,16 @@ OCL_FILES=\
 	ocl_errors.o \
 	ocl_kernels.o \
 	ocl_reduction.o \
+	initialise_chunk_kernel_ocl.o \
+	generate_chunk_kernel_ocl.o \
+	field_summary_kernel_ocl.o \
+	update_halo_kernel_ocl.o \
+	set_field_kernel_ocl.o \
 	tea_leaf_common_ocl.o \
+	tea_leaf_jacobi_ocl.o \
 	tea_leaf_cg_ocl.o \
 	tea_leaf_cheby_ocl.o \
-	tea_leaf_ppcg_ocl.o \
-	field_summary_kernel_ocl.o \
-	set_field_kernel_ocl.o \
-	generate_chunk_kernel_ocl.o \
-	update_halo_kernel_ocl.o \
-	initialise_chunk_kernel_ocl.o
+	tea_leaf_ppcg_ocl.o
 
 tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\

@@ -16,8 +16,8 @@ void TeaCLContext::tea_leaf_kernel_jacobi
 {
 #if 0 // RTAG
 
-    ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
+    ENQUEUE(tea_leaf_jacobi_copy_u_device);
+    ENQUEUE(tea_leaf_jacobi_solve_device);
 
     *error = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 

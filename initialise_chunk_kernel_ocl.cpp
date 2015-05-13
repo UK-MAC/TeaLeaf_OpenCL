@@ -12,6 +12,8 @@ void TeaCLContext::initialise_chunk_kernel
     // cover whole lengith/width of grid
     FOR_EACH_TILE
     {
+        // FIXME change xmin/ymin/etc so that is is applied to each tile, not
+        // globally
         tile->launch_specs.at("initialise_chunk_first_device").offset = cl::NullRange;
         tile->initialise_chunk_first_device.setArg(0, d_xmin);
         tile->initialise_chunk_first_device.setArg(1, d_ymin);
@@ -22,9 +24,9 @@ void TeaCLContext::initialise_chunk_kernel
         tile->initialise_chunk_second_device.setArg(1, d_ymin);
         tile->initialise_chunk_second_device.setArg(2, d_dx);
         tile->initialise_chunk_second_device.setArg(3, d_dy);
-    }
 
-    ENQUEUE_OFFSET(initialise_chunk_first_device)
-    ENQUEUE_OFFSET(initialise_chunk_second_device)
+        ENQUEUE(initialise_chunk_first_device);
+        ENQUEUE(initialise_chunk_second_device);
+    }
 }
 

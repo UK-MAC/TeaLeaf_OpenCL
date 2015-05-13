@@ -61,7 +61,7 @@ void TeaCLContext::ppcg_init_sd
 {
 #if 0 // RTAG
 
-    ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
+    ENQUEUE(tea_leaf_ppcg_solve_init_sd_device);
 
 #endif //RTAG
 }
