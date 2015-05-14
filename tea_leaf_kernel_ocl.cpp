@@ -237,9 +237,9 @@ void CloverChunk::tea_leaf_kernel_jacobi
 /********************/
 
 extern "C" void tea_leaf_kernel_init_common_ocl_
-(const int * coefficient, double * dt, double * rx, double * ry)
+(const int * coefficient, double * dt, double * rx, double * ry, int * chunk_neighbours)
 {
-    chunk.tea_leaf_init_common(*coefficient, *dt, rx, ry);
+    chunk.tea_leaf_init_common(*coefficient, *dt, rx, ry, chunk_neighbours);
 }
 
 // used by both
@@ -256,7 +256,7 @@ extern "C" void tea_leaf_calc_residual_ocl_
 }
 
 void CloverChunk::tea_leaf_init_common
-(int coefficient, double dt, double * rx, double * ry)
+(int coefficient, double dt, double * rx, double * ry, int * chunk_neighbours)
 {
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
     {
@@ -269,6 +269,32 @@ void CloverChunk::tea_leaf_init_common
     tea_leaf_init_common_device.setArg(7, *ry);
     tea_leaf_init_common_device.setArg(8, coefficient);
     ENQUEUE_OFFSET(tea_leaf_init_common_device);
+
+    int depth = halo_exchange_depth;
+    std::vector<double> zeros((std::max(x_max, y_max) + 2*depth)*depth, 0);
+
+    #define ZERO_BOUNDARY(face, dir, xy) \
+    if (chunk_neighbours[CHUNK_ ## face - 1] == EXTERNAL_FACE)\
+    {   \
+        queue.enqueueWriteBuffer(face##_buffer, CL_TRUE, 0, \
+            sizeof(double)*(xy##_max + 2*depth)*depth, &zeros.front()); \
+        unpack_##face##_buffer_device.setArg(0, 0);     \
+        unpack_##face##_buffer_device.setArg(1, 0);     \
+        unpack_##face##_buffer_device.setArg(2, vector_K##xy);      \
+        unpack_##face##_buffer_device.setArg(3, face##_buffer);     \
+        unpack_##face##_buffer_device.setArg(4, depth);       \
+        unpack_##face##_buffer_device.setArg(5, 0);     \
+        enqueueKernel(unpack_##face##_buffer_device, \
+                      __LINE__, __FILE__,  \
+                      update_##dir##_offset[depth], \
+                      update_##dir##_global_size[depth], \
+                      update_##dir##_local_size[depth]); \
+    }
+
+    ZERO_BOUNDARY(left, lr, x)
+    ZERO_BOUNDARY(right, lr, x)
+    ZERO_BOUNDARY(bottom, bt, y)
+    ZERO_BOUNDARY(top, bt, y)
 
     generate_chunk_init_u_device.setArg(1, energy1);
     ENQUEUE_OFFSET(generate_chunk_init_u_device);

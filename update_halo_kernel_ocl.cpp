@@ -59,11 +59,5 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(density, CELL);
     HALO_UPDATE_RESIDENT(energy0, CELL);
     HALO_UPDATE_RESIDENT(energy1, CELL);
-
-    return;
-    HALO_UPDATE_RESIDENT(u, CELL);
-    HALO_UPDATE_RESIDENT(vector_p, CELL);
-    HALO_UPDATE_RESIDENT(vector_sd, CELL);
-    HALO_UPDATE_RESIDENT(vector_r, CELL);
 }
 

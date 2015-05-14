@@ -63,7 +63,7 @@ void CloverChunk::initProgram
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init_u", generate_chunk_init_u_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk", generate_chunk_device, -2, 2, -2, 2);
 
-    compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 1, 0, 1);
+    compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/field_summary_cl.cl", "field_summary", field_summary_device, 0, 0, 0, 0);
 
     compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device, 0, 0, 0, 0);
@@ -104,7 +104,7 @@ void CloverChunk::initProgram
     }
     else
     {
-        compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device, -1, 1, -1, 1);
+        compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device, 0, 0, 0, 0);
         compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device, 0, 0, 0, 0);
     }
 
@@ -455,7 +455,7 @@ void CloverChunk::initArgs
     // field summary
     field_summary_device.setArg(0, volume);
     field_summary_device.setArg(1, density);
-    field_summary_device.setArg(2, energy0);
+    field_summary_device.setArg(2, energy1);
     field_summary_device.setArg(3, u);
 
     field_summary_device.setArg(4, reduce_buf_1);

@@ -95,7 +95,7 @@ SUBROUTINE tea_leaf()
       IF (profiler_on) init_time=timer()
 
       IF (use_opencl_kernels) THEN
-          CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry)
+          CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry, chunks(c)%chunk_neighbours)
       ENDIF
 
       fields=0

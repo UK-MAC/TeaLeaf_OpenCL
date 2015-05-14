@@ -240,8 +240,8 @@ private:
     size_t reduced_cells;
 
     // halo size
-    size_t halo_exchange_depth;
-    size_t halo_allocate_depth;
+    int halo_exchange_depth;
+    int halo_allocate_depth;
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
@@ -368,7 +368,7 @@ public:
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);
-    void tea_leaf_init_common(int, double, double*, double*);
+    void tea_leaf_init_common(int, double, double*, double*, int*);
 
     // ctor
     CloverChunk
