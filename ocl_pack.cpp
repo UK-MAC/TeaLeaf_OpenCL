@@ -24,6 +24,7 @@ void TeaCLContext::packUnpackAllBuffers
 {
     FOR_EACH_TILE
     {
+        // TODO only pack in selected tiles
         tile->packUnpackAllBuffers(fields, offsets, depth, face, pack, host_buffer);
     }
 }

@@ -57,6 +57,15 @@ int depth)
                       update_##dir##_offset[depth], \
                       update_##dir##_global_size[depth], \
                       update_##dir##_local_size[depth]); \
+    } \
+    else if (tile_external_faces[CHUNK_ ## face - 1] == 0)   \
+    {                                                           \
+        pack_##face##_buffer_device.setArg(0, array_type.x_extra);    \
+        pack_##face##_buffer_device.setArg(1, array_type.y_extra);    \
+        pack_##face##_buffer_device.setArg(2, cur_array);         \
+        pack_##face##_buffer_device.setArg(3, face##_buffer); \
+        pack_##face##_buffer_device.setArg(4, depth);             \
+        pack_##face##_buffer_device.setArg(5, 0);         \
     }
 
     CHECK_LAUNCH(bottom, bt)
