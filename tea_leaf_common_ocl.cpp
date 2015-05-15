@@ -8,9 +8,9 @@ extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 }
 
 extern "C" void tea_leaf_kernel_init_common_ocl_
-(const int * coefficient, double * dt, double * rx, double * ry)
+(const int * coefficient, double * dt, double * rx, double * ry, const int * chunk_neighbours)
 {
-    tea_context.tea_leaf_init_common(*coefficient, *dt, rx, ry);
+    tea_context.tea_leaf_init_common(*coefficient, *dt, rx, ry, chunk_neighbours);
 }
 
 // used by both
@@ -73,7 +73,7 @@ void TeaCLContext::tea_leaf_calc_2norm_kernel
 }
 
 void TeaCLContext::tea_leaf_init_common
-(int coefficient, double dt, double * rx, double * ry)
+(int coefficient, double dt, double * rx, double * ry, const int * chunk_neighbours)
 {
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
     {
@@ -81,6 +81,30 @@ void TeaCLContext::tea_leaf_init_common
     }
 
     calcrxry(dt, rx, ry);
+
+    int depth = run_flags.halo_exchange_depth;
+    std::vector<double> zeros((std::max(run_flags.x_cells, run_flags.y_cells) + 2*depth)*depth, 0);
+
+    #define ZERO_BOUNDARY(face, dir, xy) \
+    if (chunk_neighbours[CHUNK_ ## face - 1] == EXTERNAL_FACE && \
+        tile->isExternal(CHUNK_ ## face - 1)) \
+    {   \
+        tile->queue.enqueueWriteBuffer(tile->face##_buffer, CL_TRUE, 0, \
+            sizeof(double)*(tile->tile_##xy##_cells + 2*depth)*depth, &zeros.front()); \
+        tile->unpack_##face##_buffer_device.setArg(0, 0);     \
+        tile->unpack_##face##_buffer_device.setArg(1, 0);     \
+        tile->unpack_##face##_buffer_device.setArg(2, tile->vector_K##xy);      \
+        tile->unpack_##face##_buffer_device.setArg(3, tile->face##_buffer);     \
+        tile->unpack_##face##_buffer_device.setArg(4, depth);       \
+        tile->unpack_##face##_buffer_device.setArg(5, 0);     \
+        cl::NDRange offset_plus_one(tile->update_##dir##_offset[depth][0]+1,  \
+            tile->update_##dir##_offset[depth][1]+1); \
+        tile->enqueueKernel(tile->unpack_##face##_buffer_device, \
+                      __LINE__, __FILE__,  \
+                      offset_plus_one, \
+                      tile->update_##dir##_global_size[depth], \
+                      tile->update_##dir##_local_size[depth]); \
+    }
 
     FOR_EACH_TILE
     {
@@ -92,6 +116,11 @@ void TeaCLContext::tea_leaf_init_common
 
         ENQUEUE(tea_leaf_init_common_device);
         ENQUEUE(generate_chunk_init_u_device);
+
+        ZERO_BOUNDARY(left, lr, x)
+        ZERO_BOUNDARY(right, lr, x)
+        ZERO_BOUNDARY(bottom, bt, y)
+        ZERO_BOUNDARY(top, bt, y)
     }
 }
 

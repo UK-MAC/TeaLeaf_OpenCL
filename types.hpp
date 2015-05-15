@@ -430,7 +430,7 @@ public:
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);
-    void tea_leaf_init_common(int, double, double*, double*);
+    void tea_leaf_init_common(int, double, double*, double*, const int*);
 
     void initialise(void);
 
