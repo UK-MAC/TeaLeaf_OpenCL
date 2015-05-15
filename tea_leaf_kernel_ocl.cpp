@@ -307,17 +307,6 @@ void CloverChunk::tea_leaf_finalise
 (void)
 {
     ENQUEUE_OFFSET(tea_leaf_finalise_device);
-
-    return;
-    fflush(stdout);
-    fflush(stderr);
-    FILE * fp;
-    fp = fopen("OCL.txt", "w");
-    std::vector<double> arr = dumpArray("u", 0, 0);
-    for (int ii = 0; ii < arr.size(); ii++)
-        fprintf(fp, "%f ", arr.at(ii));
-    fclose(fp);
-    exit(0);
 }
 
 void CloverChunk::tea_leaf_calc_residual
