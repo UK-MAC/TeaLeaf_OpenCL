@@ -146,6 +146,7 @@ void TeaCLTile::unpackInternal
     CHECK_UNPACK(top, bt)
     CHECK_UNPACK(left, lr)
     CHECK_UNPACK(right, lr)
+
     #undef CHECK_UNPACK
 }
 
@@ -154,7 +155,7 @@ void TeaCLContext::update_internal_halo_kernel
 int depth,
 const int* chunk_neighbours)
 {
-    #define HALO_UPDATE_INTERNAL(arr, type)                 \
+    #define HALO_UPDATE_PACK_INTERNAL(arr, type)                 \
     if(fields[FIELD_ ## arr - 1] == 1)                      \
     {                                                       \
         tile->packInternal(tile->arr, type, chunk_neighbours, depth);   \
@@ -162,11 +163,36 @@ const int* chunk_neighbours)
 
     FOR_EACH_TILE
     {
-        HALO_UPDATE_INTERNAL(density, CELL);
-        HALO_UPDATE_INTERNAL(energy0, CELL);
-        HALO_UPDATE_INTERNAL(energy1, CELL);
+        HALO_UPDATE_PACK_INTERNAL(density, CELL);
+        HALO_UPDATE_PACK_INTERNAL(energy0, CELL);
+        HALO_UPDATE_PACK_INTERNAL(energy1, CELL);
+        HALO_UPDATE_PACK_INTERNAL(u, CELL);
+        HALO_UPDATE_PACK_INTERNAL(vector_p, CELL);
+        HALO_UPDATE_PACK_INTERNAL(vector_sd, CELL);
+        HALO_UPDATE_PACK_INTERNAL(vector_r, CELL);
     }
 
     #undef HALO_UPDATE_INTERNAL
+
+    // TODO exchange between tiles using clmigratememobjects
+
+    #define HALO_UPDATE_UNPACK_INTERNAL(arr, type)                 \
+    if(fields[FIELD_ ## arr - 1] == 1)                      \
+    {                                                       \
+        tile->packInternal(tile->arr, type, chunk_neighbours, depth);   \
+    }
+
+    FOR_EACH_TILE
+    {
+        HALO_UPDATE_UNPACK_INTERNAL(density, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(energy0, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(energy1, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(u, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(vector_p, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(vector_sd, CELL);
+        HALO_UPDATE_UNPACK_INTERNAL(vector_r, CELL);
+    }
+
+    #undef HALO_UPDATE_UNPACK_INTERNAL
 }
 
