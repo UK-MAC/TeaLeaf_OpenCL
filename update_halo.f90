@@ -49,6 +49,14 @@ SUBROUTINE update_halo(fields,depth)
   IF (profiler_on) profiler%halo_update = profiler%halo_update + (timer() - halo_time)
   ENDIF
 
+  DO c=1,chunks_per_task
+    IF(use_opencl_kernels)THEN
+        CALL update_internal_halo_kernel_ocl(chunks(c)%chunk_neighbours,     &
+                                    fields,                         &
+                                    depth                           )
+    ENDIF
+  ENDDO
+
 END SUBROUTINE update_halo
 
 END MODULE update_halo_module

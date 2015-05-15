@@ -214,6 +214,8 @@ private:
     int left, right, bottom, top;
     // Coordinates
     int coords[2];
+    // if one of these is set, it connects to another MPI rank
+    int tile_external_faces[4];
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
@@ -285,6 +287,21 @@ private:
     const int* chunk_neighbours,
     int depth);
 
+    void packInternal
+    (cl::Buffer& cur_array,
+    const cell_info_t& array_type,
+    const int* chunk_neighbours,
+    int depth);
+
+    void unpackInternal
+    (cl::Buffer& cur_array,
+     cl::Buffer& transferred_left,
+     cl::Buffer& transferred_right,
+     cl::Buffer& transferred_bottom,
+     cl::Buffer& transferred_top,
+     const cell_info_t& array_type,
+     int depth);
+
     void tea_leaf_calc_2norm_set_vector
     (int norm_array);
 
@@ -294,6 +311,12 @@ private:
 
     run_flags_t run_flags;
 public:
+    int isExternal
+    (int face) const;
+
+    void setExternal
+    (int face);
+
     TeaCLTile
     (run_flags_t run_flags, cl::Context context,
      int x_pos, int y_pos,
@@ -320,6 +343,9 @@ private:
 
     // mpi rank
     int rank;
+
+    // dimensions of tile grid
+    int dims[2];
 
     // number of tiles
     size_t n_tiles;
@@ -370,6 +396,9 @@ public:
         double d_dx, double d_dy);
 
     void update_halo_kernel(const int* fields, int depth,
+        const int* chunk_neighbours);
+
+    void update_internal_halo_kernel(const int* fields, int depth,
         const int* chunk_neighbours);
 
     void set_field_kernel();

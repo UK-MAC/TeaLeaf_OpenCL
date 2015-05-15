@@ -434,7 +434,9 @@ void TeaCLContext::initOcl
     // Use MPI to split tiles, then reverse it because we want it in C friendly order
     int dims_f_order[] = {0, 0};
     MPI_Dims_create(n_tiles, 2, dims_f_order);
-    int dims[] = {dims_f_order[1], dims_f_order[0]};
+
+    dims[0] = dims_f_order[1];
+    dims[1] = dims_f_order[0];
 
     run_flags.x_cells = readInt(input, "x_cells");
     run_flags.y_cells = readInt(input, "y_cells");
@@ -458,8 +460,27 @@ void TeaCLContext::initOcl
             int top = bottom + delta_y - 1;
             top += (yy < mod_y) ? 1 : 0;
 
-            tiles.push_back(TeaCLTile(run_flags, context,
-                xx, yy, left, right, bottom, top));
+            TeaCLTile new_tile(run_flags, context,
+                xx, yy, left, right, bottom, top);
+
+            if (xx == 0)
+            {
+                new_tile.setExternal(CHUNK_LEFT);
+            }
+            if (yy == 0)
+            {
+                new_tile.setExternal(CHUNK_BOTTOM);
+            }
+            if (xx == dims[0] - 1)
+            {
+                new_tile.setExternal(CHUNK_RIGHT);
+            }
+            if (yy == dims[0] - 1)
+            {
+                new_tile.setExternal(CHUNK_TOP);
+            }
+
+            tiles.push_back(new_tile);
         }
     }
 
@@ -514,6 +535,11 @@ TeaCLTile::TeaCLTile
 {
     coords[0] = x_pos;
     coords[1] = y_pos;
+
+    tile_external_faces[0] = 0;
+    tile_external_faces[1] = 0;
+    tile_external_faces[2] = 0;
+    tile_external_faces[3] = 0;
 }
 
 void TeaCLTile::initTileQueue
