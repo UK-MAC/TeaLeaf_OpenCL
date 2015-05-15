@@ -3,7 +3,7 @@ calc_dt.o calc_dt_module.mod: calc_dt.f90 tea_module.mod
 data.o data_module.mod: data.f90
 definitions.o definitions_module.mod: definitions.f90 data_module.mod
 diffuse.o: diffuse.f90 tea_module.mod timestep_module.mod \
- tea_leaf_module.mod set_field_module.mod
+ tea_leaf_module.mod
 field_summary.o: field_summary.f90 tea_module.mod
 generate_chunk.o: generate_chunk.f90 tea_module.mod
 initialise_chunk.o: initialise_chunk.f90 tea_module.mod
@@ -16,7 +16,8 @@ read_input.o: read_input.f90 tea_module.mod parse_module.mod \
  report_module.mod
 report.o report_module.mod: report.f90 data_module.mod tea_module.mod
 set_field.o set_field_module.mod: set_field.f90 tea_module.mod
-start.o: start.f90 tea_module.mod parse_module.mod update_halo_module.mod
+start.o: start.f90 tea_module.mod parse_module.mod update_halo_module.mod \
+ set_field_module.mod
 tea.o tea_module.mod: tea.f90 data_module.mod definitions_module.mod
 tea_leaf_cheby.o tea_leaf_kernel_cheby_module.mod: tea_leaf_cheby.f90
 tea_leaf.o: tea_leaf.f90 tea_module.mod
@@ -28,6 +29,7 @@ timestep.o timestep_module.mod: timestep.f90 tea_module.mod \
  definitions_module.mod
 update_halo.o update_halo_module.mod: update_halo.f90 tea_module.mod
 visit.o: visit.f90 tea_module.mod update_halo_module.mod
+
 field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
  ocl_reduction.hpp
 generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp
@@ -44,3 +46,4 @@ set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp
 tea_leaf_kernel_ocl.o: tea_leaf_kernel_ocl.cpp ocl_common.hpp \
  ocl_reduction.hpp
 update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp
+
