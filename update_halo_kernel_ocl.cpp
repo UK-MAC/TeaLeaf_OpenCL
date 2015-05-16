@@ -57,15 +57,6 @@ int depth)
                       update_##dir##_offset[depth], \
                       update_##dir##_global_size[depth], \
                       update_##dir##_local_size[depth]); \
-    } \
-    else if (tile_external_faces[CHUNK_ ## face - 1] == 0)   \
-    {                                                           \
-        pack_##face##_buffer_device.setArg(0, array_type.x_extra);    \
-        pack_##face##_buffer_device.setArg(1, array_type.y_extra);    \
-        pack_##face##_buffer_device.setArg(2, cur_array);         \
-        pack_##face##_buffer_device.setArg(3, face##_buffer); \
-        pack_##face##_buffer_device.setArg(4, depth);             \
-        pack_##face##_buffer_device.setArg(5, 0);         \
     }
 
     CHECK_LAUNCH(bottom, bt)
@@ -99,9 +90,8 @@ const int* chunk_neighbours)
 
 void TeaCLTile::packInternal
 (cl::Buffer& cur_array,
-const cell_info_t& array_type,
-const int* chunk_neighbours,
-int depth)
+ const cell_info_t& array_type,
+ int depth)
 {
     #define CHECK_PACK(face, dir) \
     if (tile_external_faces[CHUNK_ ## face - 1] == 0)   \
@@ -112,6 +102,11 @@ int depth)
         pack_##face##_buffer_device.setArg(3, face##_buffer); \
         pack_##face##_buffer_device.setArg(4, depth);             \
         pack_##face##_buffer_device.setArg(5, 0);         \
+        enqueueKernel(pack_##face##_buffer_device, \
+                      __LINE__, __FILE__,  \
+                      update_##dir##_offset[depth], \
+                      update_##dir##_global_size[depth], \
+                      update_##dir##_local_size[depth]); \
     }
 
     CHECK_PACK(bottom, bt)
@@ -140,6 +135,11 @@ void TeaCLTile::unpackInternal
         unpack_##face##_buffer_device.setArg(3, transferred_##face); \
         unpack_##face##_buffer_device.setArg(4, depth);             \
         unpack_##face##_buffer_device.setArg(5, 0);         \
+        enqueueKernel(unpack_##face##_buffer_device, \
+                      __LINE__, __FILE__,  \
+                      update_##dir##_offset[depth], \
+                      update_##dir##_global_size[depth], \
+                      update_##dir##_local_size[depth]); \
     }
 
     CHECK_UNPACK(bottom, bt)
@@ -152,13 +152,13 @@ void TeaCLTile::unpackInternal
 
 void TeaCLContext::update_internal_halo_kernel
 (const int* fields,
-int depth,
-const int* chunk_neighbours)
+ int depth,
+ const int* chunk_neighbours)
 {
     #define HALO_UPDATE_PACK_INTERNAL(arr, type)                 \
     if(fields[FIELD_ ## arr - 1] == 1)                      \
     {                                                       \
-        tile->packInternal(tile->arr, type, chunk_neighbours, depth);   \
+        tile->packInternal(tile->arr, type, depth);   \
     }
 
     FOR_EACH_TILE
@@ -179,7 +179,12 @@ const int* chunk_neighbours)
     #define HALO_UPDATE_UNPACK_INTERNAL(arr, type)                 \
     if(fields[FIELD_ ## arr - 1] == 1)                      \
     {                                                       \
-        tile->packInternal(tile->arr, type, chunk_neighbours, depth);   \
+        tile->unpackInternal(tile->arr, \
+            tile->left_buffer, \
+            tile->right_buffer, \
+            tile->bottom_buffer, \
+            tile->top_buffer, \
+            type, depth);   \
     }
 
     FOR_EACH_TILE

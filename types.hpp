@@ -283,15 +283,14 @@ private:
 
     void update_array
     (cl::Buffer& cur_array,
-    const cell_info_t& array_type,
-    const int* chunk_neighbours,
-    int depth);
+     const cell_info_t& array_type,
+     const int* chunk_neighbours,
+     int depth);
 
     void packInternal
     (cl::Buffer& cur_array,
-    const cell_info_t& array_type,
-    const int* chunk_neighbours,
-    int depth);
+     const cell_info_t& array_type,
+     int depth);
 
     void unpackInternal
     (cl::Buffer& cur_array,
