@@ -463,23 +463,6 @@ void TeaCLContext::initOcl
             TeaCLTile new_tile(run_flags, context,
                 xx, yy, left, right, bottom, top);
 
-            if (xx == 0)
-            {
-                new_tile.setExternal(CHUNK_LEFT);
-            }
-            if (yy == 0)
-            {
-                new_tile.setExternal(CHUNK_BOTTOM);
-            }
-            if (xx == dims[0] - 1)
-            {
-                new_tile.setExternal(CHUNK_RIGHT);
-            }
-            if (yy == dims[0] - 1)
-            {
-                new_tile.setExternal(CHUNK_TOP);
-            }
-
             tiles.push_back(new_tile);
         }
     }
@@ -530,7 +513,25 @@ void TeaCLContext::initOcl
 
         for (int yy = 0; yy < dims[1]; yy++)
         {
-            tiles_2d.at(xx).at(yy) = &tiles.at(yy*dims[0] + xx);
+            TeaCLTile * new_tile = &tiles.at(yy*dims[0] + xx);
+            tiles_2d.at(xx).at(yy) = new_tile;
+
+            if (xx == 0)
+            {
+                new_tile->setExternal(CHUNK_LEFT);
+            }
+            if (yy == 0)
+            {
+                new_tile->setExternal(CHUNK_BOTTOM);
+            }
+            if (xx == dims[0] - 1)
+            {
+                new_tile->setExternal(CHUNK_RIGHT);
+            }
+            if (yy == dims[0] - 1)
+            {
+                new_tile->setExternal(CHUNK_TOP);
+            }
         }
     }
 
