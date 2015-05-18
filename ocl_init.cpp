@@ -521,6 +521,19 @@ void TeaCLContext::initOcl
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
 
+    tiles_2d.assign(dims[0], std::vector< TeaCLTile* >());
+
+    // create 2d connectivity diagram
+    for (int xx = 0; xx < dims[0]; xx++)
+    {
+        tiles_2d.at(xx).assign(dims[1], NULL);
+
+        for (int yy = 0; yy < dims[1]; yy++)
+        {
+            tiles_2d.at(xx).at(yy) = &tiles.at(yy*dims[0] + xx);
+        }
+    }
+
     MPI_Barrier(MPI_COMM_WORLD);
 }
 

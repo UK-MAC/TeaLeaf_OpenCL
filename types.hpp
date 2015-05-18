@@ -351,6 +351,9 @@ private:
     std::vector<TeaCLTile> tiles;
     std::vector<TeaCLTile>::iterator typedef tileit;
 
+    // 2d array of tiles for connectivity information
+    std::vector< std::vector< TeaCLTile* > > tiles_2d;
+
     #define FOR_EACH_TILE \
         for (tileit tile = tiles.begin(); tile < tiles.end(); tile++)
 
