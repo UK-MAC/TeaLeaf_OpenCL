@@ -294,10 +294,10 @@ private:
 
     void unpackInternal
     (cl::Buffer& cur_array,
-     cl::Buffer& transferred_left,
-     cl::Buffer& transferred_right,
-     cl::Buffer& transferred_bottom,
-     cl::Buffer& transferred_top,
+     cl::Buffer * transferred_left,
+     cl::Buffer * transferred_right,
+     cl::Buffer * transferred_bottom,
+     cl::Buffer * transferred_top,
      const cell_info_t& array_type,
      int depth);
 
