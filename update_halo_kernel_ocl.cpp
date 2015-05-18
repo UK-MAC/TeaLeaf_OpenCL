@@ -83,6 +83,11 @@ const int* chunk_neighbours)
         HALO_UPDATE_RESIDENT(density, CELL);
         HALO_UPDATE_RESIDENT(energy0, CELL);
         HALO_UPDATE_RESIDENT(energy1, CELL);
+
+        HALO_UPDATE_RESIDENT(u, CELL);
+        HALO_UPDATE_RESIDENT(vector_p, CELL);
+        HALO_UPDATE_RESIDENT(vector_sd, CELL);
+        HALO_UPDATE_RESIDENT(vector_r, CELL);
     }
 
     #undef HALO_UPDATE_RESIDENT
@@ -156,7 +161,7 @@ void TeaCLContext::update_internal_halo_kernel
  const int* chunk_neighbours)
 {
     #define HALO_UPDATE_PACK_INTERNAL(arr, type)                 \
-    if(fields[FIELD_ ## arr - 1] == 1)                      \
+    if (fields[FIELD_ ## arr - 1] == 1)                      \
     {                                                       \
         tile->packInternal(tile->arr, type, depth);   \
     }
