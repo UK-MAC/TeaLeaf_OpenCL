@@ -6,11 +6,11 @@
     // for left/right
     #define VERT_IDX                        \
         (((column - get_global_offset(0)) - 1) +                     \
-        (((row -    get_global_offset(1)) - 1) + depth - 1)*depth)+offset+1
+        (((row -    get_global_offset(1)) - 1) + depth - 1)*depth)+offset+2
     // for top/bottom
     #define HORZ_IDX                        \
         (((column - get_global_offset(0)) - 1) + depth +             \
-        (((row -    get_global_offset(1)) - 0) - 0)*(x_max + x_extra + 2*depth))+offset-1
+        (((row -    get_global_offset(1)) - 0) - 0)*(x_max + x_extra + 2*depth))+offset
 #else
     #define HORZ_IDX \
         offset + column + (row + depth - 1)*depth - 2
