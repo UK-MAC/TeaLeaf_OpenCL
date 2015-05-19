@@ -456,12 +456,21 @@ void TeaCLTile::initSizes
 void TeaCLContext::initArgs
 (void)
 {
+    if (!rank)
+    {
+        fprintf(stdout, "Setting kernel arguments\n");
+    }
+
     FOR_EACH_TILE
     {
         tile->initArgs();
     }
 
-    fprintf(DBGOUT, "Kernel arguments set\n");
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!rank)
+    {
+        fprintf(stdout, "Kernel arguments set\n");
+    }
 }
 
 void TeaCLTile::initArgs

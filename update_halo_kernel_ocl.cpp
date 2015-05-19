@@ -185,23 +185,23 @@ void TeaCLContext::update_internal_halo_kernel
 
     #undef HALO_UPDATE_INTERNAL
 
-    for (int xx = 0; xx < dims[0]; xx++)
+    for (int yy = 0; yy < dims[1]; yy++)
     {
-        for (int yy = 0; yy < dims[1]; yy++)
+        for (int xx = 0; xx < dims[0]; xx++)
         {
 
 #define SWAP_ARRAYS(arr, type)                 \
 if(fields[FIELD_ ## arr - 1] == 1)                      \
 {                                                       \
     tile->unpackInternal(tile->arr, \
-        tile->isExternal(CHUNK_LEFT)   ? NULL :  &tiles_2d.at(xx-1).at(yy)->right_buffer, \
-        tile->isExternal(CHUNK_RIGHT)  ? NULL :  &tiles_2d.at(xx+1).at(yy)->left_buffer, \
-        tile->isExternal(CHUNK_BOTTOM) ? NULL :  &tiles_2d.at(xx).at(yy-1)->top_buffer, \
-        tile->isExternal(CHUNK_TOP)    ? NULL :  &tiles_2d.at(xx).at(yy+1)->bottom_buffer, \
+        tile->isExternal(CHUNK_LEFT)   ? NULL : &tiles_2d.at(yy).at(xx-1)->right_buffer, \
+        tile->isExternal(CHUNK_RIGHT)  ? NULL : &tiles_2d.at(yy).at(xx+1)->left_buffer, \
+        tile->isExternal(CHUNK_BOTTOM) ? NULL : &tiles_2d.at(yy-1).at(xx)->top_buffer, \
+        tile->isExternal(CHUNK_TOP)    ? NULL : &tiles_2d.at(yy+1).at(xx)->bottom_buffer, \
         type, depth);   \
 }
 
-            TeaCLTile * tile = tiles_2d.at(xx).at(yy);
+            TeaCLTile * tile = tiles_2d.at(yy).at(xx);
             SWAP_ARRAYS(u, CELL);
         }
     }

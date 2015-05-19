@@ -441,9 +441,9 @@ void TeaCLContext::initOcl
     run_flags.x_cells = readInt(input, "x_cells");
     run_flags.y_cells = readInt(input, "y_cells");
 
-    for (int xx = 0; xx < dims[0]; xx++)
+    for (int yy = 0; yy < dims[1]; yy++)
     {
-        for (int yy = 0; yy < dims[1]; yy++)
+        for (int xx = 0; xx < dims[0]; xx++)
         {
             int delta_x = run_flags.x_cells/dims[0];
             int delta_y = run_flags.y_cells/dims[1];
@@ -504,17 +504,17 @@ void TeaCLContext::initOcl
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
 
-    tiles_2d.assign(dims[0], std::vector< TeaCLTile* >());
+    tiles_2d.assign(dims[1], std::vector< TeaCLTile* >());
 
     // create 2d connectivity diagram
-    for (int xx = 0; xx < dims[0]; xx++)
+    for (int yy = 0; yy < dims[1]; yy++)
     {
-        tiles_2d.at(xx).assign(dims[1], NULL);
+        tiles_2d.at(yy).assign(dims[0], NULL);
 
-        for (int yy = 0; yy < dims[1]; yy++)
+        for (int xx = 0; xx < dims[0]; xx++)
         {
             TeaCLTile * new_tile = &tiles.at(yy*dims[0] + xx);
-            tiles_2d.at(xx).at(yy) = new_tile;
+            tiles_2d.at(yy).at(xx) = new_tile;
 
             if (xx == 0)
             {
@@ -528,12 +528,14 @@ void TeaCLContext::initOcl
             {
                 new_tile->setExternal(CHUNK_RIGHT);
             }
-            if (yy == dims[0] - 1)
+            if (yy == dims[1] - 1)
             {
                 new_tile->setExternal(CHUNK_TOP);
             }
         }
     }
+
+    fprintf(stdout, "Split into %zu by %zu tiles\n", tiles_2d.size(), tiles_2d.at(0).size());
 
     MPI_Barrier(MPI_COMM_WORLD);
 }
