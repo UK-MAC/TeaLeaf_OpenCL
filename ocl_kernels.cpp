@@ -259,7 +259,6 @@ void TeaCLTile::compileKernel
 
     // keep track of built programs to avoid rebuilding them
     // This can be global across all kernels, so static
-    static std::map<std::string, cl::Program> built_programs;
 
     if (built_programs.find(source_name + options) == built_programs.end())
     {
@@ -293,13 +292,7 @@ void TeaCLTile::compileKernel
             e.err(), e.what(), kernel_name);
     }
 
-    cl::detail::errHandler(
-        clGetKernelWorkGroupInfo(kernel(),
-                                 device(),
-                                 CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t),
-                                 &max_wg_size,
-                                 NULL));
+    kernel.getWorkGroupInfo(device, CL_KERNEL_WORK_GROUP_SIZE, &max_wg_size);
 
     if ((LOCAL_X*LOCAL_Y) > max_wg_size)
     {
@@ -368,13 +361,7 @@ void TeaCLTile::initSizes
      */
     // get max local size for the update kernels
     size_t max_update_wg_sz;
-    cl::detail::errHandler(
-        clGetKernelWorkGroupInfo(update_halo_bottom_device(),
-                                 device(),
-                                 CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t),
-                                 &max_update_wg_sz,
-                                 NULL));
+    update_halo_bottom_device.getWorkGroupInfo(device, CL_KERNEL_WORK_GROUP_SIZE, &max_update_wg_sz);
     //fprintf(DBGOUT, "Max work group size for update halo is %zu\n", max_update_wg_sz);
 
     // ideally multiple of 32 for nvidia, ideally multiple of 64 for amd

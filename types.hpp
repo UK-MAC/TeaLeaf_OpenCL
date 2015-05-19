@@ -308,6 +308,8 @@ private:
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
 
+    std::map<std::string, cl::Program> built_programs;
+
     run_flags_t run_flags;
 public:
     int isExternal

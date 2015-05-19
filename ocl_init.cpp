@@ -257,12 +257,6 @@ void TeaCLContext::initOcl
                 fprintf(stdout, "Using platform:\n");
                 listPlatforms(used);
 
-                // try to create a context with the desired type
-                cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,
-                    reinterpret_cast<cl_context_properties>(platform()), 0};
-
-                context = cl::Context(desired_type, properties);
-
                 break;
             }
         }
@@ -308,7 +302,7 @@ void TeaCLContext::initOcl
 
         try
         {
-            context = cl::Context(desired_type, properties);
+            cl::Context test_context(desired_type, properties);
         }
         catch (cl::Error e)
         {
@@ -441,32 +435,6 @@ void TeaCLContext::initOcl
     run_flags.x_cells = readInt(input, "x_cells");
     run_flags.y_cells = readInt(input, "y_cells");
 
-    for (int yy = 0; yy < dims[1]; yy++)
-    {
-        for (int xx = 0; xx < dims[0]; xx++)
-        {
-            int delta_x = run_flags.x_cells/dims[0];
-            int delta_y = run_flags.y_cells/dims[1];
-            int mod_x = run_flags.x_cells % dims[0];
-            int mod_y = run_flags.y_cells % dims[1];
-
-            int left = xx*delta_x;
-            left += (xx < mod_x) ? xx : mod_x;
-            int right = left + delta_x - 1;
-            right += (xx < mod_x) ? 1 : 0;
-
-            int bottom = yy*delta_y;
-            bottom += (yy < mod_y) ? yy : mod_y;
-            int top = bottom + delta_y - 1;
-            top += (yy < mod_y) ? 1 : 0;
-
-            TeaCLTile new_tile(run_flags, context,
-                xx, yy, left, right, bottom, top);
-
-            tiles.push_back(new_tile);
-        }
-    }
-
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
 
@@ -477,28 +445,56 @@ void TeaCLContext::initOcl
     {
         if (rank == cur_rank)
         {
-            // get devices - just choose the first one
-            std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
+            std::vector<cl::Device> devices;
+            platform.getDevices(desired_type, &devices);
+
+            context = cl::Context(devices);
 
             if (*std::max_element(tile_device.begin(), tile_device.end()) >= devices.size())
             {
                 DIE("opencl_affinity was set to use more devices than are available");
             }
 
+            for (int yy = 0; yy < dims[1]; yy++)
+            {
+                for (int xx = 0; xx < dims[0]; xx++)
+                {
+                    int delta_x = run_flags.x_cells/dims[0];
+                    int delta_y = run_flags.y_cells/dims[1];
+                    int mod_x = run_flags.x_cells % dims[0];
+                    int mod_y = run_flags.y_cells % dims[1];
+
+                    int left = xx*delta_x;
+                    left += (xx < mod_x) ? xx : mod_x;
+                    int right = left + delta_x - 1;
+                    right += (xx < mod_x) ? 1 : 0;
+
+                    int bottom = yy*delta_y;
+                    bottom += (yy < mod_y) ? yy : mod_y;
+                    int top = bottom + delta_y - 1;
+                    top += (yy < mod_y) ? 1 : 0;
+
+                    TeaCLTile new_tile(run_flags, context,
+                        xx, yy, left, right, bottom, top);
+
+                    tiles.push_back(new_tile);
+                }
+            }
+
             for (size_t ii = 0; ii < n_tiles; ii++)
             {
-               int device_num;
+                int device_num;
 
-               if (tile_device.size() == 0)
-               {
-                   device_num = ii % devices.size();
-               }
-               else
-               {
-                   device_num = tile_device.at(ii);
-               }
+                if (tile_device.size() == 0)
+                {
+                    device_num = ii % devices.size();
+                }
+                else
+                {
+                    device_num = tile_device.at(ii);
+                }
 
-               tiles.at(ii).initTileQueue(run_flags, devices.at(device_num), context);
+                tiles.at(ii).initTileQueue(run_flags, devices.at(device_num), context);
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
