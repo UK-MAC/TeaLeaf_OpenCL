@@ -61,7 +61,6 @@ __kernel void generate_chunk
                 density0[THARR2D(0, 0, 0)] = state_density[state];
             }
         }
-
     }
 }
 

@@ -535,7 +535,10 @@ void TeaCLContext::initOcl
         }
     }
 
-    fprintf(stdout, "Split into %zu by %zu tiles\n", tiles_2d.size(), tiles_2d.at(0).size());
+    if (!rank)
+    {
+        fprintf(stdout, "Split into %zu by %zu tiles\n", tiles_2d.size(), tiles_2d.at(0).size());
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 }
