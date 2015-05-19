@@ -94,12 +94,12 @@ void TeaCLTile::initBuffers
     BUF_ALLOC(reduce_buf_6, reduce_buf_sz);
 
     const std::vector<double> zeros(total_cells, 0.0);
-    queue.enqueueWriteBuffer(reduce_buf_1, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
-    queue.enqueueWriteBuffer(reduce_buf_2, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
-    queue.enqueueWriteBuffer(reduce_buf_3, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
-    queue.enqueueWriteBuffer(reduce_buf_4, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
-    queue.enqueueWriteBuffer(reduce_buf_5, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
-    queue.enqueueWriteBuffer(reduce_buf_6, CL_FALSE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_1, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_2, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_3, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_4, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_5, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_6, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
 
     // size of one side of mesh, plus one extra on the side for each depth, times the number of halos to be exchanged
     size_t lr_mpi_buf_sz = sizeof(double)*(tile_y_cells + 2*run_flags.halo_allocate_depth)*run_flags.halo_allocate_depth;
