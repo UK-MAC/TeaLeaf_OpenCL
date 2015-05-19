@@ -48,15 +48,15 @@ void TeaCLContext::tea_leaf_calc_2norm_kernel
             // ddot(z, r)
             tile->tea_leaf_calc_2norm_device.setArg(0, tile->vector_r);
 
-            if (preconditioner_type == TL_PREC_JAC_BLOCK)
+            if (run_flags.preconditioner_type == TL_PREC_JAC_BLOCK)
             {
                 tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_z);
             }
-            else if (preconditioner_type == TL_PREC_JAC_DIAG)
+            else if (run_flags.preconditioner_type == TL_PREC_JAC_DIAG)
             {
                 tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_z);
             }
-            else if (preconditioner_type == TL_PREC_NONE)
+            else if (run_flags.preconditioner_type == TL_PREC_NONE)
             {
                 tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_r);
             }

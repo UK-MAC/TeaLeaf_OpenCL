@@ -184,22 +184,22 @@ void TeaCLContext::initOcl
     if(!rank)fprintf(stdout, "Preconditioner to use: ");
     if (desired_preconditioner.find("jac_diag") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_JAC_DIAG;
+        run_flags.preconditioner_type = TL_PREC_JAC_DIAG;
         if(!rank)fprintf(stdout, "Diagonal Jacobi\n");
     }
     else if (desired_preconditioner.find("jac_block") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_JAC_BLOCK;
+        run_flags.preconditioner_type = TL_PREC_JAC_BLOCK;
         if(!rank)fprintf(stdout, "Block Jacobi\n");
     }
     else if (desired_preconditioner.find("none") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_NONE;
+        run_flags.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None\n");
     }
     else
     {
-        preconditioner_type = TL_PREC_NONE;
+        run_flags.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 

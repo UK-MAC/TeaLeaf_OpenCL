@@ -329,8 +329,6 @@ private:
 
     // tolerance specified in tea.in
     float tolerance;
-    // type of preconditioner
-    int preconditioner_type;
 
     // calculate rx/ry to pass back to fortran
     void calcrxry

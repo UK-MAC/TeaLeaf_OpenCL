@@ -31,12 +31,12 @@ void TeaCLContext::tea_leaf_init_cg
     {
         // Assume calc_residual has been called before this (to calculate initial_residual)
 
-        if (preconditioner_type == TL_PREC_JAC_BLOCK)
+        if (run_flags.preconditioner_type == TL_PREC_JAC_BLOCK)
         {
             ENQUEUE(tea_leaf_block_init_device);
             ENQUEUE(tea_leaf_block_solve_device);
         }
-        else if (preconditioner_type == TL_PREC_JAC_DIAG)
+        else if (run_flags.preconditioner_type == TL_PREC_JAC_DIAG)
         {
             ENQUEUE(tea_leaf_init_jac_diag_device);
         }
