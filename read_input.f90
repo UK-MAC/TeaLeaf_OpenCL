@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Reads the user input
@@ -77,6 +77,8 @@ SUBROUTINE read_input()
   tl_check_result = .FALSE.
   tl_preconditioner_type = TL_PREC_NONE
 
+  reflective_boundary = .FALSE.
+
   tl_ppcg_inner_steps = -1
 
   tl_use_chebyshev = .FALSE.
@@ -86,7 +88,6 @@ SUBROUTINE read_input()
   verbose_on = .FALSE.
 
   halo_exchange_depth=1
-  halo_allocate_depth=2
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
@@ -165,7 +166,6 @@ SUBROUTINE read_input()
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ch_cg_presteps',tl_ch_cg_presteps
       CASE('tl_ppcg_inner_steps')
         tl_ppcg_inner_steps=parse_getival(parse_getword(.TRUE.))
-        IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
       CASE('tl_ch_cg_epslim')
         tl_ch_cg_epslim=parse_getrval(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'tl_ch_cg_epslim',tl_ch_cg_epslim
@@ -213,6 +213,8 @@ SUBROUTINE read_input()
         tl_use_cg = .FALSE.
         tl_use_ppcg=.FALSE.
         tl_use_jacobi = .FALSE.
+      CASE('reflective_boundary')
+        reflective_boundary=.TRUE.
       CASE('profiler_on')
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'
@@ -313,6 +315,8 @@ SUBROUTINE read_input()
     WRITE(g_out,*) 'Input read finished.'
     WRITE(g_out,*)
   ENDIF
+
+  CALL flush(g_out)
 
   ! If a state boundary falls exactly on a cell boundary then round off can
   ! cause the state to be put one cell further that expected. This is compiler

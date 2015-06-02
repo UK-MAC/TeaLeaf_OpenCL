@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief  Allocates the data for each mesh chunk
@@ -22,17 +22,17 @@
 
 SUBROUTINE build_field(chunk,x_cells,y_cells)
 
-    USE tea_module
+   USE tea_module
 
-    IMPLICIT NONE
+   IMPLICIT NONE
 
-    INTEGER :: chunk,x_cells,y_cells
+   INTEGER :: chunk,x_cells,y_cells,j,k
 
-    chunks(chunk)%field%x_min=1
-    chunks(chunk)%field%y_min=1
+   chunks(chunk)%field%x_min=1
+   chunks(chunk)%field%y_min=1
 
-    chunks(chunk)%field%x_max=x_cells
-    chunks(chunk)%field%y_max=y_cells
+   chunks(chunk)%field%x_max=x_cells
+   chunks(chunk)%field%y_max=y_cells
 
     IF (use_opencl_kernels) THEN
       CALL initialise_ocl(chunks(chunk)%field%x_min, &

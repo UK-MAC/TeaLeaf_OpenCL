@@ -94,7 +94,6 @@ SUBROUTINE tea_init_comms
   CALL MPI_COMM_SIZE(mpi_cart_comm,size,err)
   CALL MPI_CART_COORDS(mpi_cart_comm, rank, 2, mpi_coords, err)
 
-  parallel%boss=.FALSE.
   parallel%parallel=.TRUE.
   parallel%task=rank
 
@@ -149,9 +148,9 @@ SUBROUTINE tea_decompose(x_cells,y_cells,left,right,bottom,top)
     chunks(c)%chunk_neighbours(chunk_right),    &
     err)
 
-  where (chunks(c)%chunk_neighbours .eq. mpi_proc_null)
+  WHERE (chunks(c)%chunk_neighbours .EQ. mpi_proc_null)
     chunks(c)%chunk_neighbours = external_face
-  end where
+  END WHERE
 
   chunk_y = mpi_dims(1)
   chunk_x = mpi_dims(2)
@@ -304,14 +303,17 @@ SUBROUTINE tea_exchange(fields,depth)
       message_count_lr = message_count_lr + 2
     ENDIF
 
-    CALL MPI_TESTALL(message_count_lr, request_lr, test_complete, status_lr, err)
+    IF (depth .eq. 1) THEN
+      test_complete = .false.
+      ! don't have to transfer now
+      CALL MPI_TESTALL(message_count_lr, request_lr, test_complete, status_lr, err)
+    ELSE
+      test_complete = .true.
+      !make a call to wait / sync
+      CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
+    ENDIF
 
-    IF ((depth .gt. 1) .or. (test_complete .eqv. .true.)) THEN
-      IF (test_complete .eqv. .false.) THEN
-        !make a call to wait / sync
-        CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
-      ENDIF
-
+    IF (test_complete .eqv. .true.) THEN
       !unpack in left direction
       IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         call ocl_unpack_buffers(fields, left_right_offset, depth, &
@@ -353,7 +355,7 @@ SUBROUTINE tea_exchange(fields,depth)
       message_count_ud = message_count_ud + 2
     ENDIF
 
-    IF ((depth .eq. 1) .and. (test_complete .eqv. .false.)) THEN
+    IF (test_complete .eqv. .false.) THEN
       !make a call to wait / sync
       CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
 
