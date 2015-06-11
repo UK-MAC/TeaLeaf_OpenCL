@@ -4,7 +4,7 @@ __kernel void update_halo_left
 (int x_extra, int y_extra,
  int x_invert, int y_invert,
  int x_face, int y_face,
- int grid_type, int depth, 
+ int grid_type, int depth,
  __global double * __restrict const cur_array)
 {
     __kernel_indexes;
@@ -13,7 +13,7 @@ __kernel void update_halo_left
     {
         const size_t src = 1 + (HALO_DEPTH - column - 1)*2;
         const size_t dst = 0;
-        cur_array[THARR2D(dst, 0, x_extra)] = y_invert * cur_array[THARR2D(src, 0, x_extra)];
+        cur_array[THARR2D(dst, 0, x_extra)] = x_invert * cur_array[THARR2D(src, 0, x_extra)];
     }
 }
 
@@ -21,7 +21,7 @@ __kernel void update_halo_right
 (int x_extra, int y_extra,
  int x_invert, int y_invert,
  int x_face, int y_face,
- int grid_type, int depth, 
+ int grid_type, int depth,
  __global double * __restrict const cur_array)
 {
     __kernel_indexes;
@@ -38,7 +38,7 @@ __kernel void update_halo_bottom
 (int x_extra,   int y_extra,
  int x_invert,  int y_invert,
  int x_face,    int y_face,
- int grid_type, int depth, 
+ int grid_type, int depth,
  __global double * __restrict const cur_array)
 {
     __kernel_indexes;
@@ -55,7 +55,7 @@ __kernel void update_halo_top
 (int x_extra, int y_extra,
  int x_invert, int y_invert,
  int x_face, int y_face,
- int grid_type, int depth, 
+ int grid_type, int depth,
  __global double * __restrict const cur_array)
 {
     __kernel_indexes;

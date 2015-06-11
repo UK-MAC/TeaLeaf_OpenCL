@@ -351,6 +351,13 @@ SUBROUTINE tea_leaf()
               CALL tea_leaf_kernel_solve_ocl(rx, ry, error)
           ENDIF
 
+          IF (MOD(n, 50) .EQ. 0) THEN
+            CALL update_halo(fields,1)
+
+            CALL tea_leaf_calc_residual_ocl()
+            CALL tea_leaf_calc_2norm_kernel_ocl(1, error)
+          ENDIF
+
           IF (profiler_on) dot_product_time=timer()
           CALL tea_allsum(error)
           IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
@@ -388,6 +395,7 @@ SUBROUTINE tea_leaf()
         IF (profiler_on) halo_time = timer()
         CALL update_halo(fields,1)
         IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
+
         IF(use_opencl_kernels) THEN
           CALL tea_leaf_calc_residual_ocl()
           CALL tea_leaf_calc_2norm_kernel_ocl(1, exact_error)
@@ -398,7 +406,7 @@ SUBROUTINE tea_leaf()
         IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
         IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
-        exact_error = sqrt(exact_error)
+        exact_error = SQRT(exact_error)
       ENDIF
 
       IF (profiler_on) profiler%tea_solve = profiler%tea_solve + (timer() - solve_time)

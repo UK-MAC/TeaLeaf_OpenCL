@@ -92,14 +92,15 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
-    tea_leaf_cheby_solve_calc_p_device.setArg(10, ch_alphas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(11, ch_betas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(12, rx);
-    tea_leaf_cheby_solve_calc_p_device.setArg(13, ry);
 
     tea_leaf_cheby_solve_init_p_device.setArg(10, theta);
     tea_leaf_cheby_solve_init_p_device.setArg(11, rx);
     tea_leaf_cheby_solve_init_p_device.setArg(12, ry);
+
+    tea_leaf_cheby_solve_calc_p_device.setArg(10, ch_alphas_device);
+    tea_leaf_cheby_solve_calc_p_device.setArg(11, ch_betas_device);
+    tea_leaf_cheby_solve_calc_p_device.setArg(12, rx);
+    tea_leaf_cheby_solve_calc_p_device.setArg(13, ry);
 
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_init_p_device);
 
@@ -383,6 +384,7 @@ void CloverChunk::ppcg_inner
         {
             step_global_size[0] -= (halo_exchange_depth-step_depth);
         }
+
         if (chunk_neighbours[CHUNK_BOTTOM - 1] == EXTERNAL_FACE)
         {
             step_offset[1] = halo_allocate_depth;

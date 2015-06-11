@@ -125,18 +125,6 @@ MODULE definitions_module
    INTEGER         :: jdt,kdt
 
    TYPE field_type
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: density
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: energy0,energy1
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: u, u0
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_p
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_r
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Mi
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_w
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_z
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Kx
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Ky
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_sd
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: tri_cp, tri_bfp
 
      INTEGER         :: left            &
                        ,right           &
@@ -149,21 +137,8 @@ MODULE definitions_module
 
      INTEGER         :: x_min  &
                        ,y_min  &
-                       ,x_max  &
+                       ,x_max, &
                        ,y_max
-
-     REAL(KIND=8), DIMENSION(:),   ALLOCATABLE :: cellx    &
-                                                 ,celly    &
-                                                 ,vertexx  &
-                                                 ,vertexy  &
-                                                 ,celldx   &
-                                                 ,celldy   &
-                                                 ,vertexdx &
-                                                 ,vertexdy
-
-     REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: volume  &
-                                                 ,xarea   &
-                                                 ,yarea
 
    END TYPE field_type
 

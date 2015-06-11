@@ -327,10 +327,10 @@ SUBROUTINE read_input()
   dx=(grid%xmax-grid%xmin)/REAL(grid%x_cells)
   dy=(grid%ymax-grid%ymin)/REAL(grid%y_cells)
   DO n=2,number_of_states
-    states(n)%xmin=states(n)%xmin+(dx/100.0)
-    states(n)%ymin=states(n)%ymin+(dy/100.0)
-    states(n)%xmax=states(n)%xmax-(dx/100.0)
-    states(n)%ymax=states(n)%ymax-(dy/100.0)
+    states(n)%xmin=states(n)%xmin+(dx/100.0_8)
+    states(n)%ymin=states(n)%ymin+(dy/100.0_8)
+    states(n)%xmax=states(n)%xmax-(dx/100.0_8)
+    states(n)%ymax=states(n)%ymax-(dy/100.0_8)
   ENDDO
 
 END SUBROUTINE read_input

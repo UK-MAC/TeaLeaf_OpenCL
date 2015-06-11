@@ -1,7 +1,5 @@
 #include "./kernel_files/macros_cl.cl"
 
-/********************/
-
 #if 1
     // for left/right
     #define VERT_IDX                        \
