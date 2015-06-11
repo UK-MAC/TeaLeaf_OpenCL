@@ -162,7 +162,7 @@ void CloverChunk::initOcl
         DIE("Halo exchange depth unspecified or was too small");
     }
 
-    halo_allocate_depth = std::max(file_halo_depth, 2);
+    halo_exchange_depth = std::max(file_halo_depth, 2);
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");

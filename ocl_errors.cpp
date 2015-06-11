@@ -232,8 +232,8 @@ std::vector<double> CloverChunk::dumpArray
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 2*halo_allocate_depth + x_extra)       \
-        * ((y_max) + 2*halo_allocate_depth + y_extra)       \
+        ( ((x_max) + 2*halo_exchange_depth + x_extra)       \
+        * ((y_max) + 2*halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

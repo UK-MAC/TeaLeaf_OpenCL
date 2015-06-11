@@ -161,7 +161,6 @@ MODULE definitions_module
 
   ! depth of halo for matrix powers
   integer :: halo_exchange_depth
-  integer :: halo_allocate_depth
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks

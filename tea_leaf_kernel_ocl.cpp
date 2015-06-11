@@ -155,9 +155,9 @@ void CloverChunk::calcrxry
     {
         // celldx/celldy never change, but done for consistency with fortran
         queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dx);
+            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dx);
         queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*(1 + halo_allocate_depth), sizeof(double), &dy);
+            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dy);
     }
     catch (cl::Error e)
     {
@@ -367,17 +367,17 @@ void CloverChunk::ppcg_init_sd
 void CloverChunk::ppcg_inner
 (int ppcg_cur_step, int max_steps, const int* chunk_neighbours)
 {
-    for (int step_depth = 1 + (halo_allocate_depth - halo_exchange_depth);
-        step_depth <= halo_allocate_depth; step_depth++)
+    for (int step_depth = 1 + (halo_exchange_depth - halo_exchange_depth);
+        step_depth <= halo_exchange_depth; step_depth++)
     {
         size_t step_offset[2] = {step_depth, step_depth};
         size_t step_global_size[2] = {
-            x_max + (halo_allocate_depth-step_depth)*2,
-            y_max + (halo_allocate_depth-step_depth)*2};
+            x_max + (halo_exchange_depth-step_depth)*2,
+            y_max + (halo_exchange_depth-step_depth)*2};
 
         if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
         {
-            step_offset[0] = halo_allocate_depth;
+            step_offset[0] = halo_exchange_depth;
             step_global_size[0] -= (halo_exchange_depth-step_depth);
         }
         if (chunk_neighbours[CHUNK_RIGHT - 1] == EXTERNAL_FACE)
@@ -387,7 +387,7 @@ void CloverChunk::ppcg_inner
 
         if (chunk_neighbours[CHUNK_BOTTOM - 1] == EXTERNAL_FACE)
         {
-            step_offset[1] = halo_allocate_depth;
+            step_offset[1] = halo_exchange_depth;
             step_global_size[1] -= (halo_exchange_depth-step_depth);
         }
         if (chunk_neighbours[CHUNK_TOP - 1] == EXTERNAL_FACE)

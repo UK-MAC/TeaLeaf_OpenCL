@@ -46,7 +46,7 @@ void CloverChunk::initProgram
     options << device_type_prepro;
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << halo_allocate_depth << " ";
+    options << "-DHALO_DEPTH=" << halo_exchange_depth << " ";
 
     if (!rank)
     {
@@ -56,7 +56,7 @@ void CloverChunk::initProgram
     }
 
     // launch with special work group sizes to cover the whole grid
-    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_allocate_depth, halo_allocate_depth, -halo_allocate_depth, halo_allocate_depth);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -2, 2, -2, 2);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, -1, 1, -1, 1);
@@ -134,7 +134,7 @@ CloverChunk::launch_specs_t CloverChunk::findPaddingSize
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((halo_allocate_depth) + (hmin), (halo_allocate_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((halo_exchange_depth) + (hmin), (halo_exchange_depth) + (vmin));
     return cur_specs;
 }
 
@@ -364,8 +364,8 @@ void CloverChunk::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = x_max + 2*halo_allocate_depth;
-    size_t global_lr_pack_size = y_max + 2*halo_allocate_depth;
+    size_t global_bt_pack_size = x_max + 2*halo_exchange_depth;
+    size_t global_lr_pack_size = y_max + 2*halo_exchange_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)
@@ -387,8 +387,8 @@ void CloverChunk::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(halo_allocate_depth - depth, halo_allocate_depth - depth);
-        update_bt_offset[depth] = cl::NDRange(halo_allocate_depth - depth, halo_allocate_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(halo_exchange_depth - depth, halo_exchange_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(halo_exchange_depth - depth, halo_exchange_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",

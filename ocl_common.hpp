@@ -241,7 +241,6 @@ private:
 
     // halo size
     int halo_exchange_depth;
-    int halo_allocate_depth;
 
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;

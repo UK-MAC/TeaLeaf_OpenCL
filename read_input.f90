@@ -298,9 +298,9 @@ SUBROUTINE read_input()
   endif
 
   if (halo_exchange_depth .lt. 2) then
-    halo_allocate_depth = 2
+    halo_exchange_depth = 2
   else
-    halo_allocate_depth = halo_exchange_depth
+    halo_exchange_depth = halo_exchange_depth
   endif
 
   if ((halo_exchange_depth .gt. 1) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
