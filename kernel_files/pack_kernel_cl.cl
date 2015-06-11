@@ -1,19 +1,14 @@
 #include "./kernel_files/macros_cl.cl"
 
-#if 1
-    // for left/right
-    #define VERT_IDX                        \
-        (((column - get_global_offset(0)) - 1) +                     \
-        (((row -    get_global_offset(1)) - 1) + depth - 1)*depth)+offset+1
-    // for top/bottom
-    #define HORZ_IDX                        \
-        (((column - get_global_offset(0)) - 1) + depth +             \
-        (((row -    get_global_offset(1)) - 0) - 0)*(x_max + x_extra + 2*depth))+offset-1
-#else
-    #define HORZ_IDX \
-        offset + column + (row + depth - 1)*depth - 2
-    #define VERT_IDX gid+offset
-#endif
+// for left/right
+#define VERT_IDX                        \
+    (column - get_global_offset(0)) +   \
+    (row -    get_global_offset(1))*depth + offset
+
+// for top/bottom
+#define HORZ_IDX                                        \
+    (column - get_global_offset(0)) +             \
+    (row -    get_global_offset(1))*(x_max + x_extra + 2*depth) + offset
 
 __kernel void pack_left_buffer
 (int x_extra, int y_extra,
