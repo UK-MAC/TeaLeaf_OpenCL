@@ -139,8 +139,6 @@ SUBROUTINE start
 
   CALL field_summary()
 
-  IF(visit_frequency.NE.0) CALL visit()
-
   CALL tea_barrier
 
   profiler_on=profiler_off

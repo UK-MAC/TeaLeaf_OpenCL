@@ -55,9 +55,6 @@ SUBROUTINE diffuse
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
-    IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.0) CALL visit()
-    ENDIF
 
     ! Sometimes there can be a significant start up cost that appears in the first step.
     ! Sometimes it is due to the number of MPI tasks, or OpenCL kernel compilation.
@@ -86,7 +83,6 @@ SUBROUTINE diffuse
 
       complete=.TRUE.
       CALL field_summary()
-      IF(visit_frequency.NE.0) CALL visit()
 
       wall_clock=timer() - timerstart
       IF ( parallel%boss ) THEN

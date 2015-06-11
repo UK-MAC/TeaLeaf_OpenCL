@@ -170,7 +170,6 @@ FORTRAN_FILES=\
 	set_field.o                   \
 	tea_leaf_cheby.o             	\
 	tea_solve.o                   \
-	visit.o			\
 	tea_leaf.o			\
 	diffuse.o
 

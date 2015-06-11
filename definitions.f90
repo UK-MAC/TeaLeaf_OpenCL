@@ -137,7 +137,7 @@ MODULE definitions_module
 
      INTEGER         :: x_min  &
                        ,y_min  &
-                       ,x_max, &
+                       ,x_max  &
                        ,y_max
 
    END TYPE field_type

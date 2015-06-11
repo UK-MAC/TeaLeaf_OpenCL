@@ -28,7 +28,6 @@ timestep.o timestep_module.mod: timestep.f90 tea_module.mod \
  report_module.mod update_halo_module.mod calc_dt_module.mod \
  definitions_module.mod
 update_halo.o update_halo_module.mod: update_halo.f90 tea_module.mod
-visit.o: visit.f90 tea_module.mod update_halo_module.mod
 
 field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
  ocl_reduction.hpp
