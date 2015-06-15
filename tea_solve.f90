@@ -500,7 +500,7 @@ SUBROUTINE tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   IF (profiler_on) solve_time = solve_time + (timer() - halo_time)
 
   IF(use_opencl_kernels) THEN
-    CALL tea_leaf_calc_residual_ocl()
+    !CALL tea_leaf_calc_residual_ocl()
     CALL tea_leaf_kernel_ppcg_init_sd_ocl()
   ENDIF
 
