@@ -36,7 +36,7 @@ SUBROUTINE tea_leaf()
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
-  REAL(KIND=8) :: ry,rx,error,exact_error,initial_residual
+  REAL(KIND=8) :: ry,rx,old_error,error,exact_error,initial_residual
 
   INTEGER :: fields(NUM_FIELDS)
 
@@ -73,7 +73,6 @@ SUBROUTINE tea_leaf()
     CALL report_error('tea_leaf', 'unknown coefficient option')
   ENDIF
 
-  error = 1e10
   cheby_calc_steps = 0
   cg_calc_steps = 0
 
@@ -97,7 +96,7 @@ SUBROUTINE tea_leaf()
       IF (profiler_on) init_time = init_time + (timer()-halo_time)
 
       IF (use_opencl_kernels) THEN
-          CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry, chunks(c)%chunk_neighbours)
+        CALL tea_leaf_kernel_init_common_ocl(coefficient, dt, rx, ry, chunks(c)%chunk_neighbours)
       ENDIF
 
       fields=0
@@ -117,7 +116,10 @@ SUBROUTINE tea_leaf()
       IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
       IF (profiler_on) init_time = init_time + (timer()-dot_product_time)
 
+      old_error = initial_residual
+
       initial_residual=SQRT(initial_residual)
+
       IF(parallel%boss.AND.verbose_on) THEN
 !$      IF(OMP_GET_THREAD_NUM().EQ.0) THEN
           WRITE(g_out,*)"Initial residual ",initial_residual
@@ -160,13 +162,19 @@ SUBROUTINE tea_leaf()
 
         iteration_time = timer()
 
-        IF (ch_switch_check .eqv. .false.) THEN
-          IF (tl_ch_cg_errswitch) THEN
-              ! either the ABS(error) has got below tolerance, or it's already going - minimum 20 steps to converge eigenvalues
-              ch_switch_check = (cheby_calc_steps .GT. 0) .OR. (ABS(error) .LE. tl_ch_cg_epslim) .AND. (n .GE. 20)
+        IF (ch_switch_check .EQV. .FALSE.) THEN
+          IF ((cheby_calc_steps .GT. 0)) THEN
+            ! already started or already have good guesses for eigenvalues
+            ch_switch_check = .TRUE.
+          ELSE IF ((first .EQV. .FALSE.) .AND. tl_use_ppcg .AND. n .GT. 1) THEN
+            ! If using PPCG, it can start almost immediately
+            ch_switch_check = .TRUE.
+          ELSE IF ((ABS(old_error) .LE. tl_ch_cg_epslim) .AND. (n .GE. tl_ch_cg_presteps)) THEN
+            ! Error is less than set limit, and enough steps have passed to get a good eigenvalue guess
+            ch_switch_check = .TRUE.
           ELSE
-              ! enough steps have passed and ABS(error) < 1, otherwise it's nowhere near converging on eigenvalues
-              ch_switch_check = (n .GE. tl_ch_cg_presteps) .AND. (ABS(error) .le. 1.0_8)
+            ! keep doing CG (or jacobi)
+            ch_switch_check = .FALSE.
           ENDIF
         ENDIF
 
@@ -176,9 +184,8 @@ SUBROUTINE tea_leaf()
           IF (cheby_calc_steps .EQ. 0) THEN
             ! maximum number of iterations in chebyshev solver
             max_cheby_iters = max_iters - n + 2
-            rro = error
 
-            IF(first) THEN
+            IF (first) THEN
               ! calculate eigenvalues
               CALL tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
                   max_iters, n-1, info)
@@ -209,58 +216,45 @@ SUBROUTINE tea_leaf()
 
             IF (parallel%boss) THEN
 !$            IF(OMP_GET_THREAD_NUM().EQ.0) THEN
-100 FORMAT("Eigen min",e14.6," Eigen max",e14.6," Condition number",e14.6," Error",e14.6)
+100 FORMAT("Eigen min",e14.6," Eigen max",e14.6," Condition number",f14.6," Error",e14.6)
                 WRITE(g_out,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
-                WRITE(g_out, 100) eigmin,eigmax,cn,error
+                WRITE(g_out, 100) eigmin,eigmax,cn,old_error
                 WRITE(0,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
-                WRITE(0, 100) eigmin,eigmax,cn,error
+                WRITE(0, 100) eigmin,eigmax,cn,old_error
 !$            ENDIF
             ENDIF
           ENDIF
 
           IF (tl_use_chebyshev) THEN
-              IF (cheby_calc_steps .EQ. 0) THEN
-                CALL tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
-                    error, rx, ry, theta, cn, max_cheby_iters, est_itc, solve_time)
+            IF (cheby_calc_steps .EQ. 0) THEN
+              CALL tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
+                  old_error, rx, ry, theta, cn, max_cheby_iters, est_itc, solve_time)
 
-                cheby_calc_steps = 1
-              ELSE
-                  IF(use_opencl_kernels) THEN
-                      CALL tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-                        rx, ry, cheby_calc_steps)
-                  ENDIF
+              cheby_calc_steps = 1
+            ELSE
+                IF(use_opencl_kernels) THEN
+                    CALL tea_leaf_kernel_cheby_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+                      rx, ry, cheby_calc_steps)
+                ENDIF
 
-                  ! after estimated number of iterations has passed, calc resid.
-                  ! Leaving 10 iterations between each global reduction won't affect
-                  ! total time spent much if at all (number of steps spent in
-                  ! chebyshev is typically O(300+)) but will greatly reduce global
-                  ! synchronisations needed
-                  IF ((n .GE. est_itc) .AND. (MOD(n, 10) .eq. 0)) THEN
-                    IF(use_opencl_kernels) THEN
-                      call tea_leaf_calc_2norm_kernel_ocl(1, error)
-                    ENDIF
+              ! after estimated number of iterations has passed, calc resid.
+              ! Leaving 10 iterations between each global reduction won't affect
+              ! total time spent much if at all (number of steps spent in
+              ! chebyshev is typically O(300+)) but will greatly reduce global
+              ! synchronisations needed
+              IF ((n .GE. est_itc) .AND. (MOD(n, 10) .eq. 0)) THEN
+                IF(use_opencl_kernels) THEN
+                  call tea_leaf_calc_2norm_kernel_ocl(1, error)
+                ENDIF
 
-                    IF (profiler_on) dot_product_time=timer()
-                    CALL tea_allsum(error)
-                    IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
-                    IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
-                  ENDIF
+                IF (profiler_on) dot_product_time=timer()
+                CALL tea_allsum(error)
+                IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
+                IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
               ENDIF
+            ENDIF
           ELSE IF (tl_use_ppcg) THEN
             IF (cheby_calc_steps .EQ. 0) THEN
-              cheby_calc_steps = 1
-
-              fields=0
-              fields(FIELD_U) = 1
-
-              IF (profiler_on) halo_time=timer()
-              CALL update_halo(fields,1)
-              IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
-
-              IF(use_opencl_kernels) THEN
-                CALL tea_leaf_calc_residual_ocl()
-              ENDIF
-
               IF(use_opencl_kernels) THEN
                 call tea_leaf_kernel_ppcg_init_ocl(ch_alphas, ch_betas, &
                     theta, tl_ppcg_inner_steps)
@@ -378,13 +372,16 @@ SUBROUTINE tea_leaf()
         ENDIF
 
         error=SQRT(error)
+
         IF(parallel%boss.AND.verbose_on) THEN
 !$        IF(OMP_GET_THREAD_NUM().EQ.0) THEN
             WRITE(g_out,*)"Residual ",error
 !$        ENDIF
         ENDIF
 
-        IF (abs(error) .LT. eps*initial_residual) EXIT
+        IF (ABS(error) .LT. eps*initial_residual) EXIT
+
+        old_error = error
 
       ENDDO
 
@@ -486,7 +483,7 @@ SUBROUTINE tea_leaf()
 
 END SUBROUTINE tea_leaf
 
-SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
+SUBROUTINE tea_leaf_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
     rx, ry, tl_ppcg_inner_steps, c, solve_time)
 
   INTEGER :: fields(NUM_FIELDS)
@@ -507,12 +504,13 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
     CALL tea_leaf_kernel_ppcg_init_sd_ocl()
   ENDIF
 
-  fields = 0
-  fields(FIELD_SD) = 1
-  fields(FIELD_R) = 1
-
   ! inner steps
   DO ppcg_cur_step=1,tl_ppcg_inner_steps,halo_exchange_depth
+
+    fields = 0
+    fields(FIELD_SD) = 1
+    fields(FIELD_R) = 1
+
     IF (profiler_on) halo_time = timer()
     CALL update_halo(fields,halo_exchange_depth)
     IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
@@ -525,7 +523,7 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
   fields = 0
   fields(FIELD_P) = 1
 
-END SUBROUTINE tea_leaF_run_ppcg_inner_steps
+END SUBROUTINE tea_leaf_run_ppcg_inner_steps
 
 SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
     error, rx, ry, theta, cn, max_cheby_iters, est_itc, solve_time)
@@ -572,7 +570,7 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
   IF (profiler_on) profiler%dot_product= profiler%dot_product+ (timer() - dot_product_time)
   IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
-  it_alpha = EPSILON(1.0_8)*bb/(4.0_8*error)
+  it_alpha = eps*bb/(4.0_8*error)
   gamm = (SQRT(cn) - 1.0_8)/(SQRT(cn) + 1.0_8)
   est_itc = NINT(LOG(it_alpha)/(2.0_8*LOG(gamm)))
 

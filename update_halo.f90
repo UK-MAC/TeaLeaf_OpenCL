@@ -22,11 +22,11 @@
 
 MODULE update_halo_module
 
+  USE tea_module
+
 CONTAINS
 
 SUBROUTINE update_halo(fields,depth)
-
-  USE tea_module
 
   IMPLICIT NONE
 
@@ -37,18 +37,29 @@ SUBROUTINE update_halo(fields,depth)
   CALL tea_exchange(fields,depth)
   IF (profiler_on) profiler%halo_exchange = profiler%halo_exchange + (timer() - halo_time)
 
-  IF (reflective_boundary .eqv. .TRUE.) THEN
-  IF (profiler_on) halo_time=timer()
-  DO c=1,chunks_per_task
-    IF(use_opencl_kernels)THEN
-        CALL update_halo_kernel_ocl(chunks(c)%chunk_neighbours,     &
-                                    fields,                         &
-                                    depth                           )
-    ENDIF
-  ENDDO
-  IF (profiler_on) profiler%halo_update = profiler%halo_update + (timer() - halo_time)
-  ENDIF
+  CALL update_boundary(fields, depth)
 
 END SUBROUTINE update_halo
+
+SUBROUTINE update_boundary(fields,depth)
+
+  IMPLICIT NONE
+
+  INTEGER :: c,fields(NUM_FIELDS),depth
+  REAL(KIND=8) :: timer,halo_time
+
+  IF (reflective_boundary .EQV. .TRUE.) THEN
+    IF (profiler_on) halo_time=timer()
+    DO c=1,chunks_per_task
+      IF(use_opencl_kernels)THEN
+          CALL update_halo_kernel_ocl(chunks(c)%chunk_neighbours,     &
+                                      fields,                         &
+                                      depth                           )
+      ENDIF
+    ENDDO
+    IF (profiler_on) profiler%halo_update = profiler%halo_update + (timer() - halo_time)
+  ENDIF
+
+END SUBROUTINE update_boundary
 
 END MODULE update_halo_module

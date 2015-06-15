@@ -71,9 +71,8 @@ SUBROUTINE read_input()
   profiler%tea_reset=0.0
   profiler%dot_product=0.0
 
-  tl_ch_cg_errswitch = .FALSE.
-  tl_ch_cg_presteps = 30
-  tl_ch_cg_epslim = 1e-5
+  tl_ch_cg_presteps = 25
+  tl_ch_cg_epslim = 1.0
   tl_check_result = .FALSE.
   tl_preconditioner_type = TL_PREC_NONE
 
@@ -171,8 +170,6 @@ SUBROUTINE read_input()
         IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'tl_ch_cg_epslim',tl_ch_cg_epslim
       CASE('tl_check_result')
         tl_check_result = .TRUE.
-      CASE('tl_ch_cg_errswitch')
-        tl_ch_cg_errswitch = .TRUE.
       CASE('tl_preconditioner_type')
         DO
           word=parse_getword(.FALSE.)
@@ -295,12 +292,6 @@ SUBROUTINE read_input()
   if (tl_ppcg_inner_steps .eq. -1) then
     tl_ppcg_inner_steps = 4*INT(SQRT(SQRT(REAL(grid%x_cells*grid%y_cells))))
     IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
-  endif
-
-  if (halo_exchange_depth .lt. 2) then
-    halo_exchange_depth = 2
-  else
-    halo_exchange_depth = halo_exchange_depth
   endif
 
   if ((halo_exchange_depth .gt. 1) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
