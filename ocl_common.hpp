@@ -371,7 +371,9 @@ public:
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);
-    void tea_leaf_init_common(int, double, double*, double*, int*);
+    void tea_leaf_common_init
+    (int coefficient, double dt, double * rx, double * ry,
+     int * chunk_neighbours, int * zero_boundary, int reflective_boundary);
 
     // ctor
     CloverChunk

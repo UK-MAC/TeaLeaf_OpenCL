@@ -12,8 +12,15 @@ SUBROUTINE tea_leaf_init_common()
   IMPLICIT NONE
 
   INTEGER :: t
-
   INTEGER :: zero_boundary(4)
+
+  INTEGER :: reflective_boundary_int
+
+  IF (reflective_boundary) THEN
+    reflective_boundary_int = 1
+  ELSE
+    reflective_boundary_int = 0
+  ENDIF
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
@@ -26,7 +33,7 @@ SUBROUTINE tea_leaf_init_common()
 
       CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, &
         chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, &
-        chunk%chunk_neighbours, zero_boundary, reflective_boundary)
+        chunk%chunk_neighbours, zero_boundary, reflective_boundary_int)
     ENDDO
   ENDIF
 

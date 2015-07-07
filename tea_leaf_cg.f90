@@ -41,8 +41,7 @@ SUBROUTINE tea_leaf_cg_calc_w(pw)
     DO t=1,tiles_per_task
       tile_pw = 0.0_8
 
-      CALL tea_leaf_cg_calc_w_kernel_ocl(chunk%tiles(t)%field%rx, &
-        chunk%tiles(t)%field%ry, tile_pw)
+      CALL tea_leaf_cg_calc_w_kernel_ocl(tile_pw)
 
       pw = pw + tile_pw
     ENDDO
