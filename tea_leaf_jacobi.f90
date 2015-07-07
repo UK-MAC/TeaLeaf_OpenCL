@@ -21,19 +21,7 @@ SUBROUTINE tea_leaf_jacobi_solve(error)
     DO t=1,tiles_per_task
       tile_error = 0.0_8
 
-      CALL tea_leaf_jacobi_solve_kernel(chunk%tiles(t)%field%x_min,&
-          chunk%tiles(t)%field%x_max,                       &
-          chunk%tiles(t)%field%y_min,                       &
-          chunk%tiles(t)%field%y_max,                       &
-          halo_exchange_depth,                       &
-          chunk%tiles(t)%field%rx,                                          &
-          chunk%tiles(t)%field%ry,                                          &
-          chunk%tiles(t)%field%vector_Kx,                   &
-          chunk%tiles(t)%field%vector_Ky,                   &
-          tile_error,                                       &
-          chunk%tiles(t)%field%u0,                          &
-          chunk%tiles(t)%field%u,                           &
-          chunk%tiles(t)%field%vector_r)
+      CALL tea_leaf_jacobi_solve_kernel_ocl(rx, ry, error)
 
       error = error + tile_error
     ENDDO

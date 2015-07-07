@@ -18,22 +18,7 @@ SUBROUTINE tea_leaf_ppcg_init_sd(theta)
 
   IF (use_fortran_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_kernel_ppcg_init_sd(chunk%tiles(t)%field%x_min,&
-          chunk%tiles(t)%field%x_max,                              &
-          chunk%tiles(t)%field%y_min,                              &
-          chunk%tiles(t)%field%y_max,                              &
-          halo_exchange_depth,                              &
-          chunk%tiles(t)%field%vector_r,                           &
-          chunk%tiles(t)%field%vector_Kx,                        &
-          chunk%tiles(t)%field%vector_Ky,                        &
-          chunk%tiles(t)%field%vector_sd,                          &
-          chunk%tiles(t)%field%vector_z,                          &
-          chunk%tiles(t)%field%tri_cp,                          &
-          chunk%tiles(t)%field%tri_bfp,                          &
-          chunk%tiles(t)%field%vector_Mi,                          &
-          chunk%tiles(t)%field%rx,  &
-          chunk%tiles(t)%field%ry,                          &
-          theta, tl_preconditioner_type)
+      CALL tea_leaf_ppcg_init_sd_kernel_ocl()
     ENDDO
   ENDIF
 
@@ -73,29 +58,8 @@ SUBROUTINE tea_leaf_ppcg_inner(ch_alphas, ch_betas, inner_step, bounds_extra)
         y_max_bound = chunk%tiles(t)%field%y_max + bounds_extra
       ENDIF
 
-      CALL tea_leaf_kernel_ppcg_inner(chunk%tiles(t)%field%x_min,&
-          chunk%tiles(t)%field%x_max,                            &
-          chunk%tiles(t)%field%y_min,                            &
-          chunk%tiles(t)%field%y_max,                            &
-          halo_exchange_depth,                            &
-          x_min_bound,                                    &
-          x_max_bound,                                    &
-          y_min_bound,                                    &
-          y_max_bound,                                    &
-          ch_alphas, ch_betas,                              &
-          chunk%tiles(t)%field%rx,  &
-          chunk%tiles(t)%field%ry,                                           &
-          inner_step,                                     &
-          chunk%tiles(t)%field%u,                                &
-          chunk%tiles(t)%field%vector_r,                         &
-          chunk%tiles(t)%field%vector_Kx,                        &
-          chunk%tiles(t)%field%vector_Ky,                        &
-          chunk%tiles(t)%field%vector_sd,                        &
-          chunk%tiles(t)%field%vector_z,                          &
-          chunk%tiles(t)%field%tri_cp,                          &
-          chunk%tiles(t)%field%tri_bfp,                          &
-          chunk%tiles(t)%field%vector_Mi,                          &
-          tl_preconditioner_type)
+      CALL tea_leaf_ppcg_inner_kernel_ocl(ppcg_cur_step, &
+        tl_ppcg_inner_steps, chunks(c)%chunk_neighbours)
     ENDDO
   ENDIF
 
@@ -114,14 +78,7 @@ SUBROUTINE tea_leaf_ppcg_calc_zrnorm(rrn)
     DO t=1,tiles_per_task
       tile_rrn = 0.0_8
 
-      CALL tea_leaf_ppcg_calc_zrnorm_kernel(chunk%tiles(t)%field%x_min, &
-            chunk%tiles(t)%field%x_max,                           &
-            chunk%tiles(t)%field%y_min,                           &
-            chunk%tiles(t)%field%y_max,                           &
-            halo_exchange_depth,                           &
-            chunk%tiles(t)%field%vector_z,                        &
-            chunk%tiles(t)%field%vector_r,                        &
-            tl_preconditioner_type, tile_rrn)
+      CALL tea_leaf_calc_2norm_kernel_ocl(2, tile_rrn)
 
       rrn = rrn + tile_rrn
     ENDDO

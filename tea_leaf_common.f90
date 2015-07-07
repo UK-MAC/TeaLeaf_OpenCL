@@ -28,28 +28,8 @@ SUBROUTINE tea_leaf_init_common()
         zero_boundary = chunk%chunk_neighbours
       ENDIF
 
-      CALL tea_leaf_common_init_kernel(chunk%tiles(t)%field%x_min, &
-          chunk%tiles(t)%field%x_max,                                  &
-          chunk%tiles(t)%field%y_min,                                  &
-          chunk%tiles(t)%field%y_max,                                  &
-          halo_exchange_depth,                                  &
-          chunk%chunk_neighbours,                             &
-          zero_boundary,                               &
-          reflective_boundary,                                    &
-          chunk%tiles(t)%field%density,                                &
-          chunk%tiles(t)%field%energy1,                                &
-          chunk%tiles(t)%field%u,                                      &
-          chunk%tiles(t)%field%u0,                                      &
-          chunk%tiles(t)%field%vector_r,                               &
-          chunk%tiles(t)%field%vector_w,                               &
-          chunk%tiles(t)%field%vector_Kx,                              &
-          chunk%tiles(t)%field%vector_Ky,                              &
-          chunk%tiles(t)%field%tri_cp,   &
-          chunk%tiles(t)%field%tri_bfp,    &
-          chunk%tiles(t)%field%vector_Mi,    &
-          chunk%tiles(t)%field%rx,  &
-          chunk%tiles(t)%field%ry,  &
-          tl_preconditioner_type, coefficient)
+      CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, rx, ry, &
+        chunks(c)%chunk_neighbours, zero_boundary, reflective_boundary)
     ENDDO
   ENDIF
 
@@ -63,18 +43,7 @@ SUBROUTINE tea_leaf_calc_residual()
 
   IF (use_fortran_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_calc_residual_kernel(chunk%tiles(t)%field%x_min,&
-          chunk%tiles(t)%field%x_max,                        &
-          chunk%tiles(t)%field%y_min,                        &
-          chunk%tiles(t)%field%y_max,                        &
-          halo_exchange_depth,                        &
-          chunk%tiles(t)%field%u,                            &
-          chunk%tiles(t)%field%u0,                           &
-          chunk%tiles(t)%field%vector_r,                     &
-          chunk%tiles(t)%field%vector_Kx,                    &
-          chunk%tiles(t)%field%vector_Ky,                    &
-          chunk%tiles(t)%field%rx,  &
-          chunk%tiles(t)%field%ry)
+      CALL tea_leaf_calc_residual_ocl()
     ENDDO
   ENDIF
 
@@ -93,13 +62,7 @@ SUBROUTINE tea_leaf_calc_2norm(norm)
     DO t=1,tiles_per_task
       tile_norm = 0.0_8
 
-      CALL tea_leaf_calc_2norm_kernel(chunk%tiles(t)%field%x_min,        &
-          chunk%tiles(t)%field%x_max,                                    &
-          chunk%tiles(t)%field%y_min,                                    &
-          chunk%tiles(t)%field%y_max,                                    &
-          halo_exchange_depth,                                    &
-          chunk%tiles(t)%field%vector_r,                                 &
-          tile_norm)
+      CALL tea_leaf_calc_2norm_kernel_ocl(norm_array, tile_norm)
 
       norm = norm + tile_norm
     ENDDO
@@ -115,14 +78,7 @@ SUBROUTINE tea_leaf_finalise()
 
   IF (use_fortran_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_kernel_finalise(chunk%tiles(t)%field%x_min, &
-          chunk%tiles(t)%field%x_max,                           &
-          chunk%tiles(t)%field%y_min,                           &
-          chunk%tiles(t)%field%y_max,                           &
-          halo_exchange_depth,                           &
-          chunk%tiles(t)%field%energy1,                         &
-          chunk%tiles(t)%field%density,                         &
-          chunk%tiles(t)%field%u)
+      CALL tea_leaf_common_finalise_kernel_ocl()
     ENDDO
   ENDIF
 

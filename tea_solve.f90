@@ -102,7 +102,7 @@ SUBROUTINE tea_leaf()
   IF (profiler_on) init_time = init_time + (timer()-halo_time)
 
   CALL tea_leaf_calc_residual()
-  CALL tea_leaf_calc_2norm(initial_residual)
+  CALL tea_leaf_calc_2norm(1, initial_residual)
 
   IF (profiler_on) dot_product_time=timer()
   CALL tea_allsum(initial_residual)
@@ -229,7 +229,7 @@ SUBROUTINE tea_leaf()
           ! chebyshev is typically O(300+)) but will greatly reduce global
           ! synchronisations needed
           IF ((n .GE. est_itc) .AND. (MOD(n, 10) .eq. 0)) THEN
-            CALL tea_leaf_calc_2norm(error)
+            CALL tea_leaf_calc_2norm(1, error)
 
             IF (profiler_on) dot_product_time=timer()
             CALL tea_allsum(error)
@@ -343,7 +343,7 @@ SUBROUTINE tea_leaf()
     IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
 
     CALL tea_leaf_calc_residual()
-    CALL tea_leaf_calc_2norm(exact_error)
+    CALL tea_leaf_calc_2norm(1, exact_error)
 
     IF (profiler_on) dot_product_time=timer()
     CALL tea_allsum(exact_error)
@@ -491,7 +491,7 @@ SUBROUTINE tea_leaf_cheby_first_step(ch_alphas, ch_betas, fields, &
   REAL(KIND=8) :: halo_time, timer, dot_product_time, solve_time
 
   ! calculate 2 norm of u0
-  CALL tea_leaf_calc_2norm(bb)
+  CALL tea_leaf_calc_2norm(0, bb)
 
   IF (profiler_on) dot_product_time=timer()
   CALL tea_allsum(bb)
@@ -506,7 +506,7 @@ SUBROUTINE tea_leaf_cheby_first_step(ch_alphas, ch_betas, fields, &
 
   CALL tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, 1)
 
-  CALL tea_leaf_calc_2norm(error)
+  CALL tea_leaf_calc_2norm(1, error)
 
   IF (profiler_on) dot_product_time=timer()
   CALL tea_allsum(error)
