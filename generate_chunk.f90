@@ -19,13 +19,14 @@
 !>  @author David Beckingsale, Wayne Gaudin
 !>  @details Invoked the users specified chunk generator.
 
-SUBROUTINE generate_chunk(chunk)
+SUBROUTINE generate_chunk()
 
   USE tea_module
+  USE generate_chunk_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER         :: chunk
+  INTEGER         :: t
 
   INTEGER         :: state
   REAL(KIND=8), DIMENSION(number_of_states) :: state_density,state_energy
@@ -43,19 +44,21 @@ SUBROUTINE generate_chunk(chunk)
    state_geometry(state)=states(state)%geometry
   ENDDO
 
-  IF(use_opencl_kernels)THEN
-        CALL generate_chunk_kernel_ocl(number_of_states,                      &
-                                       state_density,                         &
-                                       state_energy,                          &
-                                       state_xmin,                            &
-                                       state_xmax,                            &
-                                       state_ymin,                            &
-                                       state_ymax,                            &
-                                       state_radius,                          &
-                                       state_geometry,                        &
-                                       g_rect,                                &
-                                       g_circ,                                &
-                                       g_point)
-      ENDIF
+  IF(use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL generate_chunk_kernel_ocl(number_of_states,                      &
+                                     state_density,                         &
+                                     state_energy,                          &
+                                     state_xmin,                            &
+                                     state_xmax,                            &
+                                     state_ymin,                            &
+                                     state_ymax,                            &
+                                     state_radius,                          &
+                                     state_geometry,                        &
+                                     g_rect,                                &
+                                     g_circ,                                &
+                                     g_point)
+    ENDDO
+  ENDIF
 
 END SUBROUTINE generate_chunk

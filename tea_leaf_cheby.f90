@@ -1,29 +1,79 @@
-!Crown Copyright 2014 AWE.
-!
-! This file is part of TeaLeaf.
-!
-! TeaLeaf is free software: you can redistribute it and/or modify it under
-! the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or (at your option)
-! any later version.
-!
-! TeaLeaf is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-! details.
-!
-! You should have received a copy of the GNU General Public License along with
-! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
-!>  @brief Fortran heat conduction kernel
-!>  @author Michael Boulton, Wayne Gaudin
-!>  @details Implicitly calculates the change in temperature using accelerated Chebyshev method
+MODULE tea_leaf_cheby_module
 
-MODULE tea_leaf_kernel_cheby_module
+  USE tea_leaf_cheby_kernel_module
+  USE definitions_module
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
 CONTAINS
+
+SUBROUTINE tea_leaf_cheby_init(theta)
+
+  IMPLICIT NONE
+
+  INTEGER :: t
+  REAL(KIND=8) :: theta
+
+  IF (use_fortran_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_kernel_cheby_init(chunk%tiles(t)%field%x_min,&
+            chunk%tiles(t)%field%x_max,                          &
+            chunk%tiles(t)%field%y_min,                          &
+            chunk%tiles(t)%field%y_max,                          &
+            halo_exchange_depth,                          &
+            chunk%tiles(t)%field%u,                              &
+            chunk%tiles(t)%field%u0,                             &
+            chunk%tiles(t)%field%vector_p,                       &
+            chunk%tiles(t)%field%vector_r,                       &
+            chunk%tiles(t)%field%vector_Mi,                      &
+            chunk%tiles(t)%field%vector_w,                       &
+            chunk%tiles(t)%field%vector_z,                       &
+            chunk%tiles(t)%field%vector_Kx,                      &
+            chunk%tiles(t)%field%vector_Ky,                      &
+            chunk%tiles(t)%field%tri_cp,   &
+            chunk%tiles(t)%field%tri_bfp,    &
+            chunk%tiles(t)%field%rx,    &
+            chunk%tiles(t)%field%ry,    &
+            theta, tl_preconditioner_type)
+    ENDDO
+  ENDIF
+
+END SUBROUTINE tea_leaf_cheby_init
+
+SUBROUTINE tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, cheby_calc_steps)
+
+  IMPLICIT NONE
+
+  INTEGER :: t, cheby_calc_steps, max_cheby_iters
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+
+  IF (use_fortran_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_kernel_cheby_iterate(chunk%tiles(t)%field%x_min,&
+                  chunk%tiles(t)%field%x_max,                       &
+                  chunk%tiles(t)%field%y_min,                       &
+                  chunk%tiles(t)%field%y_max,                       &
+                  halo_exchange_depth,                       &
+                  chunk%tiles(t)%field%u,                           &
+                  chunk%tiles(t)%field%u0,                          &
+                  chunk%tiles(t)%field%vector_p,                    &
+                  chunk%tiles(t)%field%vector_r,                    &
+                  chunk%tiles(t)%field%vector_Mi,                   &
+                  chunk%tiles(t)%field%vector_w,                    &
+                  chunk%tiles(t)%field%vector_z,                    &
+                  chunk%tiles(t)%field%vector_Kx,                   &
+                  chunk%tiles(t)%field%vector_Ky,                   &
+                  chunk%tiles(t)%field%tri_cp,   &
+                  chunk%tiles(t)%field%tri_bfp,    &
+                  ch_alphas, ch_betas, max_cheby_iters,        &
+                  chunk%tiles(t)%field%rx,  &
+                  chunk%tiles(t)%field%ry,  &
+                  cheby_calc_steps, tl_preconditioner_type)
+    ENDDO
+  ENDIF
+
+END SUBROUTINE tea_leaf_cheby_iterate
 
 SUBROUTINE tqli(d,e,n, info)
     ! http://physics.sharif.edu/~jafari/fortran-codes/lanczos/tqli.f90
@@ -155,18 +205,5 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
 
 END SUBROUTINE tea_calc_ch_coefs
 
-SUBROUTINE tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                             theta, ppcg_inner_steps)
-
-  INTEGER :: ppcg_inner_steps
-  REAL(KIND=8), DIMENSION(ppcg_inner_steps) :: ch_alphas, ch_betas
-  REAL(KIND=8) :: eigmin, eigmax, theta
-
-  ! TODO
-  CALL tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
-                         theta, ppcg_inner_steps)
-
-END SUBROUTINE
-
-END MODULE
+END MODULE tea_leaf_cheby_module
 

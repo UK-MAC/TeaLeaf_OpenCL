@@ -20,25 +20,25 @@
 !>  @details The data fields for the mesh chunk are allocated based on the mesh
 !>  size.
 
-SUBROUTINE build_field(chunk,x_cells,y_cells)
+SUBROUTINE build_field()
 
-   USE tea_module
+  USE tea_module
 
-   IMPLICIT NONE
+  IMPLICIT NONE
 
-   INTEGER :: chunk,x_cells,y_cells
+  INTEGER :: j,k
 
-   chunks(chunk)%field%x_min=1
-   chunks(chunk)%field%y_min=1
+  chunk%tiles(t)%field%x_min=1
+  chunk%tiles(t)%field%y_min=1
 
-   chunks(chunk)%field%x_max=x_cells
-   chunks(chunk)%field%y_max=y_cells
+  chunk%tiles(t)%field%x_max=chunk%tiles(t)%x_cells
+  chunk%tiles(t)%field%y_max=chunk%tiles(t)%y_cells
 
-    IF (use_opencl_kernels) THEN
-      CALL initialise_ocl(chunks(chunk)%field%x_min, &
-                          chunks(chunk)%field%x_max, &
-                          chunks(chunk)%field%y_min, &
-                          chunks(chunk)%field%y_max)
-    ENDIF
+  IF (use_opencl_kernels) THEN
+    CALL initialise_ocl(chunks%tiles(t)%field%x_min, &
+                        chunks%tiles(t)%field%x_max, &
+                        chunks%tiles(t)%field%y_min, &
+                        chunks%tiles(t)%field%y_max)
+  ENDIF
   
 END SUBROUTINE build_field

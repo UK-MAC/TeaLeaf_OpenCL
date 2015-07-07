@@ -66,11 +66,15 @@ SUBROUTINE read_input()
   profiler%visit=0.0
   profiler%summary=0.0
   profiler%halo_exchange=0.0
+  profiler%halo_update=0.0
+  profiler%internal_halo_update=0.0
   profiler%tea_init=0.0
   profiler%tea_solve=0.0
   profiler%tea_reset=0.0
   profiler%dot_product=0.0
 
+  ! Hardcoded for the moment
+  tiles_per_task = 1
   tl_ch_cg_presteps = 25
   tl_ch_cg_epslim = 1.0
   tl_check_result = .FALSE.
@@ -294,11 +298,12 @@ SUBROUTINE read_input()
     IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ppcg_inner_steps',tl_ppcg_inner_steps
   endif
 
-  if ((halo_exchange_depth .gt. 1) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK)) then
+  if ((halo_exchange_depth .gt. 1) .and. (tl_preconditioner_type .eq. TL_PREC_JAC_BLOCK) .and. tl_use_ppcg) then
     call report_error('read_input', 'Unable to use nonstandard halo depth with block jacobi preconditioner')
   endif
 
   IF(parallel%boss) THEN
+    WRITE(g_out,"(1x,a25,i12)")'tiles per task ',tiles_per_task
     WRITE(g_out,*)
     ELSEIF(use_opencl_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using OpenCL Kernels'

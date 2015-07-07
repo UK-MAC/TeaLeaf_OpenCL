@@ -27,39 +27,56 @@
 SUBROUTINE field_summary()
 
   USE tea_module
+  USE field_summary_kernel_module
 
   IMPLICIT NONE
 
   REAL(KIND=8) :: vol,mass,ie,temp
+  REAL(KIND=8) :: tile_vol,tile_mass,tile_ie,tile_temp
   REAL(KIND=8) :: qa_diff
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
 
-  INTEGER      :: c
+  INTEGER      :: t
 
   REAL(KIND=8) :: kernel_time,timer
 
-  IF(parallel%boss)THEN
+  IF(parallel%boss) THEN
     WRITE(g_out,*)
     WRITE(g_out,*) 'Time ',time
     WRITE(g_out,'(a13,5a26)')'           ','Volume','Mass','Density'       &
                                           ,'Energy','U'
   ENDIF
 
+  vol=0.0
+  mass=0.0
+  ie=0.0
+  temp=0.0
+
   IF(profiler_on) kernel_time=timer()
-  DO c=1,chunks_per_task
-    IF(use_opencl_kernels)THEN
-      IF(chunks(c)%task.EQ.parallel%task) THEN
-        CALL field_summary_kernel_ocl(vol,mass,ie,temp)
-      ENDIF
-    ENDIF
-  ENDDO
+
+  IF(use_opencl_kernels)THEN
+    DO t=1,tiles_per_task
+      tile_vol=0.0
+      tile_mass=0.0
+      tile_ie=0.0
+      tile_temp=0.0
+
+      CALL field_summary_kernel_ocl(tile_vol,tile_mass,tile_ie,tile_temp)
+
+      vol = vol + tile_vol
+      mass = mass + tile_mass
+      ie = ie + tile_ie
+      temp = temp + tile_temp
+    ENDDO
+  ENDIF
 
   ! For mpi I need a reduction here
   CALL tea_sum(vol)
   CALL tea_sum(mass)
   CALL tea_sum(ie)
   CALL tea_sum(temp)
+
   IF(profiler_on) profiler%summary=profiler%summary+(timer()-kernel_time)
 
   IF(parallel%boss) THEN

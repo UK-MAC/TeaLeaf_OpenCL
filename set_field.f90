@@ -26,24 +26,22 @@ CONTAINS
 SUBROUTINE set_field()
 
   USE tea_module
+  USE set_field_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER :: c
+  INTEGER :: t
 
   REAL(KIND=8) :: kernel_time,timer
 
   IF(profiler_on) kernel_time=timer()
-  DO c=1,chunks_per_task
 
-    IF(chunks(c)%task.EQ.parallel%task) THEN
+  IF(use_opencl_kernels)THEN
+    DO t=1,tiles_per_task
+      CALL set_field_kernel_ocl()
+    ENDDO
+  ENDIF
 
-      IF(use_opencl_kernels)THEN
-        CALL set_field_kernel_ocl()
-      ENDIF
-    ENDIF
-
-  ENDDO
   IF(profiler_on) profiler%set_field=profiler%set_field+(timer()-kernel_time)
 
 END SUBROUTINE set_field

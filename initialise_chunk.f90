@@ -19,26 +19,28 @@
 !>  @author David Beckingsale, Wayne Gaudin
 !>  @details Invokes the user specified chunk initialisation kernel.
 
-SUBROUTINE initialise_chunk(chunk)
+SUBROUTINE initialise_chunk()
 
+  USE definitions_module
   USE tea_module
+  USE initialise_chunk_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER :: chunk
+  INTEGER :: t
 
   REAL(KIND=8) :: xmin,ymin,dx,dy
 
-  dx=(grid%xmax-grid%xmin)/REAL(grid%x_cells)
-  dy=(grid%ymax-grid%ymin)/REAL(grid%y_cells)
-
-  xmin=grid%xmin+dx*REAL(chunks(chunk)%field%left-1)
-
-  ymin=grid%ymin+dy*REAL(chunks(chunk)%field%bottom-1)
+  dx=(grid%xmax - grid%xmin)/REAL(grid%x_cells)
+  dy=(grid%ymax - grid%ymin)/REAL(grid%y_cells)
 
   IF(use_opencl_kernels)THEN
-    CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
+    DO t=1,tiles_per_task
+      xmin=grid%xmin + dx*REAL(chunk%tiles(t)%left-1)
+  
+      ymin=grid%ymin + dy*REAL(chunk%tiles(t)%bottom-1)
+  
+      CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
   ENDIF
-
 
 END SUBROUTINE initialise_chunk

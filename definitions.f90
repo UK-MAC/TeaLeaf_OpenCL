@@ -137,13 +137,42 @@ MODULE definitions_module
                        ,x_max  &
                        ,y_max
 
+     REAL(KIND=8)    :: rx, ry
    END TYPE field_type
+
+   TYPE tile_type
+     TYPE(field_type):: field
+
+     INTEGER         :: left            &
+                       ,right           &
+                       ,bottom          &
+                       ,top
+
+     INTEGER            :: x_cells              &
+                          ,y_cells
+
+     INTEGER         :: tile_neighbours(4)
+     INTEGER         :: tile_coords(2)
+   END TYPE tile_type
 
    TYPE chunk_type
 
      INTEGER         :: task   !mpi task
 
-     INTEGER         :: chunk_neighbours(4) ! Chunks, not tasks, so we can overload in the future
+     INTEGER         :: chunk_x_min  &
+                       ,chunk_y_min  &
+                       ,chunk_x_max  &
+                       ,chunk_y_max
+
+     INTEGER            :: x_cells              &
+                          ,y_cells
+
+     INTEGER         :: left            &
+                       ,right           &
+                       ,bottom          &
+                       ,top
+
+     INTEGER         :: chunk_neighbours(4)
 
      ! Idealy, create an array to hold the buffers for each field so a commuincation only needs
      !  one send and one receive per face, rather than per field.
@@ -152,15 +181,14 @@ MODULE definitions_module
      REAL(KIND=8),ALLOCATABLE:: left_rcv_buffer(:),right_rcv_buffer(:),bottom_rcv_buffer(:),top_rcv_buffer(:)
      REAL(KIND=8),ALLOCATABLE:: left_snd_buffer(:),right_snd_buffer(:),bottom_snd_buffer(:),top_snd_buffer(:)
 
-     TYPE(field_type):: field
+     TYPE(tile_type), DIMENSION(:), ALLOCATABLE :: tiles
+
+     ! how tiles are arranged
+     INTEGER,DIMENSION(2) :: tile_dims
 
   END TYPE chunk_type
 
-  ! depth of halo for matrix powers
-  integer :: halo_exchange_depth
-
-  TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
-  INTEGER                              :: number_of_chunks
+  TYPE(chunk_type)                     :: chunk
 
   TYPE(grid_type)                      :: grid
 
