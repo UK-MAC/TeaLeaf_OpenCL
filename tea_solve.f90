@@ -498,7 +498,7 @@ SUBROUTINE tea_leaf_cheby_first_step(ch_alphas, ch_betas, fields, &
   IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
   ! initialise 'p' array
-  CALL tea_leaf_cheby_init(theta)
+  CALL tea_leaf_cheby_init(theta, ch_alphas, ch_betas, max_cheby_iters)
 
   IF (profiler_on) halo_time = timer()
   CALL update_halo(fields,1)

@@ -153,6 +153,7 @@ C_FILES=\
 FORTRAN_FILES=\
 	data.o			\
 	definitions.o			\
+	global_mpi.o				\
 	tea.o				\
 	report.o			\
 	timer.o			\
@@ -168,7 +169,11 @@ FORTRAN_FILES=\
 	calc_dt.o			\
 	timestep.o			\
 	set_field.o                   \
+	tea_leaf_common.o             \
+	tea_leaf_cg.o             	\
 	tea_leaf_cheby.o             	\
+	tea_leaf_ppcg.o             	\
+	tea_leaf_jacobi.o             \
 	tea_solve.o                   \
 	tea_leaf.o			\
 	diffuse.o
@@ -198,16 +203,16 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 	-o tea_leaf
 	@echo $(MESSAGE)
 
-include make.deps
+include makefile.deps
 
-%.o: %.cpp Makefile make.deps ocl_common.hpp
-	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $*.o
+%.o: %.cpp Makefile makefile.deps ocl_common.hpp
+	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $@
 %_module.mod: %.f90 %.o
 	@true
-%.o: %.f90 Makefile make.deps
-	$(MPI_COMPILER) $(FLAGS) -c $< -o $*.o
-%.o: %.c Makefile make.deps
-	$(C_MPI_COMPILER) $(CFLAGS) -c $< -o $*.o
+%.o: %.f90 Makefile makefile.deps
+	$(MPI_COMPILER) $(FLAGS) -c $< -o $@
+%.o: %.c Makefile makefile.deps
+	$(C_MPI_COMPILER) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf
+	rm -f *.o *.mod *genmod* *.lst *.cub *.ptx tea_leaf *.s *.i

@@ -1,24 +1,26 @@
 
 MODULE tea_leaf_cheby_module
 
-  USE tea_leaf_cheby_kernel_module
   USE definitions_module
 
   IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_cheby_init(theta)
+SUBROUTINE tea_leaf_cheby_init(theta, ch_alphas, ch_betas, max_cheby_iters)
 
   IMPLICIT NONE
 
   INTEGER :: t
   REAL(KIND=8) :: theta
 
-  IF (use_fortran_kernels) THEN
+  INTEGER :: max_cheby_iters
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_cheby_init_kernel_ocl(ch_alphas, ch_betas, &
-        max_cheby_iters, rx, ry, theta, error)
+        max_cheby_iters, chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, theta)
     ENDDO
   ENDIF
 
@@ -31,10 +33,10 @@ SUBROUTINE tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, cheby_ca
   INTEGER :: t, cheby_calc_steps, max_cheby_iters
   REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_cheby_kernel_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
-        rx, ry, 1)
+        chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, 1)
     ENDDO
   ENDIF
 

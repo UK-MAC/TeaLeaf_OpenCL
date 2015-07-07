@@ -1,7 +1,6 @@
 
 MODULE tea_leaf_common_module
 
-  USE tea_leaf_common_kernel_module
   USE definitions_module
 
   IMPLICIT NONE
@@ -16,11 +15,8 @@ SUBROUTINE tea_leaf_init_common()
 
   INTEGER :: zero_boundary(4)
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      chunk%tiles(t)%field%rx = dt/(chunk%tiles(t)%field%celldx(chunk%tiles(t)%field%x_min)**2)
-      chunk%tiles(t)%field%ry = dt/(chunk%tiles(t)%field%celldy(chunk%tiles(t)%field%y_min)**2)
-
       ! CG never needs matrix defined outside of boundaries, PPCG does
       IF (tl_use_cg) THEN
         zero_boundary = chunk%tiles(t)%tile_neighbours
@@ -28,8 +24,9 @@ SUBROUTINE tea_leaf_init_common()
         zero_boundary = chunk%chunk_neighbours
       ENDIF
 
-      CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, rx, ry, &
-        chunks(c)%chunk_neighbours, zero_boundary, reflective_boundary)
+      CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, &
+        chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, &
+        chunk%chunk_neighbours, zero_boundary, reflective_boundary)
     ENDDO
   ENDIF
 
@@ -41,7 +38,7 @@ SUBROUTINE tea_leaf_calc_residual()
 
   INTEGER :: t
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_calc_residual_ocl()
     ENDDO
@@ -49,16 +46,16 @@ SUBROUTINE tea_leaf_calc_residual()
 
 END SUBROUTINE
 
-SUBROUTINE tea_leaf_calc_2norm(norm)
+SUBROUTINE tea_leaf_calc_2norm(norm_array, norm)
 
   IMPLICIT NONE
 
-  INTEGER :: t
+  INTEGER :: t, norm_array
   REAL(KIND=8) :: norm, tile_norm
 
   norm = 0.0_8
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       tile_norm = 0.0_8
 
@@ -76,7 +73,7 @@ SUBROUTINE tea_leaf_finalise()
 
   INTEGER :: t
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_common_finalise_kernel_ocl()
     ENDDO

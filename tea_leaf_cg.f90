@@ -1,7 +1,6 @@
 
 MODULE tea_leaf_cg_module
 
-  USE tea_leaf_cg_kernel_module
   USE definitions_module
 
   IMPLICIT NONE
@@ -21,7 +20,8 @@ SUBROUTINE tea_leaf_cg_init(rro)
     DO t=1,tiles_per_task
       tile_rro = 0.0_8
 
-      CALL tea_leaf_cg_init_kernel_ocl(coefficient, dt, rx, ry, tile_rro)
+      CALL tea_leaf_cg_init_kernel_ocl(coefficient, dt, &
+        chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, tile_rro)
 
       rro = rro + tile_rro
     ENDDO
@@ -42,7 +42,8 @@ SUBROUTINE tea_leaf_cg_calc_w(pw)
     DO t=1,tiles_per_task
       tile_pw = 0.0_8
 
-      CALL tea_leaf_cg_calc_w_kernel_ocl(rx, ry, tile_pw)
+      CALL tea_leaf_cg_calc_w_kernel_ocl(chunk%tiles(t)%field%rx, &
+        chunk%tiles(t)%field%ry, tile_pw)
 
       pw = pw + tile_pw
     ENDDO

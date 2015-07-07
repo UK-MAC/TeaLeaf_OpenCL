@@ -32,7 +32,6 @@
 MODULE tea_module
 
   USE definitions_module
-  USE pack_module
   USE global_mpi_module
   USE report_module
 

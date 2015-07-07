@@ -22,7 +22,6 @@
 SUBROUTINE generate_chunk()
 
   USE tea_module
-  USE generate_chunk_kernel_module
 
   IMPLICIT NONE
 

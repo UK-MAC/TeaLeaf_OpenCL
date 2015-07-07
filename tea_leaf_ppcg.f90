@@ -1,7 +1,6 @@
 
 MODULE tea_leaf_ppcg_module
 
-  USE tea_leaf_ppcg_kernel_module
   USE tea_leaf_cheby_module
   USE definitions_module
 
@@ -16,7 +15,7 @@ SUBROUTINE tea_leaf_ppcg_init_sd(theta)
   INTEGER :: t
   REAL(KIND=8) :: theta
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_ppcg_init_sd_kernel_ocl()
     ENDDO
@@ -32,7 +31,7 @@ SUBROUTINE tea_leaf_ppcg_inner(ch_alphas, ch_betas, inner_step, bounds_extra)
   INTEGER :: x_min_bound, x_max_bound, y_min_bound, y_max_bound
   REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       IF (chunk%chunk_neighbours(CHUNK_LEFT).EQ.EXTERNAL_FACE) THEN
         x_min_bound = chunk%tiles(t)%field%x_min
@@ -58,8 +57,8 @@ SUBROUTINE tea_leaf_ppcg_inner(ch_alphas, ch_betas, inner_step, bounds_extra)
         y_max_bound = chunk%tiles(t)%field%y_max + bounds_extra
       ENDIF
 
-      CALL tea_leaf_ppcg_inner_kernel_ocl(ppcg_cur_step, &
-        tl_ppcg_inner_steps, chunks(c)%chunk_neighbours)
+      CALL tea_leaf_ppcg_inner_kernel_ocl(inner_step, &
+        tl_ppcg_inner_steps, chunk%chunk_neighbours)
     ENDDO
   ENDIF
 
@@ -74,7 +73,7 @@ SUBROUTINE tea_leaf_ppcg_calc_zrnorm(rrn)
 
   rrn = 0.0_8
 
-  IF (use_fortran_kernels) THEN
+  IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       tile_rrn = 0.0_8
 

@@ -26,7 +26,6 @@ CONTAINS
 SUBROUTINE set_field()
 
   USE tea_module
-  USE set_field_kernel_module
 
   IMPLICIT NONE
 

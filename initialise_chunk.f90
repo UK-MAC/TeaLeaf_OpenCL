@@ -23,7 +23,6 @@ SUBROUTINE initialise_chunk()
 
   USE definitions_module
   USE tea_module
-  USE initialise_chunk_kernel_module
 
   IMPLICIT NONE
 
@@ -41,6 +40,7 @@ SUBROUTINE initialise_chunk()
       ymin=grid%ymin + dy*REAL(chunk%tiles(t)%bottom-1)
   
       CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
+    ENDDO
   ENDIF
 
 END SUBROUTINE initialise_chunk

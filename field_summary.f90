@@ -27,7 +27,6 @@
 SUBROUTINE field_summary()
 
   USE tea_module
-  USE field_summary_kernel_module
 
   IMPLICIT NONE
 
