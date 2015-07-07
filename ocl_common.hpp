@@ -10,8 +10,8 @@
 #define JACOBI_BLOCK_SIZE 4
 
 // 2 dimensional arrays - use a 2D tile for local group
-const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
-const static size_t LOCAL_X = 128/LOCAL_Y;
+const static int LOCAL_Y = JACOBI_BLOCK_SIZE;
+const static int LOCAL_X = 128/LOCAL_Y;
 const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
 
 // used in update_halo and for copying back to host for mpi transfers
@@ -152,7 +152,7 @@ private:
 
     cl::Kernel tea_leaf_block_init_device;
     cl::Kernel tea_leaf_block_solve_device;
-    cl::Kernel tea_leaf_init_jac_diag_device;;
+    cl::Kernel tea_leaf_init_jac_diag_device;
     cl::Buffer cp, bfp;
 
     cl::Buffer u, u0;
@@ -237,7 +237,7 @@ private:
     // global size for kernels
     cl::NDRange global_size;
     // number of cells reduced
-    size_t reduced_cells;
+    int reduced_cells;
 
     // halo size
     int halo_exchange_depth;
@@ -251,10 +251,10 @@ private:
     std::map<int, cl::NDRange> update_bt_offset;
 
     // values used to control operation
-    size_t x_min;
-    size_t x_max;
-    size_t y_min;
-    size_t y_max;
+    int x_min;
+    int x_max;
+    int y_min;
+    int y_max;
     // mpi rank
     int rank;
 
@@ -341,29 +341,33 @@ public:
     void set_field_kernel();
 
     // Tea leaf
-    void tea_leaf_init_jacobi(int, double, double*, double*);
-    void tea_leaf_kernel_jacobi(double, double, double*);
+    void tea_leaf_jacobi_solve_kernel
+    (double* error);
 
-    void tea_leaf_init_cg(int, double, double*, double*, double*);
-    void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
-    void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
-    void tea_leaf_kernel_cg_calc_p(double beta);
+    void tea_leaf_cg_init_kernel
+    (double * rro);
+    void tea_leaf_cg_calc_w_kernel
+    (double* pw);
+    void tea_leaf_cg_calc_ur_kernel
+    (double alpha, double* rrn);
+    void tea_leaf_cg_calc_p_kernel
+    (double beta);
 
-    void tea_leaf_cheby_copy_u
-    (void);
     void tea_leaf_calc_2norm_kernel
     (int norm_array, double* norm);
-    void tea_leaf_kernel_cheby_init
+    void tea_leaf_cheby_init_kernel
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
-     const double rx, const double ry, const double theta, double* error);
-    void tea_leaf_kernel_cheby_iterate
-    (const double * ch_alphas, const double * ch_betas, int n_coefs,
-     const double rx, const double ry, const int cheby_calc_steps);
+     const double rx, const double ry, const double theta);
+    void tea_leaf_cheby_iterate_kernel
+    (const int cheby_calc_steps);
 
-    void ppcg_init(const double * ch_alphas, const double * ch_betas,
-        const double theta, const int n);
-    void ppcg_init_sd();
-    void ppcg_inner(int, int, const int*);
+    void ppcg_init
+    (const double * ch_alphas, const double * ch_betas,
+    const double theta, const int n);
+    void ppcg_init_sd_kernel
+    (void);
+    void tea_leaf_ppcg_inner_kernel
+    (int, int, const int*);
 
     void tea_leaf_finalise();
     void tea_leaf_calc_residual(void);

@@ -20,8 +20,7 @@ SUBROUTINE tea_leaf_cg_init(rro)
     DO t=1,tiles_per_task
       tile_rro = 0.0_8
 
-      CALL tea_leaf_cg_init_kernel_ocl(coefficient, dt, &
-        chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, tile_rro)
+      CALL tea_leaf_cg_init_kernel_ocl(tile_rro)
 
       rro = rro + tile_rro
     ENDDO

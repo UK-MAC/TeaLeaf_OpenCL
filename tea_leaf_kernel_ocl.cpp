@@ -16,20 +16,18 @@ extern "C" void tea_leaf_calc_2norm_kernel_ocl_
     chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
 
-extern "C" void tea_leaf_kernel_cheby_init_ocl_
+extern "C" void tea_leaf_cheby_init_kernel_ocl_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
- const double * rx, const double * ry, const double * theta, double* error)
+ const double * rx, const double * ry, const double * theta)
 {
-    chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
-        *rx, *ry, *theta, error);
+    chunk.tea_leaf_cheby_init_kernel(ch_alphas, ch_betas, *n_coefs,
+        *rx, *ry, *theta);
 }
 
-extern "C" void tea_leaf_kernel_cheby_iterate_ocl_
-(const double * ch_alphas, const double * ch_betas, int *n_coefs,
- const double * rx, const double * ry, const int * cheby_calc_step)
+extern "C" void tea_leaf_cheby_iterate_kernel_ocl_
+(const int * cheby_calc_step)
 {
-    chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
-        *rx, *ry, *cheby_calc_step);
+    chunk.tea_leaf_cheby_iterate_kernel(*cheby_calc_step);
 }
 
 void CloverChunk::tea_leaf_calc_2norm_kernel
@@ -74,9 +72,9 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
-void CloverChunk::tea_leaf_kernel_cheby_init
+void CloverChunk::tea_leaf_cheby_init_kernel
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const double theta, double* error)
+ const double rx, const double ry, const double theta)
 {
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
@@ -107,9 +105,8 @@ void CloverChunk::tea_leaf_kernel_cheby_init
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
 }
 
-void CloverChunk::tea_leaf_kernel_cheby_iterate
-(const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const int cheby_calc_step)
+void CloverChunk::tea_leaf_cheby_iterate_kernel
+(const int cheby_calc_step)
 {
     tea_leaf_cheby_solve_calc_p_device.setArg(14, cheby_calc_step-1);
 
@@ -120,26 +117,26 @@ void CloverChunk::tea_leaf_kernel_cheby_iterate
 /********************/
 
 // CG solver functions
-extern "C" void tea_leaf_kernel_init_cg_ocl_
-(const int * coefficient, double * dt, double * rx, double * ry, double * rro)
+extern "C" void tea_leaf_cg_init_kernel_ocl_
+(double * rro)
 {
-    chunk.tea_leaf_init_cg(*coefficient, *dt, rx, ry, rro);
+    chunk.tea_leaf_cg_init_kernel(rro);
 }
 
-extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_w_
-(const double * rx, const double * ry, double * pw)
+extern "C" void tea_leaf_cg_calc_w_kernel_ocl_
+(double * pw)
 {
-    chunk.tea_leaf_kernel_cg_calc_w(*rx, *ry, pw);
+    chunk.tea_leaf_cg_calc_w_kernel(pw);
 }
-extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_ur_
+extern "C" void tea_leaf_cg_calc_ur_kernel_ocl_
 (double * alpha, double * rrn)
 {
-    chunk.tea_leaf_kernel_cg_calc_ur(*alpha, rrn);
+    chunk.tea_leaf_cg_calc_ur_kernel(*alpha, rrn);
 }
-extern "C" void tea_leaf_kernel_solve_cg_ocl_calc_p_
+extern "C" void tea_leaf_cg_calc_p_kernel_ocl_
 (double * beta)
 {
-    chunk.tea_leaf_kernel_cg_calc_p(*beta);
+    chunk.tea_leaf_cg_calc_p_kernel(*beta);
 }
 
 // copy back dx/dy and calculate rx/ry
@@ -171,8 +168,8 @@ void CloverChunk::calcrxry
 
 /********************/
 
-void CloverChunk::tea_leaf_init_cg
-(int coefficient, double dt, double * rx, double * ry, double * rro)
+void CloverChunk::tea_leaf_cg_init_kernel
+(double * rro)
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
@@ -193,14 +190,14 @@ void CloverChunk::tea_leaf_init_cg
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 }
 
-void CloverChunk::tea_leaf_kernel_cg_calc_w
-(double rx, double ry, double* pw)
+void CloverChunk::tea_leaf_cg_calc_w_kernel
+(double* pw)
 {
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 }
 
-void CloverChunk::tea_leaf_kernel_cg_calc_ur
+void CloverChunk::tea_leaf_cg_calc_ur_kernel
 (double alpha, double* rrn)
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
@@ -210,7 +207,7 @@ void CloverChunk::tea_leaf_kernel_cg_calc_ur
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 }
 
-void CloverChunk::tea_leaf_kernel_cg_calc_p
+void CloverChunk::tea_leaf_cg_calc_p_kernel
 (double beta)
 {
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
@@ -220,14 +217,14 @@ void CloverChunk::tea_leaf_kernel_cg_calc_p
 
 /********************/
 
-extern "C" void tea_leaf_kernel_solve_ocl_
-(const double * rx, const double * ry, double * error)
+extern "C" void tea_leaf_jacobi_solve_kernel_ocl_
+(double * error)
 {
-    chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
+    chunk.tea_leaf_jacobi_solve_kernel(error);
 }
 
-void CloverChunk::tea_leaf_kernel_jacobi
-(double rx, double ry, double* error)
+void CloverChunk::tea_leaf_jacobi_solve_kernel
+(double* error)
 {
     ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
     ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
@@ -237,14 +234,14 @@ void CloverChunk::tea_leaf_kernel_jacobi
 
 /********************/
 
-extern "C" void tea_leaf_kernel_init_common_ocl_
+extern "C" void tea_leaf_common_init_kernel_ocl_
 (const int * coefficient, double * dt, double * rx, double * ry, int * chunk_neighbours)
 {
     chunk.tea_leaf_init_common(*coefficient, *dt, rx, ry, chunk_neighbours);
 }
 
 // used by both
-extern "C" void tea_leaf_kernel_finalise_ocl_
+extern "C" void tea_leaf_common_finalise_kernel_ocl_
 (void)
 {
     chunk.tea_leaf_finalise();
@@ -318,25 +315,25 @@ void CloverChunk::tea_leaf_calc_residual
 
 /********************/
 
-extern "C" void tea_leaf_kernel_ppcg_init_ocl_
+extern "C" void tea_leaf_ppcg_init_ocl_
 (const double * ch_alphas, const double * ch_betas,
  double* theta, int* n_inner_steps)
 {
     chunk.ppcg_init(ch_alphas, ch_betas, *theta, *n_inner_steps);
 }
 
-extern "C" void tea_leaf_kernel_ppcg_init_sd_ocl_
+extern "C" void tea_leaf_ppcg_init_sd_kernel_ocl_
 (void)
 {
-    chunk.ppcg_init_sd();
+    chunk.ppcg_init_sd_kernel();
 }
 
-extern "C" void tea_leaf_kernel_ppcg_inner_ocl_
+extern "C" void tea_leaf_ppcg_inner_kernel_ocl_
 (int * ppcg_cur_step,
  int * max_steps,
  const int* chunk_neighbours)
 {
-    chunk.ppcg_inner(*ppcg_cur_step, *max_steps, chunk_neighbours);
+    chunk.tea_leaf_ppcg_inner_kernel(*ppcg_cur_step, *max_steps, chunk_neighbours);
 }
 
 void CloverChunk::ppcg_init
@@ -358,20 +355,20 @@ void CloverChunk::ppcg_init
     tea_leaf_ppcg_solve_calc_sd_device.setArg(9, ch_betas_device);
 }
 
-void CloverChunk::ppcg_init_sd
+void CloverChunk::ppcg_init_sd_kernel
 (void)
 {
     ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_sd_device);
 }
 
-void CloverChunk::ppcg_inner
+void CloverChunk::tea_leaf_ppcg_inner_kernel
 (int ppcg_cur_step, int max_steps, const int* chunk_neighbours)
 {
     for (int step_depth = 1 + (halo_exchange_depth - halo_exchange_depth);
         step_depth <= halo_exchange_depth; step_depth++)
     {
-        size_t step_offset[2] = {step_depth, step_depth};
-        size_t step_global_size[2] = {
+        int step_offset[2] = {step_depth, step_depth};
+        int step_global_size[2] = {
             x_max + (halo_exchange_depth-step_depth)*2,
             y_max + (halo_exchange_depth-step_depth)*2};
 

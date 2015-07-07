@@ -96,7 +96,7 @@ void CloverChunk::packUnpackAllBuffers
     pack_kernel->setArg(4, depth);
 
     // size of this buffer
-    size_t side_size = 0;
+    int side_size = 0;
     // reuse the halo update kernels sizes to launch packing kernels
     cl::NDRange pack_global, pack_local, pack_offset;
 

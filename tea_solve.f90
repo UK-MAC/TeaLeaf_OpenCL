@@ -237,6 +237,11 @@ SUBROUTINE tea_leaf()
           ENDIF
         ENDIF
       ELSE IF (tl_use_ppcg) THEN
+        IF(use_opencl_kernels) THEN
+          CALL tea_leaf_ppcg_init_ocl(ch_alphas, ch_betas, &
+              theta, tl_ppcg_inner_steps)
+        ENDIF
+
         CALL tea_leaf_cg_calc_w(pw)
 
         IF (profiler_on) dot_product_time=timer()

@@ -128,9 +128,9 @@ void CloverChunk::initProgram
 CloverChunk::launch_specs_t CloverChunk::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
-    size_t global_horz_size = (-(hmin)) + (hmax) + x_max;
+    int global_horz_size = (-(hmin)) + (hmax) + x_max;
     while (global_horz_size % LOCAL_X) global_horz_size++;
-    size_t global_vert_size = (-(vmin)) + (vmax) + y_max;
+    int global_vert_size = (-(vmin)) + (vmax) + y_max;
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
@@ -202,8 +202,6 @@ void CloverChunk::compileKernel
         program = built_programs.at(source_name + options);
     }
 
-    size_t max_wg_size;
-
     try
     {
         kernel = cl::Kernel(program, kernel_name);
@@ -214,6 +212,9 @@ void CloverChunk::compileKernel
         DIE("Error %d (%s) in creating %s kernel\n",
             e.err(), e.what(), kernel_name);
     }
+
+    size_t max_wg_size;
+
     cl::detail::errHandler(
         clGetKernelWorkGroupInfo(kernel(),
                                  device(),
@@ -223,7 +224,7 @@ void CloverChunk::compileKernel
                                  NULL));
     if ((LOCAL_X*LOCAL_Y) > max_wg_size)
     {
-        DIE("Work group size %zux%zu is too big for kernel %s"
+        DIE("Work group size %dx%d is too big for kernel %s"
             " - maximum is %zu\n",
                 LOCAL_X, LOCAL_Y, kernel_name,
                 max_wg_size);
@@ -289,15 +290,15 @@ cl::Program CloverChunk::compileProgram
 void CloverChunk::initSizes
 (void)
 {
-    fprintf(DBGOUT, "Local size = %zux%zu\n", LOCAL_X, LOCAL_Y);
+    fprintf(DBGOUT, "Local size = %dx%d\n", LOCAL_X, LOCAL_Y);
 
     // pad the global size so the local size fits
-    const size_t glob_x = x_max+4 +
+    const int glob_x = x_max+4 +
         (((x_max+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+4)%LOCAL_X)));
-    const size_t glob_y = y_max+4 +
+    const int glob_y = y_max+4 +
         (((y_max+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+4)%LOCAL_Y)));
 
-    fprintf(DBGOUT, "Global size = %zux%zu\n", glob_x, glob_y);
+    fprintf(DBGOUT, "Global size = %dx%d\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
 
     /*
@@ -306,9 +307,9 @@ void CloverChunk::initSizes
      *  that doesn't include these halo cells for the reduction which should
      *  speed it up a bit
      */
-    const size_t red_x = x_max +
+    const int red_x = x_max +
         (((x_max)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max)%LOCAL_X)));
-    const size_t red_y = y_max +
+    const int red_y = y_max +
         (((y_max)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 

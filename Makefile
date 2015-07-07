@@ -179,6 +179,7 @@ FORTRAN_FILES=\
 	diffuse.o
 
 OCL_FILES=\
+	tea_leaf_kernel_ocl.o \
 	ocl_pack.o \
 	ocl_init.o \
 	ocl_strings.o \
@@ -188,7 +189,6 @@ OCL_FILES=\
 	ocl_kernels.o \
 	set_field_kernel_ocl.o \
 	field_summary_kernel_ocl.o \
-	tea_leaf_kernel_ocl.o \
 	generate_chunk_kernel_ocl.o \
 	update_halo_kernel_ocl.o \
 	initialise_chunk_kernel_ocl.o

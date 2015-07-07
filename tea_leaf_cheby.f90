@@ -35,7 +35,7 @@ SUBROUTINE tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, cheby_ca
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_cheby_kernel_iterate_ocl(ch_alphas, ch_betas, max_cheby_iters, &
+      CALL tea_leaf_cheby_iterate_kernel_ocl(ch_alphas, ch_betas, max_cheby_iters, &
         chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, 1)
     ENDDO
   ENDIF

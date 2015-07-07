@@ -238,7 +238,7 @@ void CloverChunk::initOcl
         fprintf(stdout, "Choosing first platform that matches device type\n");
 
         // go through all platforms
-        for (size_t ii = 0;;ii++)
+        for (size_t ii = 0; ; ii++)
         {
             // if there are no platforms left to match
             if (platforms.size() == ii)
@@ -289,7 +289,7 @@ void CloverChunk::initOcl
     else
     {
         // go through all platforms
-        for (size_t ii = 0;;)
+        for (size_t ii = 0; ; )
         {
             std::string plat_name;
             platforms.at(ii).getInfo(CL_PLATFORM_VENDOR, &plat_name);
@@ -389,7 +389,7 @@ void CloverChunk::initOcl
                 actual_device = 0;
                 device = devices.at(actual_device);
             }
-            else if (actual_device >= devices.size())
+            else if (actual_device >= static_cast<int>(devices.size()))
             {
                 DIE("Device %d was selected in rank %d but there are only %zu available\n",
                     actual_device, rank, devices.size());

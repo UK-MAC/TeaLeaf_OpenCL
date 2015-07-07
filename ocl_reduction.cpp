@@ -13,11 +13,11 @@ void CloverChunk::initReduction
     fprintf(DBGOUT, "\n---- Reduction ----\n");
 
     // each work group reduces to 1 value inside each kernel
-    const size_t total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
+    const int total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
 
-    fprintf(DBGOUT, "Total cells to reduce = %zu\n", reduced_cells);
-    size_t reduction_global_size = total_to_reduce;
-    fprintf(DBGOUT, "Reduction within work group reduces to = %zu\n", reduction_global_size);
+    fprintf(DBGOUT, "Total cells to reduce = %d\n", reduced_cells);
+    int reduction_global_size = total_to_reduce;
+    fprintf(DBGOUT, "Reduction within work group reduces to = %d\n", reduction_global_size);
 
     // each thread can load 2 values to reduce at once
     //reduction_global_size /= 2;
@@ -54,11 +54,11 @@ void CloverChunk::initReduction
         options << "-w ";
 
         // the actual number of elements that needs to be reduced in this stage
-        const size_t stage_elems_to_reduce = reduction_global_size;
+        const int stage_elems_to_reduce = reduction_global_size;
         options << "-D ELEMS_TO_REDUCE=" << stage_elems_to_reduce << " ";
 
         fprintf(DBGOUT, "\n\nStage %d:\n", ii);
-        fprintf(DBGOUT, "%zu elements remaining to reduce\n", stage_elems_to_reduce);
+        fprintf(DBGOUT, "%d elements remaining to reduce\n", stage_elems_to_reduce);
 
         /*
          *  To get the local size to use at this stage, figure out the largest
@@ -67,7 +67,7 @@ void CloverChunk::initReduction
          *  NB at the moment, enforcing power of 2 local size anyway
          *  NB also, 128 was preferred work group size on phi
          */
-        size_t reduction_local_size = LOCAL_X*LOCAL_Y;
+        int reduction_local_size = LOCAL_X*LOCAL_Y;
 
         // if there are more elements to reduce than the standard local size
         if (reduction_global_size > reduction_local_size)
@@ -110,8 +110,8 @@ void CloverChunk::initReduction
             reduction_global_size = reduction_local_size;
         }
 
-        fprintf(DBGOUT, "Padded total number of threads to launch is %zu\n", reduction_global_size);
-        fprintf(DBGOUT, "Local size for reduction is %zu\n", reduction_local_size);
+        fprintf(DBGOUT, "Padded total number of threads to launch is %d\n", reduction_global_size);
+        fprintf(DBGOUT, "Local size for reduction is %d\n", reduction_local_size);
 
         options << "-D GLOBAL_SZ=" << reduction_global_size << " ";
         options << "-D LOCAL_SZ=" << reduction_local_size << " ";
@@ -119,9 +119,9 @@ void CloverChunk::initReduction
         // FIXME not working properly - just load one per thread for now
         #if 0
         // threshold for a thread loading 2 values
-        size_t red_load_threshold = stage_elems_to_reduce/2;
+        int red_load_threshold = stage_elems_to_reduce/2;
         options << "-DRED_LOAD_THRESHOLD=" << red_load_threshold << " ";
-        fprintf(DBGOUT, "Load threshold is %zu\n", red_load_threshold);
+        fprintf(DBGOUT, "Load threshold is %d\n", red_load_threshold);
         #endif
         options << "-D RED_LOAD_THRESHOLD=" << 0 << " ";
         options << "-I. ";
@@ -165,9 +165,9 @@ void CloverChunk::initReduction
         MAKE_REDUCE_KNL(min, double, DBL_MAX);
         MAKE_REDUCE_KNL(max, int, 0);
 
-        fprintf(DBGOUT, "%zu/", reduction_global_size);
+        fprintf(DBGOUT, "%d/", reduction_global_size);
         reduction_global_size /= reduction_local_size;
-        fprintf(DBGOUT, "%zu = %zu remaining\n", reduction_local_size, reduction_global_size);
+        fprintf(DBGOUT, "%d = %d remaining\n", reduction_local_size, reduction_global_size);
 
         if (reduction_global_size <= 1)
         {

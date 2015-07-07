@@ -20,8 +20,7 @@ SUBROUTINE tea_leaf_jacobi_solve(error)
     DO t=1,tiles_per_task
       tile_error = 0.0_8
 
-      CALL tea_leaf_jacobi_solve_kernel_ocl(chunk%tiles(t)%field%rx, &
-        chunk%tiles(t)%field%ry, tile_error)
+      CALL tea_leaf_jacobi_solve_kernel_ocl(tile_error)
 
       error = error + tile_error
     ENDDO
