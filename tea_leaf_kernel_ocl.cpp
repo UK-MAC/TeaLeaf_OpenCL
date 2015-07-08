@@ -406,7 +406,7 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
                   step_global_size_range,
                   cl::NullRange);
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(10, inner_step - 1 + (step_depth - 1));
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(10, inner_step - 1);
 
     enqueueKernel(tea_leaf_ppcg_solve_calc_sd_device, __LINE__, __FILE__,
                   step_offset_range,

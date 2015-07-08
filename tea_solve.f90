@@ -193,9 +193,6 @@ SUBROUTINE tea_leaf()
           fields = 0
           fields(FIELD_U) = 1
         ELSE IF (tl_use_ppcg) THEN
-          ! To avoid some irritating bounds checking in ppcg inner iterations
-          max_cheby_iters = max_cheby_iters + halo_exchange_depth
-
           ! currently also calculate chebyshev coefficients
           CALL tea_calc_ls_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
               theta, tl_ppcg_inner_steps)

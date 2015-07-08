@@ -23,7 +23,7 @@
 #define FIELD_vector_sd FIELD_sd
 #define FIELD_vector_r FIELD_r
 
-#define NUM_BUFFERED_FIELDS 3
+#define NUM_BUFFERED_FIELDS 7
 
 // which side to pack - keep the same as in fortran file
 #define CHUNK_LEFT 1
