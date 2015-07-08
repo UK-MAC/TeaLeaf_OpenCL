@@ -28,37 +28,11 @@ SUBROUTINE tea_leaf_ppcg_inner(ch_alphas, ch_betas, inner_step, bounds_extra)
   IMPLICIT NONE
 
   INTEGER :: t, inner_step, bounds_extra
-  INTEGER :: x_min_bound, x_max_bound, y_min_bound, y_max_bound
   REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      IF (chunk%chunk_neighbours(CHUNK_LEFT).EQ.EXTERNAL_FACE) THEN
-        x_min_bound = chunk%tiles(t)%field%x_min
-      ELSE
-        x_min_bound = chunk%tiles(t)%field%x_min - bounds_extra
-      ENDIF
-
-      IF (chunk%chunk_neighbours(CHUNK_RIGHT).EQ.EXTERNAL_FACE) THEN
-        x_max_bound = chunk%tiles(t)%field%x_max
-      ELSE
-        x_max_bound = chunk%tiles(t)%field%x_max + bounds_extra
-      ENDIF
-
-      IF (chunk%chunk_neighbours(CHUNK_BOTTOM).EQ.EXTERNAL_FACE) THEN
-        y_min_bound = chunk%tiles(t)%field%y_min
-      ELSE
-        y_min_bound = chunk%tiles(t)%field%y_min - bounds_extra
-      ENDIF
-
-      IF (chunk%chunk_neighbours(CHUNK_TOP).EQ.EXTERNAL_FACE) THEN
-        y_max_bound = chunk%tiles(t)%field%y_max
-      ELSE
-        y_max_bound = chunk%tiles(t)%field%y_max + bounds_extra
-      ENDIF
-
-      CALL tea_leaf_ppcg_inner_kernel_ocl(inner_step, &
-        tl_ppcg_inner_steps, chunk%chunk_neighbours)
+      CALL tea_leaf_ppcg_inner_kernel_ocl(inner_step, bounds_extra, chunk%chunk_neighbours)
     ENDDO
   ENDIF
 
