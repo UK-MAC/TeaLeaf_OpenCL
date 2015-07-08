@@ -28,19 +28,19 @@ SUBROUTINE build_field()
 
   INTEGER :: j,k, t
 
-  chunk%tiles(t)%field%x_min=1
-  chunk%tiles(t)%field%y_min=1
-
-  chunk%tiles(t)%field%x_max=chunk%tiles(t)%x_cells
-  chunk%tiles(t)%field%y_max=chunk%tiles(t)%y_cells
-
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
+      chunk%tiles(t)%field%x_min=1
+      chunk%tiles(t)%field%y_min=1
+
+      chunk%tiles(t)%field%x_max=chunk%tiles(t)%x_cells
+      chunk%tiles(t)%field%y_max=chunk%tiles(t)%y_cells
+
       CALL initialise_ocl(chunk%tiles(t)%field%x_min, &
                           chunk%tiles(t)%field%x_max, &
                           chunk%tiles(t)%field%y_min, &
                           chunk%tiles(t)%field%y_max)
     ENDDO
   ENDIF
-  
+
 END SUBROUTINE build_field

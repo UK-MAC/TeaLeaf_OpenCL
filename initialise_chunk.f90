@@ -36,9 +36,9 @@ SUBROUTINE initialise_chunk()
   IF(use_opencl_kernels)THEN
     DO t=1,tiles_per_task
       xmin=grid%xmin + dx*REAL(chunk%tiles(t)%left-1)
-  
+
       ymin=grid%ymin + dy*REAL(chunk%tiles(t)%bottom-1)
-  
+
       CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
     ENDDO
   ENDIF

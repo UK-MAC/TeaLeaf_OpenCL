@@ -350,7 +350,6 @@ void CloverChunk::initOcl
         }
     }
 
-#if defined(MPI_HDR)
     // gets devices one at a time to prevent conflicts (on emerald)
     int ranks, cur_rank = 0;
 
@@ -361,7 +360,6 @@ void CloverChunk::initOcl
     {
         if (rank == cur_rank)
         {
-#endif
             // index of device to use
             int actual_device = 0;
 
@@ -419,13 +417,11 @@ void CloverChunk::initOcl
                 device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
                 break;
             }
-#if defined(MPI_HDR)
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
 
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     // initialise command queue
     if (profiler_on)
