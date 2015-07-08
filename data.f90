@@ -85,7 +85,8 @@ MODULE data_module
 
    INTEGER,        PARAMETER ::g_len_max=500
 
-   INTEGER                   ::tiles_per_task
+   ! Hardcoded in OpenCL version
+   INTEGER, PARAMETER        ::tiles_per_task=1
 
    ! cartesian communicator
    INTEGER                   ::mpi_cart_comm

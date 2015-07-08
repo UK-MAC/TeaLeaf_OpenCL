@@ -73,8 +73,6 @@ SUBROUTINE read_input()
   profiler%tea_reset=0.0
   profiler%dot_product=0.0
 
-  ! Hardcoded for the moment
-  tiles_per_task = 1
   tl_ch_cg_presteps = 25
   tl_ch_cg_epslim = 1.0
   tl_check_result = .FALSE.
@@ -303,7 +301,6 @@ SUBROUTINE read_input()
   endif
 
   IF(parallel%boss) THEN
-    WRITE(g_out,"(1x,a25,i12)")'tiles per task ',tiles_per_task
     WRITE(g_out,*)
     ELSEIF(use_opencl_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using OpenCL Kernels'
