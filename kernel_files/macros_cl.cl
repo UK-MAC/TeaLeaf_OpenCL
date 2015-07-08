@@ -1,9 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 // preconditioners
-#define TL_PREC_NONE        1
-#define TL_PREC_JAC_DIAG    2
-#define TL_PREC_JAC_BLOCK   3
+#include "definitions.hpp"
 
 #if defined(BLOCK_TOP_CHECK)
     #define BLOCK_TOP (MIN(((int)y_max + 2 - (int)row),(int)JACOBI_BLOCK_SIZE))

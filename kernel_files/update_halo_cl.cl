@@ -13,7 +13,7 @@ __kernel void update_halo_left
     {
         const size_t src = 1 + (HALO_DEPTH - column - 1)*2;
         const size_t dst = 0;
-        cur_array[THARR2D(dst, 0, x_extra)] = x_invert * cur_array[THARR2D(src, 0, x_extra)];
+        cur_array[THARR2D(dst, 0, x_extra)] = y_invert * cur_array[THARR2D(src, 0, x_extra)];
     }
 }
 

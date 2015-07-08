@@ -30,14 +30,6 @@ void CloverChunk::initProgram
 
     // local sizes
     options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
-    options << "-DLOCAL_X=" << LOCAL_X << " ";
-    options << "-DLOCAL_Y=" << LOCAL_Y << " ";
-
-    // for update halo
-    options << "-DCELL_DATA=" << CELL_DATA << " ";
-    options << "-DVERTEX_DATA=" << VERTEX_DATA << " ";
-    options << "-DX_FACE_DATA=" << X_FACE_DATA << " ";
-    options << "-DY_FACE_DATA=" << Y_FACE_DATA << " ";
 
     // include current directory
     options << "-I. ";

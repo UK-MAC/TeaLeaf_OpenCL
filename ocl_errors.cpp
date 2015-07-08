@@ -1,6 +1,4 @@
-#if defined(MPI_HDR)
 #include "mpi.h"
-#endif
 #include "ocl_common.hpp"
 
 #include <cstdio>
@@ -182,7 +180,7 @@ void CloverChunk::enqueueKernel
 }
 
 // called when something goes wrong
-void CloverChunk::cloverDie
+void cloverDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");
@@ -200,11 +198,7 @@ void CloverChunk::cloverDie
 
     fprintf(stderr, "\nExiting\n");
 
-#if defined(MPI_HDR)
     MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-    exit(1);
-#endif
 }
 
 // print out timing info when done

@@ -1,6 +1,4 @@
-#if defined(MPI_HDR)
 #include "mpi.h"
-#endif
 #include "ocl_common.hpp"
 #include "ocl_strings.hpp"
 
@@ -44,11 +42,7 @@ CloverChunk::CloverChunk
     }
 #endif
 
-#if defined(MPI_HDR)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
-    rank = 0;
-#endif
 
     double t0;
     timer_c_(&t0);
@@ -65,9 +59,8 @@ CloverChunk::CloverChunk
     initBuffers();
     initArgs();
 
-#if defined(MPI_HDR)
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
+
     if (!rank)
     {
         double t1;
@@ -75,6 +68,14 @@ CloverChunk::CloverChunk
 
         fprintf(stdout, "Finished initialisation in %f seconds\n", t1-t0);
     }
+}
+
+static void stripString
+(std::string & input_string)
+{
+    // trim whitespace from a string
+    input_string.erase(input_string.find_last_not_of(" \n\r\t")+1);
+    input_string.erase(input_string.begin(), input_string.begin()+input_string.find_first_not_of(" \n\r\t"));
 }
 
 static void listPlatforms
@@ -100,9 +101,7 @@ static void listPlatforms
             cl_device_type dtype;
             devices.at(ii).getInfo(CL_DEVICE_NAME, &devname);
             devices.at(ii).getInfo(CL_DEVICE_TYPE, &dtype);
-            // trim whitespace
-            devname.erase(devname.find_last_not_of(" \n\r\t")+1);
-            devname.erase(devname.begin(), devname.begin()+devname.find_first_not_of(" \n\r\t"));
+            stripString(devname);
 
             std::string dtype_str = strType(dtype);
             fprintf(stdout, " Device %zu: %s (%s)\n", ii, devname.c_str(), dtype_str.c_str());

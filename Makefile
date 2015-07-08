@@ -65,7 +65,7 @@ endif
 
 OMP_INTEL     = -openmp -ip -align
 OMP_SUN       = -xopenmp=parallel -vpara
-OMP_GNU       = -fopenmp -cpp
+OMP_GNU       = -fopenmp
 OMP_CRAY      = -e Z
 OMP_PGI       = -mp=nonuma
 OMP_PATHSCALE = -mp
@@ -74,7 +74,7 @@ OMP=$(OMP_$(COMPILER))
 
 FLAGS_INTEL     = -O3 -fpp -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
-FLAGS_GNU       = -O3 -march=native -funroll-loops
+FLAGS_GNU       = -O3 -march=native -funroll-loops -cpp
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
 FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
@@ -125,14 +125,9 @@ endif
 MPICXX_LIB=#-lmpi_cxx
 
 LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
-CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D MPI_HDR -g
-
-ifdef VERBOSE
-CXXFLAGS+=-D OCL_VERBOSE
-endif
-
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
+CXXFLAGS=$(CFLAGS)
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 CXX_MPI_COMPILER=mpicxx
@@ -145,7 +140,11 @@ ifdef VERBOSE
 CXXFLAGS+=-D OCL_VERBOSE
 endif
 
-CXXFLAGS+=$(CFLAGS)
+CXXFLAGS+=-D CL_USE_DEPRECATED_OPENCL_1_1_APIS -D __CL_ENABLE_EXCEPTIONS -D MPI_HDR -g
+
+ifdef VERBOSE
+CXXFLAGS+=-D OCL_VERBOSE
+endif
 
 C_FILES=\
 	timer_c.o
@@ -205,7 +204,7 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 
 include makefile.deps
 
-%.o: %.cpp Makefile makefile.deps ocl_common.hpp
+%.o: %.cpp Makefile makefile.deps
 	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $@
 %_module.mod: %.f90 %.o
 	@true

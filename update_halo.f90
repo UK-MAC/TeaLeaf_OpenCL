@@ -77,23 +77,7 @@ SUBROUTINE update_tile_boundary(fields, depth)
   IF (profiler_on) halo_time=timer()
 
   IF (tiles_per_task .GT. 1) THEN
-    IF (use_opencl_kernels)THEN
-      DO t=1,tiles_per_task
-        right_idx = chunk%tiles(t)%tile_neighbours(CHUNK_RIGHT)
-
-        IF (right_idx .NE. EXTERNAL_FACE) THEN
-          ! TODO
-        ENDIF
-      ENDDO
-
-      DO t=1,tiles_per_task
-        up_idx = chunk%tiles(t)%tile_neighbours(CHUNK_TOP)
-
-        IF (up_idx .NE. EXTERNAL_FACE) THEN
-          ! TODO
-        ENDIF
-      ENDDO
-    ENDIF
+    CALL report_error("update_tile_boundary", "OpenCL should never have >1 tile per task")
   ENDIF
 
   IF (profiler_on) profiler%internal_halo_update = profiler%internal_halo_update + (timer() - halo_time)
