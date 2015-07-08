@@ -271,7 +271,7 @@ void CloverChunk::tea_leaf_common_init
     tea_leaf_init_common_device.setArg(8, coefficient);
     ENQUEUE_OFFSET(tea_leaf_init_common_device);
 
-    if (reflective_boundary)
+    if (!reflective_boundary)
     {
         int depth = halo_exchange_depth;
         std::vector<double> zeros((std::max(x_max, y_max) + 2*depth)*depth, 0);
