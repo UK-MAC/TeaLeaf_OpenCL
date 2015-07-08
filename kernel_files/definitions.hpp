@@ -52,7 +52,7 @@
 #define TEA_ENUM_PPCG       4
 
 // same as in fortran
-#define CONDUCTIVITY 1
-#define RECIP_CONDUCTIVITY 2
+#define COEF_CONDUCTIVITY 1
+#define COEF_RECIP_CONDUCTIVITY 2
 
 #endif

@@ -53,8 +53,6 @@ __kernel void tea_leaf_calc_2norm
     REDUCTION(rro_shared, rro, SUM)
 }
 
-#define COEF_CONDUCTIVITY 1
-#define COEF_RECIP_CONDUCTIVITY 2
 __kernel void tea_leaf_init_common
 (__global const double * __restrict const density,
  __global const double * __restrict const energy,
