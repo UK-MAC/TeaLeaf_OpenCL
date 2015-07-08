@@ -218,7 +218,7 @@ void CloverChunk::compileKernel
     {
         DIE("Work group size %dx%d is too big for kernel %s"
             " - maximum is %zu\n",
-                LOCAL_X, LOCAL_Y, kernel_name,
+                int(LOCAL_X), int(LOCAL_Y), kernel_name,
                 max_wg_size);
     }
 
@@ -282,7 +282,7 @@ cl::Program CloverChunk::compileProgram
 void CloverChunk::initSizes
 (void)
 {
-    fprintf(DBGOUT, "Local size = %dx%d\n", LOCAL_X, LOCAL_Y);
+    fprintf(DBGOUT, "Local size = %dx%d\n", int(LOCAL_X), int(LOCAL_Y));
 
     // pad the global size so the local size fits
     const int glob_x = x_max+4 +
