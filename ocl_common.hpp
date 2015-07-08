@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "definitions.hpp"
+#include "kernel_files/definitions.hpp"
 #include "types.hpp"
 
 static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);

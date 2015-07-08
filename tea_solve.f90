@@ -237,9 +237,11 @@ SUBROUTINE tea_leaf()
           ENDIF
         ENDIF
       ELSE IF (tl_use_ppcg) THEN
-        IF(use_opencl_kernels) THEN
-          CALL tea_leaf_ppcg_init_ocl(ch_alphas, ch_betas, &
-              theta, tl_ppcg_inner_steps)
+        IF (cheby_calc_steps .EQ. 0) THEN
+          IF (use_opencl_kernels) THEN
+            CALL tea_leaf_ppcg_init_ocl(ch_alphas, ch_betas, &
+                theta, tl_ppcg_inner_steps)
+          ENDIF
         ENDIF
 
         CALL tea_leaf_cg_calc_w(pw)
