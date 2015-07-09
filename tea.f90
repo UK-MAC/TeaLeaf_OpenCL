@@ -360,7 +360,7 @@ SUBROUTINE tea_exchange(fields,depth)
       CALL MPI_TESTALL(message_count_lr, request_lr, test_complete, status_lr, err)
     ELSE
       test_complete = .true.
-      !make a CALL to wait / sync
+      !make a call to wait / sync
       CALL MPI_WAITALL(message_count_lr,request_lr,status_lr,err)
     ENDIF
 
@@ -423,7 +423,7 @@ SUBROUTINE tea_exchange(fields,depth)
       ENDIF
     ENDIF
 
-    !need to make a CALL to wait / sync
+    !need to make a call to wait / sync
     CALL MPI_WAITALL(message_count_ud,request_ud,status_ud,err)
 
     !unpack in top direction

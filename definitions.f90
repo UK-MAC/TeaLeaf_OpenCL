@@ -124,15 +124,6 @@ MODULE definitions_module
 
    TYPE field_type
 
-     INTEGER         :: left            &
-                       ,right           &
-                       ,bottom          &
-                       ,top             &
-                       ,left_boundary   &
-                       ,right_boundary  &
-                       ,bottom_boundary &
-                       ,top_boundary
-
      INTEGER         :: x_min  &
                        ,y_min  &
                        ,x_max  &
