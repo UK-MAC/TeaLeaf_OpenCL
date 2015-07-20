@@ -118,10 +118,6 @@ ifdef IEEE
   I3E=$(I3E_$(COMPILER))
 endif
 
-ifneq (,$(filter $(COMPILER), GNU INTEL))
-OMP4=-D WITH_OMP4
-endif
-
 MPICXX_LIB=#-lmpi_cxx
 
 LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)

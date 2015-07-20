@@ -4,17 +4,44 @@
 #include <cassert>
 #include <cmath>
 
-extern CloverChunk chunk;
-
 // same as in fortran
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
+
+// copy back dx/dy and calculate rx/ry
+void CloverChunk::calcrxry
+(double dt, double * rx, double * ry)
+{
+    // make sure intialise chunk has finished
+    queue.finish();
+
+    double dx, dy;
+
+    try
+    {
+        // celldx/celldy never change, but done for consistency with fortran
+        queue.enqueueReadBuffer(celldx, CL_TRUE,
+            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dx);
+        queue.enqueueReadBuffer(celldy, CL_TRUE,
+            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dy);
+    }
+    catch (cl::Error e)
+    {
+        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
+            e.err(), e.what());
+    }
+
+    *rx = dt/(dx*dx);
+    *ry = dt/(dy*dy);
+}
 
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 (int* norm_array, double* norm)
 {
     chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
+
+/********************/
 
 extern "C" void tea_leaf_cheby_init_kernel_ocl_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
@@ -137,33 +164,6 @@ extern "C" void tea_leaf_cg_calc_p_kernel_ocl_
 (double * beta)
 {
     chunk.tea_leaf_cg_calc_p_kernel(*beta);
-}
-
-// copy back dx/dy and calculate rx/ry
-void CloverChunk::calcrxry
-(double dt, double * rx, double * ry)
-{
-    // make sure intialise chunk has finished
-    queue.finish();
-
-    double dx, dy;
-
-    try
-    {
-        // celldx/celldy never change, but done for consistency with fortran
-        queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dx);
-        queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dy);
-    }
-    catch (cl::Error e)
-    {
-        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
-            e.err(), e.what());
-    }
-
-    *rx = dt/(dx*dx);
-    *ry = dt/(dy*dy);
 }
 
 /********************/
