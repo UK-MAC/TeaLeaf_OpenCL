@@ -74,7 +74,7 @@ OMP=$(OMP_$(COMPILER))
 
 FLAGS_INTEL     = -O3 -fpp -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
-FLAGS_GNU       = -O3 -march=native -funroll-loops -cpp
+FLAGS_GNU       = -O3 -funroll-loops -cpp
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
 FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
@@ -82,7 +82,7 @@ FLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qsigtrap -qextname=
 FLAGS_          = -O3
 CFLAGS_INTEL     = -O3 -no-prec-div -restrict -fno-alias
 CFLAGS_SUN       = -fast -xipo=2
-CFLAGS_GNU       = -O3 -march=native -funroll-loops
+CFLAGS_GNU       = -O3 -funroll-loops
 CFLAGS_CRAY      = -em -h list=a
 CFLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 CFLAGS_PATHSCALE = -O3
