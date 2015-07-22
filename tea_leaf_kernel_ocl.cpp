@@ -403,19 +403,24 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
         step_global_size[1] -= (halo_exchange_depth-step_depth);
     }
 
+    step_global_size[0] -= step_global_size[0] % local_group_size[0];
+    step_global_size[0] += local_group_size[0];
+    step_global_size[1] -= step_global_size[1] % local_group_size[1];
+    step_global_size[1] += local_group_size[1];
+
     cl::NDRange step_offset_range(step_offset[0], step_offset[1]);
     cl::NDRange step_global_size_range(step_global_size[0], step_global_size[1]);
 
     enqueueKernel(tea_leaf_ppcg_solve_update_r_device, __LINE__, __FILE__,
                   step_offset_range,
                   step_global_size_range,
-                  cl::NullRange);
+                  local_group_size);
 
     tea_leaf_ppcg_solve_calc_sd_device.setArg(10, inner_step - 1);
 
     enqueueKernel(tea_leaf_ppcg_solve_calc_sd_device, __LINE__, __FILE__,
                   step_offset_range,
                   step_global_size_range,
-                  cl::NullRange);
+                  local_group_size);
 }
 
