@@ -90,8 +90,10 @@ void CloverChunk::initProgram
         else if (tea_solver == TEA_ENUM_PPCG)
         {
             compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_sd", tea_leaf_ppcg_solve_init_sd_device, 0, 0, 0, 0);
-            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device, 0, 0, 0, 0);
-            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device, 0, 0, 0, 0);
+            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device,
+                -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+            compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device, 
+                -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
         }
     }
     else

@@ -63,11 +63,16 @@ __kernel void tea_leaf_ppcg_solve_update_r
  __global       double * __restrict const r,
  __global const double * __restrict const Kx,
  __global const double * __restrict const Ky,
- __global       double * __restrict const sd)
+ __global       double * __restrict const sd,
+ int bounds_extra_x, int bounds_extra_y)
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    bool within_matrix_powers_bound =
+        row <= (y_max + HALO_DEPTH - 1) + bounds_extra_y &&
+        column <= (x_max + HALO_DEPTH - 1) + bounds_extra_x;
+
+    if (within_matrix_powers_bound)
     {
         u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
 
@@ -94,9 +99,14 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
 
  __constant const double * __restrict const alpha,
  __constant const double * __restrict const beta,
- int step)
+ int step,
+ int bounds_extra_x, int bounds_extra_y)
 {
     __kernel_indexes;
+
+    bool within_matrix_powers_bound =
+        row <= (y_max + HALO_DEPTH - 1) + bounds_extra_y &&
+        column <= (x_max + HALO_DEPTH - 1) + bounds_extra_x;
 
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
@@ -106,7 +116,7 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         r_l[lid] = 0;
         z_l[lid] = 0;
 
-        if (WITHIN_BOUNDS)
+        if (within_matrix_powers_bound)
         {
             r_l[lid] = r[THARR2D(0, 0, 0)];
         }
@@ -114,20 +124,20 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         barrier(CLK_LOCAL_MEM_FENCE);
         if (loc_row == 0)
         {
-            if (WITHIN_BOUNDS)
+            if (within_matrix_powers_bound)
             {
                 block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if (WITHIN_BOUNDS)
+        if (within_matrix_powers_bound)
         {
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                                 + beta[step]*z_l[lid];
         }
     }
-    else if (WITHIN_BOUNDS)
+    else if (within_matrix_powers_bound)
     {
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
