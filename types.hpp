@@ -330,15 +330,15 @@ public:
     (int coefficient, double dt, double * rx, double * ry,
      int * chunk_neighbours, int * zero_boundary, int reflective_boundary);
 
+    void print_profiling_info
+    (void);
+
     // ctor
     CloverChunk
     (void);
     CloverChunk
     (int* in_x_min, int* in_x_max,
      int* in_y_min, int* in_y_max);
-    // dtor
-    ~CloverChunk
-    (void);
 
     // enqueue a kernel
     void enqueueKernel

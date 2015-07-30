@@ -79,6 +79,11 @@ SUBROUTINE tea_finalize
 
   INTEGER :: err
 
+  call tea_barrier()
+  if (use_opencl_kernels) then
+    call print_opencl_profiling_info()
+  endif
+
   CLOSE(g_out)
   CALL FLUSH(0)
   CALL FLUSH(6)

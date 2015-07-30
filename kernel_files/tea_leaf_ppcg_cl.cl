@@ -67,7 +67,6 @@ __kernel void tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    // either matrix powers is enabled, or block jacobi is
     if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];

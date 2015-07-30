@@ -117,16 +117,8 @@ void CloverChunk::enqueueKernel
             prof_event->getProfilingInfo(CL_PROFILING_COMMAND_END, &end);
             double taken = static_cast<double>(end-start)*1.0e-6;
 
-            if (kernel_times.end() != kernel_times.find(func_name))
-            {
-                kernel_calls.at(func_name) += 1;
-                kernel_times.at(func_name) += taken;
-            }
-            else
-            {
-                kernel_calls[func_name] = 1;
-                kernel_times[func_name] = taken;
-            }
+            kernel_calls.at(func_name) += 1;
+            kernel_times.at(func_name) += taken;
         }
         else
         {
@@ -201,13 +193,22 @@ void cloverDie
     MPI_Abort(MPI_COMM_WORLD, 1);
 }
 
-// print out timing info when done
-CloverChunk::~CloverChunk
+extern "C" void print_opencl_profiling_info_
 (void)
 {
-    if (profiler_on && !rank)
+    chunk.print_profiling_info();
+}
+
+// print out timing info when done
+void CloverChunk::print_profiling_info
+(void)
+{
+    if (profiler_on)
     {
-        fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
+        if (!rank)
+        {
+            fprintf(stdout, "@@@@@ OpenCL Profiling information @@@@@\n");
+        }
 
         std::map<std::string, double>::iterator ii = kernel_times.begin();
         std::map<std::string, int>::iterator jj = kernel_calls.begin();
@@ -215,8 +216,17 @@ CloverChunk::~CloverChunk
         for (ii = kernel_times.begin(), jj = kernel_calls.begin();
             ii != kernel_times.end(); ii++, jj++)
         {
-            fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
-                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
+            double total_time;
+            int total_calls;
+
+            MPI_Reduce(&ii->second, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+            MPI_Reduce(&jj->second, &total_calls, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+            if (!rank)
+            {
+                fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
+                    ii->first.c_str(), total_time, 1e3*total_time/total_calls, total_calls);
+            }
         }
     }
 }

@@ -140,6 +140,9 @@ void CloverChunk::compileKernel
 {
     std::string source_str;
 
+    kernel_calls[kernel_name] = 0;
+    kernel_times[kernel_name] = 0;
+
     {
         std::ifstream ifile(source_name.c_str());
         source_str = std::string(

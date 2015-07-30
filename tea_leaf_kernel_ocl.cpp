@@ -4,10 +4,6 @@
 #include <cassert>
 #include <cmath>
 
-// same as in fortran
-#define CONDUCTIVITY 1
-#define RECIP_CONDUCTIVITY 2
-
 // copy back dx/dy and calculate rx/ry
 void CloverChunk::calcrxry
 (double dt, double * rx, double * ry)
@@ -259,7 +255,7 @@ void CloverChunk::tea_leaf_common_init
 (int coefficient, double dt, double * rx, double * ry,
  int * chunk_neighbours, int * zero_boundary, int reflective_boundary)
 {
-    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
+    if (coefficient != COEF_CONDUCTIVITY && coefficient != COEF_RECIP_CONDUCTIVITY)
     {
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
     }
