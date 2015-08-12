@@ -117,6 +117,7 @@ private:
     // TODO could be used by all - precalculate diagonal + scale Kx/Ky
     cl::Kernel tea_leaf_calc_residual_device;
     cl::Kernel tea_leaf_init_common_device;
+    cl::Kernel tea_leaf_zero_boundary_device;
 
     // tolerance specified in tea.in
     float tolerance;
@@ -328,7 +329,7 @@ public:
     void tea_leaf_calc_residual(void);
     void tea_leaf_common_init
     (int coefficient, double dt, double * rx, double * ry,
-     int * chunk_neighbours, int * zero_boundary, int reflective_boundary);
+     int * zero_boundary, int reflective_boundary);
 
     void print_profiling_info
     (void);
@@ -370,11 +371,15 @@ public:
 class KernelCompileError : std::exception
 {
 private:
-    const std::string _err;
+    const std::string _what;
+    const int _err;
 public:
-    KernelCompileError(const char* err):_err(err){}
+    KernelCompileError(const char* what, int err):_what(what),_err(err){}
     ~KernelCompileError() throw(){}
-    const char* what() const throw() {return this->_err.c_str();}
+
+    const char* what() const throw() {return this->_what.c_str();}
+
+    const int err() const throw() {return this->_err;}
 };
 
 #endif

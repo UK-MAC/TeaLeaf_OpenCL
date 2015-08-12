@@ -108,6 +108,7 @@ void CloverChunk::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
 
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_zero_boundary", tea_leaf_zero_boundary_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 
     if (!rank)
@@ -186,7 +187,7 @@ void CloverChunk::compileKernel
         }
         catch (KernelCompileError err)
         {
-            DIE("Errors in compiling %s (in %s):\n%s\n", kernel_name, source_name.c_str(), err.what());
+            DIE("Errors (%d) in compiling %s (in %s):\n%s\n", err.err(), kernel_name, source_name.c_str(), err.what());
         }
 
         built_programs[source_name + options] = program;
@@ -248,12 +249,23 @@ cl::Program CloverChunk::compileProgram
     try
     {
         program = cl::Program(context, sources);
-        std::vector<cl::Device> dev_vec(1, device);
+    }
+    catch (cl::Error e)
+    {
+        DIE("%s %d\n", e.what(), e.err());
+    }
+
+    std::vector<cl::Device> dev_vec(1, device);
+
+    try
+    {
         program.build(dev_vec, options.c_str());
     }
     catch (cl::Error e)
     {
         fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
+
+        errstream << e.what() << std::endl;
 
         try
         {
@@ -266,7 +278,7 @@ cl::Program CloverChunk::compileProgram
 
         std::string errs(errstream.str());
         //DIE("%s\n", errs.c_str());
-        throw KernelCompileError(errs.c_str());
+        throw KernelCompileError(errs.c_str(), e.err());
     }
 
     // return

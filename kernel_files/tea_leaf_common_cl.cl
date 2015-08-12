@@ -89,6 +89,41 @@ __kernel void tea_leaf_init_common
     }
 }
 
+__kernel void tea_leaf_zero_boundary
+(__global double * __restrict const Kx,
+ __global double * __restrict const Ky,
+ int zero_left, int zero_right, int zero_bottom, int zero_top)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        if (zero_left && column <= HALO_DEPTH)
+        {
+            Kx[THARR2D(0, 0, 0)] = 0;
+            if (column < HALO_DEPTH) Ky[THARR2D(0, 0, 0)] = 0;
+        }
+
+        if (zero_right && column > (x_max - 1) + HALO_DEPTH)
+        {
+            Kx[THARR2D(0, 0, 0)] = 0;
+            Ky[THARR2D(0, 0, 0)] = 0;
+        }
+
+        if (zero_bottom && row <= HALO_DEPTH)
+        {
+            Ky[THARR2D(0, 0, 0)] = 0;
+            if (row < HALO_DEPTH) Kx[THARR2D(0, 0, 0)] = 0;
+        }
+
+        if (zero_top && row > (y_max - 1) + HALO_DEPTH)
+        {
+            Ky[THARR2D(0, 0, 0)] = 0;
+            Kx[THARR2D(0, 0, 0)] = 0;
+        }
+    }
+}
+
 __kernel void tea_leaf_init_jac_diag
 (__global       double * __restrict const Mi,
  __global const double * __restrict const Kx,
