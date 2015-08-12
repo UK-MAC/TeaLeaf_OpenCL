@@ -18,7 +18,7 @@ tl_use_ppcg
 tl_check_result
 tl_eps=1.0e-12
 !profiler_on
-halo_depth=1
+halo_depth=4
 opencl_vendor=any
-opencl_type=cpu
+opencl_type=gpu
 *endtea

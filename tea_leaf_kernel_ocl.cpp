@@ -359,6 +359,9 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
         x_max + (halo_exchange_depth-step_depth)*2,
         y_max + (halo_exchange_depth-step_depth)*2};
 
+    int bounds_extra_x = bounds_extra;
+    int bounds_extra_y = bounds_extra;
+
     if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
     {
         step_offset[0] = halo_exchange_depth;
@@ -367,6 +370,7 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
     if (chunk_neighbours[CHUNK_RIGHT - 1] == EXTERNAL_FACE)
     {
         step_global_size[0] -= (halo_exchange_depth-step_depth);
+        bounds_extra_x = 0;
     }
 
     if (chunk_neighbours[CHUNK_BOTTOM - 1] == EXTERNAL_FACE)
@@ -377,12 +381,18 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
     if (chunk_neighbours[CHUNK_TOP - 1] == EXTERNAL_FACE)
     {
         step_global_size[1] -= (halo_exchange_depth-step_depth);
+        bounds_extra_y = 0;
     }
 
     step_global_size[0] -= step_global_size[0] % local_group_size[0];
     step_global_size[0] += local_group_size[0];
     step_global_size[1] -= step_global_size[1] % local_group_size[1];
     step_global_size[1] += local_group_size[1];
+
+    tea_leaf_ppcg_solve_update_r_device.setArg(5, bounds_extra_x);
+    tea_leaf_ppcg_solve_update_r_device.setArg(6, bounds_extra_y);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(11, bounds_extra_x);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(12, bounds_extra_y);
 
     cl::NDRange step_offset_range(step_offset[0], step_offset[1]);
     cl::NDRange step_global_size_range(step_global_size[0], step_global_size[1]);
