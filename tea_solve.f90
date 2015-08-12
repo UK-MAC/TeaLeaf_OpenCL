@@ -38,7 +38,6 @@ SUBROUTINE tea_leaf()
 
   IMPLICIT NONE
 
-!$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: n
   REAL(KIND=8) :: old_error,error,exact_error,initial_residual
 
@@ -113,9 +112,7 @@ SUBROUTINE tea_leaf()
   initial_residual=SQRT(initial_residual)
 
   IF (parallel%boss.AND.verbose_on) THEN
-!$  IF (OMP_GET_THREAD_NUM().EQ.0) THEN
       WRITE(g_out,*)"Initial residual ",initial_residual
-!$  ENDIF
   ENDIF
 
   IF (tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
@@ -201,13 +198,11 @@ SUBROUTINE tea_leaf()
         cn = eigmax/eigmin
 
         IF (parallel%boss) THEN
-!$        IF (OMP_GET_THREAD_NUM().EQ.0) THEN
 100 FORMAT("Eigen min",e14.6," Eigen max",e14.6," Condition number",f14.6," Error",e14.6)
             WRITE(g_out,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
             WRITE(g_out, 100) eigmin,eigmax,cn,old_error
             WRITE(0,'(a,i3,a,e15.7)') "Switching after ",n," CG its, error ",rro
             WRITE(0, 100) eigmin,eigmax,cn,old_error
-!$        ENDIF
         ENDIF
       ENDIF
 
@@ -327,9 +322,7 @@ SUBROUTINE tea_leaf()
     error=SQRT(error)
 
     IF (parallel%boss.AND.verbose_on) THEN
-!$    IF (OMP_GET_THREAD_NUM().EQ.0) THEN
         WRITE(g_out,*)"Residual ",error
-!$    ENDIF
     ENDIF
 
     IF (ABS(error) .LT. eps*initial_residual) EXIT
@@ -359,7 +352,6 @@ SUBROUTINE tea_leaf()
   IF (profiler_on) profiler%tea_solve = profiler%tea_solve + (timer() - solve_time)
 
   IF (parallel%boss) THEN
-!$  IF (OMP_GET_THREAD_NUM().EQ.0) THEN
 
 102 FORMAT('Conduction error ',e14.7)
       WRITE(g_out,102) error/initial_residual
@@ -378,7 +370,6 @@ SUBROUTINE tea_leaf()
         WRITE(g_out,103) ppcg_inner_iters, ppcg_inner_iters + n-1
         WRITE(0,103) ppcg_inner_iters, ppcg_inner_iters + n-1
       ENDIF
-!$  ENDIF
   ENDIF
 
   ! RESET

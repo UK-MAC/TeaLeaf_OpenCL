@@ -34,8 +34,6 @@ SUBROUTINE field_summary()
   REAL(KIND=8) :: tile_vol,tile_mass,tile_ie,tile_temp
   REAL(KIND=8) :: qa_diff
 
-!$ INTEGER :: OMP_GET_THREAD_NUM
-
   INTEGER      :: t
 
   REAL(KIND=8) :: kernel_time,timer
@@ -79,17 +77,14 @@ SUBROUTINE field_summary()
   IF(profiler_on) profiler%summary=profiler%summary+(timer()-kernel_time)
 
   IF(parallel%boss) THEN
-!$  IF(OMP_GET_THREAD_NUM().EQ.0) THEN
       WRITE(g_out,'(a6,i7,5e26.17)')' step:',step,vol,mass,mass/vol,ie,temp
       WRITE(g_out,*)
       CALL FLUSH(g_out)
-!$  ENDIF
   ENDIF
 
   !Check if this is the final call and if it is a test problem, check the result.
   IF(complete) THEN
     IF(parallel%boss) THEN
-!$    IF(OMP_GET_THREAD_NUM().EQ.0) THEN
         IF(test_problem.GE.1) THEN
   ! Note that the "correct" solution is with IEEE switched on, 1 task, 1 thread, Intel compiler on Ivy Bridge
           IF(test_problem.EQ.1) qa_diff=ABS((100.0_8*(temp/157.550841832793_8))-100.0_8)
@@ -109,7 +104,6 @@ SUBROUTINE field_summary()
             WRITE(g_out,*)"This is test is considered NOT PASSED"
           ENDIF
         ENDIF
-!$    ENDIF
     ENDIF
   ENDIF
 
