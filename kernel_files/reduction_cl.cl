@@ -95,8 +95,8 @@ __kernel void reduction
                 + (lid/SERIAL_REDUCTION_AMOUNT)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT)
                 // offset in this block
                 + offset*SERIAL_REDUCTION_AMOUNT
-                // and some based on the group
-                + get_group_id(0)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT*LOCAL_SZ)
+                // each group gets local_sz*size of serial block to reduce
+                + get_group_id(0)*(SERIAL_REDUCTION_AMOUNT*LOCAL_SZ)
                 // and based on local id
                 + lid%SERIAL_REDUCTION_AMOUNT
                 ;

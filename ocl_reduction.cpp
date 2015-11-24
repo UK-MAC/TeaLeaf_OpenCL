@@ -53,7 +53,7 @@ void CloverChunk::initReduction
         options << "-D SERIAL_REDUCTION_AMOUNT=" << SERIAL_REDUCTION_AMOUNT << " ";
 
         // global size at this step
-        int reduction_global_size = std::ceil(stage_elems_to_reduce/SERIAL_REDUCTION_AMOUNT);
+        int reduction_global_size = std::max(SERIAL_REDUCTION_AMOUNT, int(std::ceil(stage_elems_to_reduce/SERIAL_REDUCTION_AMOUNT)));
 
         fprintf(DBGOUT, "\n\nStage %d:\n", ii);
         fprintf(DBGOUT, "%d elements remaining to reduce\n", stage_elems_to_reduce);
@@ -153,7 +153,7 @@ void CloverChunk::initReduction
         MAKE_REDUCE_KNL(sum, double, 0.0);
 
         fprintf(DBGOUT, "%d/%d", stage_elems_to_reduce, (SERIAL_REDUCTION_AMOUNT*reduction_local_size));
-        stage_elems_to_reduce /= (SERIAL_REDUCTION_AMOUNT*reduction_local_size);
+        stage_elems_to_reduce = std::ceil((1.0*stage_elems_to_reduce)/(SERIAL_REDUCTION_AMOUNT*reduction_local_size));
         fprintf(DBGOUT, " = %d remaining\n", stage_elems_to_reduce);
 
         if (stage_elems_to_reduce <= 1)
