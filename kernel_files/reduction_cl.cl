@@ -68,43 +68,22 @@ __kernel void reduction
         dest_offset = 0;
     }
 
-    /*
-     *  If the number of elements to reduce is not a power of 2 then 2 values
-     *  can be loaded for an initial reduction for some threads but not for
-     *  others, defined by the threshold corresponding to the difference between
-     *  the next power of 2 up from the number to reduce
-     *
-     *  if there are 900 values to reduce with a 256 local size, then launch 2
-     *  groups of total thread count 512, and load 2 values to reduce on load in
-     *  the first 250 of these threads
-     */
-
-    /*
-     *  one thread launched per SERIAL_REDUCTION_AMOUNT
-     *  eg, 1024 elements, SER.. = 16, gid has to be less than 1024/16
-     *  1000 elements, 1000/16 = 62.5, so we need to launch 63, not 62
-     */
-    //if (gid < ceil((ELEMS_TO_REDUCE*1.0)/SERIAL_REDUCTION_AMOUNT))
+    for (int offset = 0; offset < SERIAL_REDUCTION_AMOUNT; offset++)
     {
-        for (int offset = 0; offset < SERIAL_REDUCTION_AMOUNT; offset++)
-        {
-            int read_idx =
-                // either first half or back half of reduction buffer
-                src_offset
-                // size of serial reduction bit might be smaller than local size
-                + (lid/SERIAL_REDUCTION_AMOUNT)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT)
-                // offset in this block
-                + offset*SERIAL_REDUCTION_AMOUNT
-                // each group gets local_sz*size of serial block to reduce
-                + get_group_id(0)*(SERIAL_REDUCTION_AMOUNT*LOCAL_SZ)
-                // and based on local id
-                + lid%SERIAL_REDUCTION_AMOUNT
-                ;
+        int read_idx =
+            // size of serial reduction bit might be smaller than local size
+            + (lid/SERIAL_REDUCTION_AMOUNT)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT)
+            // offset in this block
+            + offset*SERIAL_REDUCTION_AMOUNT
+            // each group gets local_sz*size of serial block to reduce
+            + get_group_id(0)*(SERIAL_REDUCTION_AMOUNT*LOCAL_SZ)
+            // and based on local id
+            + lid%SERIAL_REDUCTION_AMOUNT
+            ;
 
-            if (read_idx < ELEMS_TO_REDUCE)
-            {
-                scratch[lid] = REDUCE(scratch[lid], input[read_idx]);
-            }
+        if (read_idx < ELEMS_TO_REDUCE)
+        {
+            scratch[lid] = REDUCE(scratch[lid], input[read_idx + src_offset]);
         }
     }
 

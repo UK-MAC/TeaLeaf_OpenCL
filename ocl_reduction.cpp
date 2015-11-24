@@ -20,8 +20,9 @@ void CloverChunk::initReduction
 
     int ii = 0;
 
-// amount of elements to reduce in serial in OpenCL for good coalescence
-#define SERIAL_REDUCTION_AMOUNT 16
+    // amount of elements to reduce in serial in OpenCL for good coalescence
+    // 16 or 32 is good
+    #define SERIAL_REDUCTION_AMOUNT 16
 
     // number of elements to reduce at this step
     int stage_elems_to_reduce = total_to_reduce;
@@ -67,6 +68,11 @@ void CloverChunk::initReduction
          *  NB also, 128 was preferred work group size on phi
          */
         int reduction_local_size = LOCAL_X*LOCAL_Y;
+
+        if (reduction_local_size < SERIAL_REDUCTION_AMOUNT)
+        {
+            DIE("SERIAL_REDUCTION_AMOUNT (%d) should be less than reduction_local_size (%d)", int(SERIAL_REDUCTION_AMOUNT), reduction_local_size);
+        }
 
         // if there are more elements to reduce than the standard local size
         if (reduction_global_size > reduction_local_size)
