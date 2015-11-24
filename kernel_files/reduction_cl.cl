@@ -54,18 +54,18 @@ __kernel void reduction
      *  stage of reduction reads from second half and writes back into first,
      *  etc.
      */
-    size_t dest_offset;
-    size_t src_offset;
+    int dest_offset;
+    int src_offset;
 
-    if (!(RED_STAGE % 2))
-    {
-        src_offset = ORIG_ELEMS_TO_REDUCE;
-        dest_offset = 0;
-    }
-    else
+    if (RED_STAGE % 2)
     {
         src_offset = 0;
         dest_offset = ORIG_ELEMS_TO_REDUCE;
+    }
+    else
+    {
+        src_offset = ORIG_ELEMS_TO_REDUCE;
+        dest_offset = 0;
     }
 
     /*
@@ -78,18 +78,34 @@ __kernel void reduction
      *  groups of total thread count 512, and load 2 values to reduce on load in
      *  the first 250 of these threads
      */
-    if (0&&gid < RED_LOAD_THRESHOLD)
-    // FIXME this isn't working properly for now - just load one per thread
+
+    /*
+     *  one thread launched per SERIAL_REDUCTION_AMOUNT
+     *  eg, 1024 elements, SER.. = 16, gid has to be less than 1024/16
+     *  1000 elements, 1000/16 = 62.5, so we need to launch 63, not 62
+     */
+    //if (gid < ceil((ELEMS_TO_REDUCE*1.0)/SERIAL_REDUCTION_AMOUNT))
     {
-        // TODO when this is fixed then do it in a vector for xeon phi things?
-        // load + reduce at the same time
-        scratch[lid] = REDUCE(input[src_offset + gid],
-            input[src_offset + gid + GLOBAL_SZ]);
-    }
-    else if (gid < ELEMS_TO_REDUCE)
-    {
-        // just load
-        scratch[lid] = input[src_offset + gid];
+        for (int offset = 0; offset < SERIAL_REDUCTION_AMOUNT; offset++)
+        {
+            int read_idx =
+                // either first half or back half of reduction buffer
+                src_offset
+                // size of serial reduction bit might be smaller than local size
+                + (lid/SERIAL_REDUCTION_AMOUNT)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT)
+                // offset in this block
+                + offset*SERIAL_REDUCTION_AMOUNT
+                // and some based on the group
+                + get_group_id(0)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT*LOCAL_SZ)
+                // and based on local id
+                + lid%SERIAL_REDUCTION_AMOUNT
+                ;
+
+            if (read_idx < ELEMS_TO_REDUCE)
+            {
+                scratch[lid] = REDUCE(scratch[lid], input[read_idx]);
+            }
+        }
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -107,13 +123,14 @@ __kernel void reduction
 
 #elif defined(CL_DEVICE_TYPE_CPU)
 
-    if (0 == lid)
-    {
-        for (int offset = 1; offset < LOCAL_SZ; offset++)
-        {
-            scratch[0] = REDUCE(scratch[0], scratch[offset]);
-        }
-    }
+    //if (0 == lid)
+    //{
+    //    for (int offset = 1; offset < LOCAL_SZ; offset++)
+    //    {
+    //        scratch[0] = REDUCE(scratch[0], scratch[offset]);
+    //    }
+    //}
+    scratch[lid] = work_group_reduce_add(scratch[lid]);
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
 

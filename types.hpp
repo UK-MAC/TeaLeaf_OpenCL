@@ -1,8 +1,6 @@
 #ifndef __CL_TYPE_HDR
 #define __CL_TYPE_HDR
 
-#include "CL/cl.hpp"
-
 #include <cstdio>
 #include <cstdlib>
 #include <map>
