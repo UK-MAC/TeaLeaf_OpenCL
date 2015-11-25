@@ -13,12 +13,6 @@ void CloverChunk::initProgram
     options << "-DCLOVER_NO_BUILTINS ";
 #endif
 
-    options << "-DPRECONDITIONER=" << preconditioner_type << " ";
-
-    // pass in these values so you don't have to pass them in to every kernel
-    options << "-Dx_max=" << x_max << " ";
-    options << "-Dy_max=" << y_max << " ";
-
     options << "-DJACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
 
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge

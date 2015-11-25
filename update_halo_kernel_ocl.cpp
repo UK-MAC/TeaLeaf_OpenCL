@@ -1,7 +1,7 @@
 #include "ocl_common.hpp"
 
 // types of array data
-const static cell_info_t CELL(    0, 0,  1,  1, 0, 0, CELL_DATA);
+cell_info_t CELL = {.x_extra=0, .y_extra=0, .x_invert=1, .y_invert=1, .x_face=0, .y_face=0, .grid_type=CELL_DATA};
 
 extern "C" void update_halo_kernel_ocl_
 (const int* chunk_neighbours,
@@ -23,15 +23,9 @@ int depth)
     #define CHECK_LAUNCH(face, dir) \
     if(chunk_neighbours[CHUNK_ ## face - 1] == EXTERNAL_FACE)\
     {\
-        update_halo_##face##_device.setArg(0, array_type.x_extra); \
-        update_halo_##face##_device.setArg(1, array_type.y_extra); \
-        update_halo_##face##_device.setArg(2, array_type.x_invert); \
-        update_halo_##face##_device.setArg(3, array_type.y_invert); \
-        update_halo_##face##_device.setArg(4, array_type.x_face); \
-        update_halo_##face##_device.setArg(5, array_type.y_face); \
-        update_halo_##face##_device.setArg(6, array_type.grid_type); \
-        update_halo_##face##_device.setArg(7, depth); \
-        update_halo_##face##_device.setArg(8, cur_array); \
+        update_halo_##face##_device.setArg(1, array_type); \
+        update_halo_##face##_device.setArg(2, cur_array); \
+        update_halo_##face##_device.setArg(3, depth); \
         enqueueKernel(update_halo_##face##_device, \
                       __LINE__, __FILE__,  \
                       update_##dir##_offset[depth], \

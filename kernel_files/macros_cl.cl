@@ -3,6 +3,35 @@
 // preconditioners
 #include "definitions.hpp"
 
+typedef struct cell_info_struct {
+    int x_extra;
+    int y_extra;
+    int x_invert;
+    int y_invert;
+    int x_face;
+    int y_face;
+    int grid_type;
+} cell_info_t;
+
+typedef struct kernel_info_struct {
+    int x_min;
+    int x_max;
+    int y_min;
+    int y_max;
+    int halo_depth;
+    int preconditioner_type;
+    int x_offset;
+    int y_offset;
+
+    int kernel_x_min;
+    int kernel_x_max;
+    int kernel_y_min;
+    int kernel_y_max;
+} kernel_info_t;
+
+// So these can be hopefully used alongside the CUDA versions too
+#define __GLOBAL__ __global
+
 #if defined(BLOCK_TOP_CHECK)
     #define BLOCK_TOP (MIN(((int)y_max + 2 - (int)row),(int)JACOBI_BLOCK_SIZE))
 #else
@@ -10,6 +39,11 @@
 #endif
 
 #define __kernel_indexes                            \
+    const int x_min = kernel_info.x_min; \
+    const int x_max = kernel_info.x_max; \
+    const int y_min = kernel_info.y_min; \
+    const int y_max = kernel_info.y_max; \
+    const int PRECONDITIONER = kernel_info.preconditioner_type; \
     const int column = get_global_id(0);			\
     const int row = get_global_id(1);				\
     const int loc_column = get_local_id(0);			\

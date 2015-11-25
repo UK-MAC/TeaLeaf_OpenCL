@@ -7,36 +7,38 @@
 #include <cstdlib>
 #include <map>
 
-typedef struct cell_info {
-    const int x_extra;
-    const int y_extra;
-    const int x_invert;
-    const int y_invert;
-    const int x_face;
-    const int y_face;
-    const int grid_type;
-
-    cell_info
-    (int in_x_extra, int in_y_extra,
-    int in_x_invert, int in_y_invert,
-    int in_x_face, int in_y_face,
-    int in_grid_type)
-    :x_extra(in_x_extra), y_extra(in_y_extra),
-    x_invert(in_x_invert), y_invert(in_y_invert),
-    x_face(in_x_face), y_face(in_y_face),
-    grid_type(in_grid_type)
-    {
-        ;
-    }
-
+typedef struct cell_info_struct {
+    cl_int x_extra;
+    cl_int y_extra;
+    cl_int x_invert;
+    cl_int y_invert;
+    cl_int x_face;
+    cl_int y_face;
+    cl_int grid_type;
 } cell_info_t;
 
+typedef struct kernel_info_struct {
+    cl_int x_min;
+    cl_int x_max;
+    cl_int y_min;
+    cl_int y_max;
+    cl_int halo_depth;
+    cl_int preconditioner_type;
+    cl_int x_offset;
+    cl_int y_offset;
+
+    cl_int kernel_x_min;
+    cl_int kernel_x_max;
+    cl_int kernel_y_min;
+    cl_int kernel_y_max;
+} kernel_info_t;
+
 // reductions
-typedef struct red_t {
+struct reduce_kernel_info_t {
     cl::Kernel kernel;
     cl::NDRange global_size;
     cl::NDRange local_size;
-} reduce_kernel_info_t;
+};
 
 // vectors of kernels and work group sizes for a specific reduction
 typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
