@@ -110,14 +110,15 @@ __kernel void reduction
 
 #elif defined(CL_DEVICE_TYPE_CPU)
 
-    //if (0 == lid)
-    //{
-    //    for (int offset = 1; offset < LOCAL_SZ; offset++)
-    //    {
-    //        scratch[0] = REDUCE(scratch[0], scratch[offset]);
-    //    }
-    //}
-    scratch[lid] = work_group_reduce_add(scratch[lid]);
+    if (0 == lid)
+    {
+        for (int offset = 1; offset < LOCAL_SZ; offset++)
+        {
+            scratch[0] = REDUCE(scratch[0], scratch[offset]);
+        }
+    }
+    // This is faster on Intel CPUs at least, but not supported everywhere
+    //scratch[lid] = work_group_reduce_add(scratch[lid]);
 
 #elif defined(CL_DEVICE_TYPE_ACCELERATOR)
 
