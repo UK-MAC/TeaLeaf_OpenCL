@@ -16,26 +16,21 @@ void CloverChunk::initReduction
     const int total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
 
     fprintf(DBGOUT, "Total cells to reduce = %d\n", reduced_cells);
-    int reduction_global_size = total_to_reduce;
-    fprintf(DBGOUT, "Reduction within work group reduces to = %d\n", reduction_global_size);
-
-    // each thread can load 2 values to reduce at once
-    //reduction_global_size /= 2;
-    //fprintf(DBGOUT, "Loading two values per thread reduces to = %d\n", reduction_global_size);
+    fprintf(DBGOUT, "Reduction within work group reduces to = %d\n", total_to_reduce);
 
     int ii = 0;
 
+    // amount of elements to reduce in serial in OpenCL for good coalescence
+    // 16 or 32 is good
+    #define SERIAL_REDUCTION_AMOUNT 16
+
+    // number of elements to reduce at this step
+    int stage_elems_to_reduce = total_to_reduce;
+
     while (++ii)
     {
-        /*
-         *  TODO
-         *
-         *  one set of reduction kernels for big rows, one for small rows
-         */
-
         // different kernels for different types and operations
-        cl::Kernel sum_double, min_double, max_double;
-        cl::Kernel max_int;
+        cl::Kernel sum_double;
 
         // make options again
         std::stringstream options("");
@@ -54,11 +49,16 @@ void CloverChunk::initReduction
         options << "-w ";
 
         // the actual number of elements that needs to be reduced in this stage
-        const int stage_elems_to_reduce = reduction_global_size;
         options << "-D ELEMS_TO_REDUCE=" << stage_elems_to_reduce << " ";
+
+        options << "-D SERIAL_REDUCTION_AMOUNT=" << SERIAL_REDUCTION_AMOUNT << " ";
+
+        // global size at this step
+        int reduction_global_size = std::max(SERIAL_REDUCTION_AMOUNT, int(std::ceil(stage_elems_to_reduce/SERIAL_REDUCTION_AMOUNT)));
 
         fprintf(DBGOUT, "\n\nStage %d:\n", ii);
         fprintf(DBGOUT, "%d elements remaining to reduce\n", stage_elems_to_reduce);
+        fprintf(DBGOUT, "Global size %d\n", reduction_global_size);
 
         /*
          *  To get the local size to use at this stage, figure out the largest
@@ -68,6 +68,11 @@ void CloverChunk::initReduction
          *  NB also, 128 was preferred work group size on phi
          */
         int reduction_local_size = LOCAL_X*LOCAL_Y;
+
+        if (reduction_local_size < SERIAL_REDUCTION_AMOUNT)
+        {
+            DIE("SERIAL_REDUCTION_AMOUNT (%d) should be less than reduction_local_size (%d)", int(SERIAL_REDUCTION_AMOUNT), reduction_local_size);
+        }
 
         // if there are more elements to reduce than the standard local size
         if (reduction_global_size > reduction_local_size)
@@ -90,7 +95,6 @@ void CloverChunk::initReduction
             {
                 reduction_global_size++;
             }
-            //reduction_global_size /= 2;
         }
         else
         {
@@ -116,14 +120,6 @@ void CloverChunk::initReduction
         options << "-D GLOBAL_SZ=" << reduction_global_size << " ";
         options << "-D LOCAL_SZ=" << reduction_local_size << " ";
 
-        // FIXME not working properly - just load one per thread for now
-        #if 0
-        // threshold for a thread loading 2 values
-        int red_load_threshold = stage_elems_to_reduce/2;
-        options << "-DRED_LOAD_THRESHOLD=" << red_load_threshold << " ";
-        fprintf(DBGOUT, "Load threshold is %d\n", red_load_threshold);
-        #endif
-        options << "-D RED_LOAD_THRESHOLD=" << 0 << " ";
         options << "-I. ";
 
         fprintf(DBGOUT, "\n");
@@ -161,15 +157,12 @@ void CloverChunk::initReduction
         }
 
         MAKE_REDUCE_KNL(sum, double, 0.0);
-        MAKE_REDUCE_KNL(max, double, 0.0);
-        MAKE_REDUCE_KNL(min, double, DBL_MAX);
-        MAKE_REDUCE_KNL(max, int, 0);
 
-        fprintf(DBGOUT, "%d/", reduction_global_size);
-        reduction_global_size /= reduction_local_size;
-        fprintf(DBGOUT, "%d = %d remaining\n", reduction_local_size, reduction_global_size);
+        fprintf(DBGOUT, "%d/%d", stage_elems_to_reduce, (SERIAL_REDUCTION_AMOUNT*reduction_local_size));
+        stage_elems_to_reduce = std::ceil((1.0*stage_elems_to_reduce)/(SERIAL_REDUCTION_AMOUNT*reduction_local_size));
+        fprintf(DBGOUT, " = %d remaining\n", stage_elems_to_reduce);
 
-        if (reduction_global_size <= 1)
+        if (stage_elems_to_reduce <= 1)
         {
             break;
         }
