@@ -1,21 +1,22 @@
 #include <kernel_files/macros_cl.cl>
 
 __kernel void generate_chunk
-(__global const double * __restrict const vertexx,
- __global const double * __restrict const vertexy,
- __global const double * __restrict const cellx,
- __global const double * __restrict const celly,
- __global       double * __restrict const density0,
- __global       double * __restrict const energy0,
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const vertexx,
+ __GLOBAL__ const double * __restrict const vertexy,
+ __GLOBAL__ const double * __restrict const cellx,
+ __GLOBAL__ const double * __restrict const celly,
+ __GLOBAL__       double * __restrict const density,
+ __GLOBAL__       double * __restrict const energy0,
 
- __global const double * __restrict const state_density,
- __global const double * __restrict const state_energy,
- __global const double * __restrict const state_xmin,
- __global const double * __restrict const state_xmax,
- __global const double * __restrict const state_ymin,
- __global const double * __restrict const state_ymax,
- __global const double * __restrict const state_radius,
- __global const int    * __restrict const state_geometry,
+ __GLOBAL__ const double * __restrict const state_density,
+ __GLOBAL__ const double * __restrict const state_energy,
+ __GLOBAL__ const double * __restrict const state_xmin,
+ __GLOBAL__ const double * __restrict const state_xmax,
+ __GLOBAL__ const double * __restrict const state_ymin,
+ __GLOBAL__ const double * __restrict const state_ymax,
+ __GLOBAL__ const double * __restrict const state_radius,
+ __GLOBAL__ const int    * __restrict const state_geometry,
 
  const int g_rect,
  const int g_circ,
@@ -38,7 +39,7 @@ __kernel void generate_chunk
             && vertexy[row]    <  state_ymax[state])
             {
                 energy0[THARR2D(0, 0, 0)] = state_energy[state];
-                density0[THARR2D(0, 0, 0)] = state_density[state];
+                density[THARR2D(0, 0, 0)] = state_density[state];
             }
         }
         else if (state_geometry[state] == g_circ)
@@ -50,7 +51,7 @@ __kernel void generate_chunk
             if (radius <= state_radius[state])
             {
                 energy0[THARR2D(0, 0, 0)] = state_energy[state];
-                density0[THARR2D(0, 0, 0)] = state_density[state];
+                density[THARR2D(0, 0, 0)] = state_density[state];
             }
         }
         else if (state_geometry[state] == g_point)
@@ -58,17 +59,18 @@ __kernel void generate_chunk
             if (vertexx[column] == x_cent && vertexy[row] == y_cent)
             {
                 energy0[THARR2D(0, 0, 0)] = state_energy[state];
-                density0[THARR2D(0, 0, 0)] = state_density[state];
+                density[THARR2D(0, 0, 0)] = state_density[state];
             }
         }
     }
 }
 
 __kernel void generate_chunk_init_u
-(__global const double * density,
- __global const double * energy,
- __global       double * u,
- __global       double * u0)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * density,
+ __GLOBAL__ const double * energy,
+ __GLOBAL__       double * u,
+ __GLOBAL__       double * u0)
 {
     __kernel_indexes;
 
@@ -80,17 +82,18 @@ __kernel void generate_chunk_init_u
 }
 
 __kernel void generate_chunk_init
-(__global       double * density0,
- __global       double * energy0,
- __global const double * state_density,
- __global const double * state_energy)
+(kernel_info_t kernel_info,
+ __GLOBAL__       double * density,
+ __GLOBAL__       double * energy0,
+ __GLOBAL__ const double * state_density,
+ __GLOBAL__ const double * state_energy)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
         energy0[THARR2D(0, 0, 0)] = state_energy[0];
-        density0[THARR2D(0, 0, 0)] = state_density[0];
+        density[THARR2D(0, 0, 0)] = state_density[0];
     }
 }
 
