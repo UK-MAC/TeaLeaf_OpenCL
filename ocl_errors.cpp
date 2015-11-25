@@ -222,7 +222,7 @@ void CloverChunk::print_profiling_info
             MPI_Reduce(&ii->second, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
             MPI_Reduce(&jj->second, &total_calls, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-            if (!rank)
+            if (!rank && total_calls)
             {
                 fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
                     ii->first.c_str(), total_time, 1e3*total_time/total_calls, total_calls);
