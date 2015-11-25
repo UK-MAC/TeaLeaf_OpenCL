@@ -70,6 +70,13 @@ __kernel void reduction
 
     for (int offset = 0; offset < SERIAL_REDUCTION_AMOUNT; offset++)
     {
+#if defined(CL_DEVICE_TYPE_CPU)
+        int read_idx =
+            // just do it in serial
+            gid*SERIAL_REDUCTION_AMOUNT
+            + offset
+            ;
+#else
         int read_idx =
             // size of serial reduction bit might be smaller than local size
             + (lid/SERIAL_REDUCTION_AMOUNT)*(SERIAL_REDUCTION_AMOUNT*SERIAL_REDUCTION_AMOUNT)
@@ -80,7 +87,7 @@ __kernel void reduction
             // and based on local id
             + lid%SERIAL_REDUCTION_AMOUNT
             ;
-
+#endif
         if (read_idx < ELEMS_TO_REDUCE)
         {
             scratch[lid] = REDUCE(scratch[lid], input[read_idx + src_offset]);
