@@ -4,12 +4,13 @@
 #define COEF_C (-Ky[THARR2D(0,k+ 1, 0)])
 
 void block_solve_func
-(__local const double r_local[BLOCK_SZ],
- __local       double z_local[BLOCK_SZ],
- __global const double * __restrict const cp,
- __global const double * __restrict const bfp,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
+(kernel_info_t kernel_info,
+ __SHARED__ const double r_local[BLOCK_SZ],
+ __SHARED__       double z_local[BLOCK_SZ],
+ __GLOBAL__ const double * __restrict const cp,
+ __GLOBAL__ const double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
 {
     const size_t column = get_global_id(0);
     const size_t row = get_global_id(1);
@@ -18,6 +19,9 @@ void block_solve_func
     const size_t loc_row_size = LOCAL_X;
 
     const size_t upper_limit = BLOCK_TOP;
+
+    const int x_max = kernel_info.x_max;
+    const int y_max = kernel_info.y_max;
 
     int k = 0;
 #define LOC_K (loc_column + k*loc_row_size)
@@ -42,17 +46,18 @@ void block_solve_func
 }
 
 __kernel void tea_leaf_block_solve
-(__global const double * __restrict const r,
- __global       double * __restrict const z,
- __global const double * __restrict const cp,
- __global const double * __restrict const bfp,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const r,
+ __GLOBAL__       double * __restrict const z,
+ __GLOBAL__ const double * __restrict const cp,
+ __GLOBAL__ const double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
 {
     __kernel_indexes;
 
-    __local double r_l[BLOCK_SZ];
-    __local double z_l[BLOCK_SZ];
+    __SHARED__ double r_l[BLOCK_SZ];
+    __SHARED__ double z_l[BLOCK_SZ];
 
     r_l[lid] = 0;
     z_l[lid] = 0;
@@ -65,7 +70,7 @@ __kernel void tea_leaf_block_solve
     barrier(CLK_LOCAL_MEM_FENCE);
     if (loc_row == 0)
     {
-        block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+        block_solve_func(kernel_info,r_l, z_l, cp, bfp, Kx, Ky);
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -76,12 +81,13 @@ __kernel void tea_leaf_block_solve
 }
 
 __kernel void tea_leaf_block_init
-(__global const double * __restrict const r,
- __global const double * __restrict const z,
- __global       double * __restrict const cp,
- __global       double * __restrict const bfp,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const r,
+ __GLOBAL__ const double * __restrict const z,
+ __GLOBAL__       double * __restrict const cp,
+ __GLOBAL__       double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
 {
     __kernel_indexes;
 

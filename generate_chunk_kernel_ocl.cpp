@@ -59,34 +59,34 @@ const int g_rect, const int g_circ, const int g_point)
 
     #undef TEMP_ALLOC
 
-    generate_chunk_init_device.setArg(2, tmp_state_density);
-    generate_chunk_init_device.setArg(3, tmp_state_energy);
+    generate_chunk_init_device.setArg(3, tmp_state_density);
+    generate_chunk_init_device.setArg(4, tmp_state_energy);
 
     //ENQUEUE(generate_chunk_init_device);
     ENQUEUE_OFFSET(generate_chunk_init_device);
 
-    generate_chunk_device.setArg(6, tmp_state_density);
-    generate_chunk_device.setArg(7, tmp_state_energy);
-    generate_chunk_device.setArg(8, tmp_state_xmin);
-    generate_chunk_device.setArg(9, tmp_state_xmax);
-    generate_chunk_device.setArg(10, tmp_state_ymin);
-    generate_chunk_device.setArg(11, tmp_state_ymax);
-    generate_chunk_device.setArg(12, tmp_state_radius);
-    generate_chunk_device.setArg(13, tmp_state_geometry);
+    generate_chunk_device.setArg(7, tmp_state_density);
+    generate_chunk_device.setArg(8, tmp_state_energy);
+    generate_chunk_device.setArg(9, tmp_state_xmin);
+    generate_chunk_device.setArg(10, tmp_state_xmax);
+    generate_chunk_device.setArg(11, tmp_state_ymin);
+    generate_chunk_device.setArg(12, tmp_state_ymax);
+    generate_chunk_device.setArg(13, tmp_state_radius);
+    generate_chunk_device.setArg(14, tmp_state_geometry);
 
-    generate_chunk_device.setArg(14, g_rect);
-    generate_chunk_device.setArg(15, g_circ);
-    generate_chunk_device.setArg(16, g_point);
+    generate_chunk_device.setArg(15, g_rect);
+    generate_chunk_device.setArg(16, g_circ);
+    generate_chunk_device.setArg(17, g_point);
 
     for (int state = 1; state < number_of_states; state++)
     {
-        generate_chunk_device.setArg(17, state);
+        generate_chunk_device.setArg(18, state);
 
         //ENQUEUE(generate_chunk_device);
         ENQUEUE_OFFSET(generate_chunk_device);
     }
 
-    generate_chunk_init_u_device.setArg(1, energy0);
+    generate_chunk_init_u_device.setArg(2, energy0);
     ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 

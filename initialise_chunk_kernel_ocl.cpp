@@ -11,16 +11,16 @@ void CloverChunk::initialise_chunk_kernel
 {
     // cover whole lengith/width of grid
     launch_specs.at("initialise_chunk_first_device").offset = cl::NullRange;
-    initialise_chunk_first_device.setArg(0, d_xmin);
-    initialise_chunk_first_device.setArg(1, d_ymin);
-    initialise_chunk_first_device.setArg(2, d_dx);
-    initialise_chunk_first_device.setArg(3, d_dy);
+    initialise_chunk_first_device.setArg(1, d_xmin);
+    initialise_chunk_first_device.setArg(2, d_ymin);
+    initialise_chunk_first_device.setArg(3, d_dx);
+    initialise_chunk_first_device.setArg(4, d_dy);
     ENQUEUE_OFFSET(initialise_chunk_first_device)
 
-    initialise_chunk_second_device.setArg(0, d_xmin);
-    initialise_chunk_second_device.setArg(1, d_ymin);
-    initialise_chunk_second_device.setArg(2, d_dx);
-    initialise_chunk_second_device.setArg(3, d_dy);
+    initialise_chunk_second_device.setArg(1, d_xmin);
+    initialise_chunk_second_device.setArg(2, d_ymin);
+    initialise_chunk_second_device.setArg(3, d_dx);
+    initialise_chunk_second_device.setArg(4, d_dy);
     ENQUEUE_OFFSET(initialise_chunk_second_device)
 
     queue.finish();

@@ -1,8 +1,9 @@
 #include <kernel_files/macros_cl.cl>
 
 __kernel void tea_leaf_jacobi_copy_u
-(__global const double * __restrict const u1,
- __global       double * __restrict const un)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const u1,
+ __GLOBAL__       double * __restrict const un)
 {
     __kernel_indexes;
 
@@ -13,16 +14,17 @@ __kernel void tea_leaf_jacobi_copy_u
 }
 
 __kernel void tea_leaf_jacobi_solve
-(__global const double * __restrict const Kx,
- __global const double * __restrict const Ky,
- __global const double * __restrict const u0,
- __global       double * __restrict const u1,
- __global const double * __restrict const un,
- __global       double * __restrict const error)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky,
+ __GLOBAL__ const double * __restrict const u0,
+ __GLOBAL__       double * __restrict const u1,
+ __GLOBAL__ const double * __restrict const un,
+ __GLOBAL__       double * __restrict const error)
 {
     __kernel_indexes;
 
-    __local double error_local[BLOCK_SZ];
+    __SHARED__ double error_local[BLOCK_SZ];
     error_local[lid] = 0;
 
     if (WITHIN_BOUNDS)

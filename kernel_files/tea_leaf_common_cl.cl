@@ -2,9 +2,10 @@
 #include <kernel_files/tea_block_jacobi.cl>
 
 __kernel void tea_leaf_finalise
-(__global const double * __restrict const density,
- __global const double * __restrict const u1,
- __global       double * __restrict const energy)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const density,
+ __GLOBAL__ const double * __restrict const u1,
+ __GLOBAL__       double * __restrict const energy)
 {
     __kernel_indexes;
 
@@ -15,11 +16,12 @@ __kernel void tea_leaf_finalise
 }
 
 __kernel void tea_leaf_calc_residual
-(__global const double * __restrict const u,
- __global const double * __restrict const u0,
- __global       double * __restrict const r,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const u,
+ __GLOBAL__ const double * __restrict const u0,
+ __GLOBAL__       double * __restrict const r,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
 {
     __kernel_indexes;
 
@@ -36,13 +38,14 @@ __kernel void tea_leaf_calc_residual
 }
 
 __kernel void tea_leaf_calc_2norm
-(__global const double * const r1,
- __global const double * const r2,
- __global       double * __restrict const rro)
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * const r1,
+ __GLOBAL__ const double * const r2,
+ __GLOBAL__       double * __restrict const rro)
 {
     __kernel_indexes;
 
-    __local double rro_shared[BLOCK_SZ];
+    __SHARED__ double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
@@ -54,12 +57,13 @@ __kernel void tea_leaf_calc_2norm
 }
 
 __kernel void tea_leaf_init_common
-(__global const double * __restrict const density,
- __global const double * __restrict const energy,
- __global       double * __restrict const Kx,
- __global       double * __restrict const Ky,
- __global       double * __restrict const u0,
- __global       double * __restrict const u,
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const density,
+ __GLOBAL__ const double * __restrict const energy,
+ __GLOBAL__       double * __restrict const Kx,
+ __GLOBAL__       double * __restrict const Ky,
+ __GLOBAL__       double * __restrict const u0,
+ __GLOBAL__       double * __restrict const u,
  double rx, double ry,
  const int coef)
 {
@@ -90,8 +94,9 @@ __kernel void tea_leaf_init_common
 }
 
 __kernel void tea_leaf_zero_boundary
-(__global double * __restrict const Kx,
- __global double * __restrict const Ky,
+(kernel_info_t kernel_info,
+ __GLOBAL__ double * __restrict const Kx,
+ __GLOBAL__ double * __restrict const Ky,
  int zero_left, int zero_right, int zero_bottom, int zero_top)
 {
     __kernel_indexes;
@@ -125,9 +130,10 @@ __kernel void tea_leaf_zero_boundary
 }
 
 __kernel void tea_leaf_init_jac_diag
-(__global       double * __restrict const Mi,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky)
+(kernel_info_t kernel_info,
+ __GLOBAL__       double * __restrict const Mi,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
 {
     __kernel_indexes;
 

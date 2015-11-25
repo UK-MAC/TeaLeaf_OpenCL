@@ -2,16 +2,17 @@
 #include <kernel_files/tea_block_jacobi.cl>
 
 __kernel void tea_leaf_cheby_solve_init_p
-(__global const double * __restrict const u,
- __global const double * __restrict const u0,
- __global       double * __restrict const p,
- __global       double * __restrict const r,
- __global       double * __restrict const w,
- __global const double * __restrict const cp,
- __global const double * __restrict const bfp,
- __global const double * __restrict const Mi,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky,
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const u,
+ __GLOBAL__ const double * __restrict const u0,
+ __GLOBAL__       double * __restrict const p,
+ __GLOBAL__       double * __restrict const r,
+ __GLOBAL__       double * __restrict const w,
+ __GLOBAL__ const double * __restrict const cp,
+ __GLOBAL__ const double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Mi,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky,
  double theta, double rx, double ry)
 {
     __kernel_indexes;
@@ -29,8 +30,8 @@ __kernel void tea_leaf_cheby_solve_init_p
 
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
+        __SHARED__ double r_l[BLOCK_SZ];
+        __SHARED__ double z_l[BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;
@@ -43,7 +44,7 @@ __kernel void tea_leaf_cheby_solve_init_p
         barrier(CLK_LOCAL_MEM_FENCE);
         if (loc_row == 0)
         {
-            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info,r_l, z_l, cp, bfp, Kx, Ky);
         }
         barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -66,8 +67,9 @@ __kernel void tea_leaf_cheby_solve_init_p
 }
 
 __kernel void tea_leaf_cheby_solve_calc_u
-(__global       double * __restrict const u,
- __global const double * __restrict const p)
+(kernel_info_t kernel_info,
+ __GLOBAL__       double * __restrict const u,
+ __GLOBAL__ const double * __restrict const p)
 {
     __kernel_indexes;
 
@@ -78,16 +80,17 @@ __kernel void tea_leaf_cheby_solve_calc_u
 }
 
 __kernel void tea_leaf_cheby_solve_calc_p
-(__global const double * __restrict const u,
- __global const double * __restrict const u0,
- __global       double * __restrict const p,
- __global       double * __restrict const r,
- __global       double * __restrict const w,
- __global const double * __restrict const cp,
- __global const double * __restrict const bfp,
- __global const double * __restrict const Mi,
- __global const double * __restrict const Kx,
- __global const double * __restrict const Ky,
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const u,
+ __GLOBAL__ const double * __restrict const u0,
+ __GLOBAL__       double * __restrict const p,
+ __GLOBAL__       double * __restrict const r,
+ __GLOBAL__       double * __restrict const w,
+ __GLOBAL__ const double * __restrict const cp,
+ __GLOBAL__ const double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Mi,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky,
  __constant const double * __restrict const alpha,
  __constant const double * __restrict const beta,
  double rx, double ry, int step)
@@ -107,8 +110,8 @@ __kernel void tea_leaf_cheby_solve_calc_p
 
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
+        __SHARED__ double r_l[BLOCK_SZ];
+        __SHARED__ double z_l[BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;
@@ -121,7 +124,7 @@ __kernel void tea_leaf_cheby_solve_calc_p
         barrier(CLK_LOCAL_MEM_FENCE);
         if (loc_row == 0)
         {
-            block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info,r_l, z_l, cp, bfp, Kx, Ky);
         }
         barrier(CLK_LOCAL_MEM_FENCE);
 

@@ -59,31 +59,31 @@ void CloverChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        tea_leaf_calc_2norm_device.setArg(0, u0);
         tea_leaf_calc_2norm_device.setArg(1, u0);
+        tea_leaf_calc_2norm_device.setArg(2, u0);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        tea_leaf_calc_2norm_device.setArg(0, vector_r);
         tea_leaf_calc_2norm_device.setArg(1, vector_r);
+        tea_leaf_calc_2norm_device.setArg(2, vector_r);
     }
     else if (norm_array == 2)
     {
         // ddot(z, r)
-        tea_leaf_calc_2norm_device.setArg(0, vector_r);
+        tea_leaf_calc_2norm_device.setArg(1, vector_r);
 
         if (preconditioner_type == TL_PREC_JAC_BLOCK)
         {
-            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+            tea_leaf_calc_2norm_device.setArg(2, vector_z);
         }
         else if (preconditioner_type == TL_PREC_JAC_DIAG)
         {
-            tea_leaf_calc_2norm_device.setArg(1, vector_z);
+            tea_leaf_calc_2norm_device.setArg(2, vector_z);
         }
         else if (preconditioner_type == TL_PREC_NONE)
         {
-            tea_leaf_calc_2norm_device.setArg(1, vector_r);
+            tea_leaf_calc_2norm_device.setArg(2, vector_r);
         }
     }
     else
@@ -114,14 +114,14 @@ void CloverChunk::tea_leaf_cheby_init_kernel
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
 
-    tea_leaf_cheby_solve_init_p_device.setArg(10, theta);
-    tea_leaf_cheby_solve_init_p_device.setArg(11, rx);
-    tea_leaf_cheby_solve_init_p_device.setArg(12, ry);
+    tea_leaf_cheby_solve_init_p_device.setArg(11, theta);
+    tea_leaf_cheby_solve_init_p_device.setArg(12, rx);
+    tea_leaf_cheby_solve_init_p_device.setArg(13, ry);
 
-    tea_leaf_cheby_solve_calc_p_device.setArg(10, ch_alphas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(11, ch_betas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(12, rx);
-    tea_leaf_cheby_solve_calc_p_device.setArg(13, ry);
+    tea_leaf_cheby_solve_calc_p_device.setArg(11, ch_alphas_device);
+    tea_leaf_cheby_solve_calc_p_device.setArg(12, ch_betas_device);
+    tea_leaf_cheby_solve_calc_p_device.setArg(13, rx);
+    tea_leaf_cheby_solve_calc_p_device.setArg(14, ry);
 
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_init_p_device);
 
@@ -131,7 +131,7 @@ void CloverChunk::tea_leaf_cheby_init_kernel
 void CloverChunk::tea_leaf_cheby_iterate_kernel
 (const int cheby_calc_step)
 {
-    tea_leaf_cheby_solve_calc_p_device.setArg(14, cheby_calc_step-1);
+    tea_leaf_cheby_solve_calc_p_device.setArg(15, cheby_calc_step-1);
 
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
@@ -196,7 +196,7 @@ void CloverChunk::tea_leaf_cg_calc_w_kernel
 void CloverChunk::tea_leaf_cg_calc_ur_kernel
 (double alpha, double* rrn)
 {
-    tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
+    tea_leaf_cg_solve_calc_ur_device.setArg(1, alpha);
 
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
 
@@ -206,7 +206,7 @@ void CloverChunk::tea_leaf_cg_calc_ur_kernel
 void CloverChunk::tea_leaf_cg_calc_p_kernel
 (double beta)
 {
-    tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
+    tea_leaf_cg_solve_calc_p_device.setArg(1, beta);
 
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
 }
@@ -262,9 +262,9 @@ void CloverChunk::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
-    tea_leaf_init_common_device.setArg(6, *rx);
-    tea_leaf_init_common_device.setArg(7, *ry);
-    tea_leaf_init_common_device.setArg(8, coefficient);
+    tea_leaf_init_common_device.setArg(7, *rx);
+    tea_leaf_init_common_device.setArg(8, *ry);
+    tea_leaf_init_common_device.setArg(9, coefficient);
     ENQUEUE_OFFSET(tea_leaf_init_common_device);
 
     if (!reflective_boundary)
@@ -274,17 +274,17 @@ void CloverChunk::tea_leaf_common_init
         int zero_bottom = zero_boundary[2];
         int zero_top = zero_boundary[3];
 
-        tea_leaf_zero_boundary_device.setArg(0, vector_Kx);
-        tea_leaf_zero_boundary_device.setArg(1, vector_Ky);
-        tea_leaf_zero_boundary_device.setArg(2, zero_left);
-        tea_leaf_zero_boundary_device.setArg(3, zero_right);
-        tea_leaf_zero_boundary_device.setArg(4, zero_bottom);
-        tea_leaf_zero_boundary_device.setArg(5, zero_top);
+        tea_leaf_zero_boundary_device.setArg(1, vector_Kx);
+        tea_leaf_zero_boundary_device.setArg(2, vector_Ky);
+        tea_leaf_zero_boundary_device.setArg(3, zero_left);
+        tea_leaf_zero_boundary_device.setArg(4, zero_right);
+        tea_leaf_zero_boundary_device.setArg(5, zero_bottom);
+        tea_leaf_zero_boundary_device.setArg(6, zero_top);
 
         ENQUEUE_OFFSET(tea_leaf_zero_boundary_device);
     }
 
-    generate_chunk_init_u_device.setArg(1, energy1);
+    generate_chunk_init_u_device.setArg(2, energy1);
     ENQUEUE_OFFSET(generate_chunk_init_u_device);
 }
 
@@ -328,7 +328,7 @@ void CloverChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
-    tea_leaf_ppcg_solve_init_sd_device.setArg(10, theta);
+    tea_leaf_ppcg_solve_init_sd_device.setArg(11, theta);
 
     // never going to do more than n_inner_steps steps? XXX
     size_t ch_buf_sz = n_inner_steps*sizeof(double);
@@ -339,8 +339,8 @@ void CloverChunk::ppcg_init
     ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
     queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(8, ch_alphas_device);
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(9, ch_betas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(9, ch_alphas_device);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(10, ch_betas_device);
 }
 
 void CloverChunk::ppcg_init_sd_kernel
@@ -389,10 +389,10 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
     step_global_size[1] -= step_global_size[1] % local_group_size[1];
     step_global_size[1] += local_group_size[1];
 
-    tea_leaf_ppcg_solve_update_r_device.setArg(5, bounds_extra_x);
-    tea_leaf_ppcg_solve_update_r_device.setArg(6, bounds_extra_y);
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(11, bounds_extra_x);
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(12, bounds_extra_y);
+    tea_leaf_ppcg_solve_update_r_device.setArg(6, bounds_extra_x);
+    tea_leaf_ppcg_solve_update_r_device.setArg(7, bounds_extra_y);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(12, bounds_extra_x);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(13, bounds_extra_y);
 
     cl::NDRange step_offset_range(step_offset[0], step_offset[1]);
     cl::NDRange step_global_size_range(step_global_size[0], step_global_size[1]);
@@ -402,7 +402,7 @@ void CloverChunk::tea_leaf_ppcg_inner_kernel
                   step_global_size_range,
                   local_group_size);
 
-    tea_leaf_ppcg_solve_calc_sd_device.setArg(10, inner_step - 1);
+    tea_leaf_ppcg_solve_calc_sd_device.setArg(11, inner_step - 1);
 
     enqueueKernel(tea_leaf_ppcg_solve_calc_sd_device, __LINE__, __FILE__,
                   step_offset_range,
