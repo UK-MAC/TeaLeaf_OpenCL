@@ -68,7 +68,7 @@ __kernel void reduction
         dest_offset = 0;
     }
 
-    #pragma unroll(4)
+    #pragma unroll 4
     for (int offset = 0; offset < SERIAL_REDUCTION_AMOUNT; offset++)
     {
 #if defined(CL_DEVICE_TYPE_CPU)
