@@ -1,22 +1,23 @@
 #include <kernel_files/macros_cl.cl>
 
 __kernel void field_summary
-(__global const double * __restrict const volume,
- __global const double * __restrict const density,
- __global const double * __restrict const energy0,
- __global const double * __restrict const u,
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const volume,
+ __GLOBAL__ const double * __restrict const density,
+ __GLOBAL__ const double * __restrict const energy0,
+ __GLOBAL__ const double * __restrict const u,
 
- __global       double * __restrict const vol,
- __global       double * __restrict const mass,
- __global       double * __restrict const ie,
- __global       double * __restrict const temp)
+ __GLOBAL__       double * __restrict const vol,
+ __GLOBAL__       double * __restrict const mass,
+ __GLOBAL__       double * __restrict const ie,
+ __GLOBAL__       double * __restrict const temp)
 {
     __kernel_indexes;
 
-    __local double vol_shared[BLOCK_SZ];
-    __local double mass_shared[BLOCK_SZ];
-    __local double ie_shared[BLOCK_SZ];
-    __local double temp_shared[BLOCK_SZ];
+    __SHARED__ double vol_shared[BLOCK_SZ];
+    __SHARED__ double mass_shared[BLOCK_SZ];
+    __SHARED__ double ie_shared[BLOCK_SZ];
+    __SHARED__ double temp_shared[BLOCK_SZ];
 
     if (WITHIN_BOUNDS)
     {

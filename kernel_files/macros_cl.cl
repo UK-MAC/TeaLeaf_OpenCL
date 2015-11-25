@@ -31,6 +31,7 @@ typedef struct kernel_info_struct {
 
 // So these can be hopefully used alongside the CUDA versions too
 #define __GLOBAL__ __global
+#define __SHARED__ __local
 
 #if defined(BLOCK_TOP_CHECK)
     #define BLOCK_TOP (MIN(((int)y_max + 2 - (int)row),(int)JACOBI_BLOCK_SIZE))
