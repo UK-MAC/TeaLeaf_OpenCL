@@ -379,7 +379,7 @@ public:
 
     const char* what() const throw() {return this->_what.c_str();}
 
-    const int err() const throw() {return this->_err;}
+    int err() const throw() {return this->_err;}
 };
 
 #endif

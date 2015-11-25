@@ -170,7 +170,11 @@ FORTRAN_FILES=\
 	diffuse.o
 
 OCL_FILES=\
-	tea_leaf_kernel_ocl.o \
+	tea_leaf_cg_kernel_ocl.o \
+	tea_leaf_cheby_kernel_ocl.o \
+	tea_leaf_common_kernel_ocl.o \
+	tea_leaf_jacobi_kernel_ocl.o \
+	tea_leaf_ppcg_kernel_ocl.o \
 	ocl_pack.o \
 	ocl_init.o \
 	ocl_strings.o \
