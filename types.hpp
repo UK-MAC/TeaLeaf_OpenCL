@@ -309,6 +309,9 @@ public:
     void tea_leaf_cg_calc_p_kernel
     (double beta);
 
+    void tea_leaf_dpcg_coarsen_matrix_kernel
+    ();
+
     void tea_leaf_calc_2norm_kernel
     (int norm_array, double* norm);
     void tea_leaf_cheby_init_kernel
