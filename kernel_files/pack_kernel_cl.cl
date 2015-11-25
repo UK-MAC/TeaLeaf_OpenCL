@@ -11,10 +11,11 @@
     (row -    get_global_offset(1))*(x_max + x_extra + 2*depth) + offset
 
 __kernel void pack_left_buffer
-(int x_extra, int y_extra,
-const  __global double * __restrict cur_array,
-       __global double * __restrict left_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+ const  __GLOBAL__ double * __restrict cur_array,
+        __GLOBAL__ double * __restrict left_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -26,10 +27,11 @@ const int depth, int offset)
 }
 
 __kernel void unpack_left_buffer
-(int x_extra, int y_extra,
-       __global double * __restrict cur_array,
-const  __global double * __restrict left_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+        __GLOBAL__ double * __restrict cur_array,
+ const  __GLOBAL__ double * __restrict left_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -43,10 +45,11 @@ const int depth, int offset)
 /************************************************************/
 
 __kernel void pack_right_buffer
-(int x_extra, int y_extra,
-const  __global double * __restrict cur_array,
-       __global double * __restrict right_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+ const  __GLOBAL__ double * __restrict cur_array,
+        __GLOBAL__ double * __restrict right_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -58,10 +61,11 @@ const int depth, int offset)
 }
 
 __kernel void unpack_right_buffer
-(int x_extra, int y_extra,
-       __global double * __restrict cur_array,
-const  __global double * __restrict right_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+        __GLOBAL__ double * __restrict cur_array,
+ const  __GLOBAL__ double * __restrict right_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -75,10 +79,11 @@ const int depth, int offset)
 /************************************************************/
 
 __kernel void pack_bottom_buffer
-(int x_extra, int y_extra,
- __global double * __restrict cur_array,
- __global double * __restrict bottom_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+  __GLOBAL__ double * __restrict cur_array,
+  __GLOBAL__ double * __restrict bottom_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -90,10 +95,11 @@ const int depth, int offset)
 }
 
 __kernel void unpack_bottom_buffer
-(int x_extra, int y_extra,
- __global double * __restrict cur_array,
- __global double * __restrict bottom_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+  __GLOBAL__ double * __restrict cur_array,
+  __GLOBAL__ double * __restrict bottom_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -107,10 +113,11 @@ const int depth, int offset)
 /************************************************************/
 
 __kernel void pack_top_buffer
-(int x_extra, int y_extra,
- __global double * __restrict cur_array,
- __global double * __restrict top_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+  __GLOBAL__ double * __restrict cur_array,
+  __GLOBAL__ double * __restrict top_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
@@ -122,10 +129,11 @@ const int depth, int offset)
 }
 
 __kernel void unpack_top_buffer
-(int x_extra, int y_extra,
- __global double * __restrict cur_array,
- __global double * __restrict top_buffer,
-const int depth, int offset)
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+  __GLOBAL__ double * __restrict cur_array,
+  __GLOBAL__ double * __restrict top_buffer,
+ const int depth, int offset)
 {
     __kernel_indexes;
 
