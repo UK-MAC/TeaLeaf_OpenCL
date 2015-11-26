@@ -82,6 +82,15 @@ void CloverChunk::initProgram
         -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 
     compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_coarsen_matrix", tea_leaf_dpcg_coarsen_matrix_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_prolong_Z", tea_leaf_dpcg_prolong_Z_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_subtract_u", tea_leaf_dpcg_subtract_u_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_restrict_ZT", tea_leaf_dpcg_restrict_ZT_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_matmul_ZTA", tea_leaf_dpcg_matmul_ZTA_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_init_p", tea_leaf_dpcg_init_p_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_store_r", tea_leaf_dpcg_store_r_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_calc_rrn", tea_leaf_dpcg_calc_rrn_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_calc_p", tea_leaf_dpcg_calc_p_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_solve_z", tea_leaf_dpcg_solve_z_device, 0, 0, 0, 0);
 
     compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_copy_u", tea_leaf_jacobi_copy_u_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_jacobi_cl.cl", "tea_leaf_jacobi_solve", tea_leaf_jacobi_solve_device, 0, 0, 0, 0);

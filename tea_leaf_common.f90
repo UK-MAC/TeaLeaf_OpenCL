@@ -13,7 +13,6 @@ SUBROUTINE tea_leaf_init_common()
 
   INTEGER :: t
   INTEGER :: zero_boundary(4)
-  LOGICAL :: zero_boundary_mask(4)
 
   INTEGER :: reflective_boundary_int
 
@@ -27,9 +26,9 @@ SUBROUTINE tea_leaf_init_common()
     DO t=1,tiles_per_task
       WHERE (chunk%tiles(t)%tile_neighbours .EQ. EXTERNAL_FACE .AND. &
              chunk%chunk_neighbours .EQ. EXTERNAL_FACE)
-        zero_boundary = .TRUE.
+        zero_boundary = 1
       ELSE WHERE
-        zero_boundary = .FALSE.
+        zero_boundary = 0
       END WHERE
 
       CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, &
