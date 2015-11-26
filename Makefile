@@ -2,17 +2,17 @@
 #
 # This file is part of TeaLeaf.
 #
-# TeaLeaf is free software: you can redistribute it and/or modify it under 
-# the terms of the GNU General Public License as published by the 
-# Free Software Foundation, either version 3 of the License, or (at your option) 
+# TeaLeaf is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
 #
-# TeaLeaf is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# TeaLeaf is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
 #
-# You should have received a copy of the GNU General Public License along with 
+# You should have received a copy of the GNU General Public License along with
 # TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 #  @brief Makefile for TeaLeaf
@@ -121,9 +121,9 @@ endif
 MPICXX_LIB=#-lmpi_cxx
 
 LDLIBS+=-lOpenCL -lstdc++ $(MPICXX_LIB)
-FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
-CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
-CXXFLAGS=$(CFLAGS)
+FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) -g
+CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -g
+CXXFLAGS=$(CFLAGS) $(CXX_OPTIONS) -g
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 CXX_MPI_COMPILER=mpicxx
@@ -176,6 +176,7 @@ OCL_FILES=\
 	tea_leaf_common_kernel_ocl.o \
 	tea_leaf_jacobi_kernel_ocl.o \
 	tea_leaf_ppcg_kernel_ocl.o \
+	tea_leaf_dpcg_kernel_ocl.o \
 	ocl_pack.o \
 	ocl_init.o \
 	ocl_strings.o \

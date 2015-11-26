@@ -208,9 +208,12 @@ void CloverChunk::compileKernel
         .y_min = y_min,
         .y_max = y_max,
         // no halo depth
+        .halo_depth = 0,
         .preconditioner_type = preconditioner_type,
         // no x_offset
+        .x_offset = 0,
         // no y_offset
+        .y_offset = 0,
         .kernel_x_min = launch_x_min,
         .kernel_x_max = launch_x_max,
         .kernel_y_min = launch_y_min,

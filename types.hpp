@@ -105,17 +105,17 @@ private:
     cl::Kernel tea_leaf_ppcg_solve_update_r_device;
 
     // deflated CG solver
-    cl::Kernel tea_leaf_dpcg_coarsen_matrix;
-    cl::Kernel tea_leaf_dpcg_prolong_Z;
-    cl::Kernel tea_leaf_dpcg_subtract_u;
-    cl::Kernel tea_leaf_dpcg_restrict_ZT;
-    cl::Kernel tea_leaf_dpcg_matmul_ZTA;
-    //cl::Kernel tea_leaf_dpcg_init_p;
-    cl::Kernel tea_leaf_dpcg_store_r;
-    cl::Kernel tea_leaf_dpcg_calc_rrn;
-    //cl::Kernel tea_leaf_dpcg_calc_p;
-    //cl::Kernel tea_leaf_dpcg_calc_zrnorm;
-    cl::Kernel tea_leaf_dpcg_solve_z;
+    cl::Kernel tea_leaf_dpcg_coarsen_matrix_device;
+    cl::Kernel tea_leaf_dpcg_prolong_Z_device;
+    cl::Kernel tea_leaf_dpcg_subtract_u_device;
+    cl::Kernel tea_leaf_dpcg_restrict_ZT_device;
+    cl::Kernel tea_leaf_dpcg_matmul_ZTA_device;
+    cl::Kernel tea_leaf_dpcg_init_p_device;
+    cl::Kernel tea_leaf_dpcg_store_r_device;
+    cl::Kernel tea_leaf_dpcg_calc_rrn_device;
+    cl::Kernel tea_leaf_dpcg_calc_p_device;
+    //cl::Kernel tea_leaf_dpcg_calc_zrnorm_device;
+    cl::Kernel tea_leaf_dpcg_solve_z_device;
 
     // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
     cl::Buffer ch_alphas_device, ch_betas_device;
@@ -323,10 +323,24 @@ public:
     (double beta);
 
     void tea_leaf_dpcg_coarsen_matrix_kernel
-    ();
+    (double * Kx_local, double * Ky_local);
+    void tea_leaf_dpcg_prolong_z_kernel
+    (double * t2_local);
+    void tea_leaf_dpcg_subtract_u_kernel
+    (double * t2_local);
+    void tea_leaf_dpcg_restrict_zt_kernel
+    (double * ztr_local);
+    void tea_leaf_dpcg_matmul_zta_kernel
+    (double * ztaz_local);
+    void tea_leaf_dpcg_init_p_kernel
+    (void);
+    void tea_leaf_dpcg_store_r_kernel
+    (void);
+    void tea_leaf_dpcg_calc_rrn_kernel
+    (double * rrn);
+    void tea_leaf_dpcg_calc_p_kernel
+    (void);
 
-    void tea_leaf_calc_2norm_kernel
-    (int norm_array, double* norm);
     void tea_leaf_cheby_init_kernel
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const double theta);
@@ -346,6 +360,8 @@ public:
     void tea_leaf_common_init
     (int coefficient, double dt, double * rx, double * ry,
      int * zero_boundary, int reflective_boundary);
+    void tea_leaf_calc_2norm_kernel
+    (int norm_array, double* norm);
 
     void print_profiling_info
     (void);

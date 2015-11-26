@@ -54,6 +54,7 @@ void CloverChunk::tea_leaf_cg_calc_w_kernel
 (double* pw)
 {
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
+
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 }
 

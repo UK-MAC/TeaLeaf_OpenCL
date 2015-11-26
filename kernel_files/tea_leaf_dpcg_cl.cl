@@ -1,6 +1,8 @@
 #include <kernel_files/macros_cl.cl>
 #include <kernel_files/tea_block_jacobi.cl>
 
+// TODO this might need to be switched round because of the fortran order of tile indexing
+
 // special indexing to write into the correct position in the 'coarse' arrays
 #define DEFLATION_IDX \
     /* column */ \
@@ -47,6 +49,7 @@
             }                                                   \
             out[DEFLATION_IDX] = in[0]; \
         }
+
 #endif
 
 __kernel void tea_leaf_dpcg_coarsen_matrix
@@ -142,8 +145,18 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
     DEFLATION_REDUCTION(ztaz_sum_shared, ztaz_coarse, SUM);
 }
 
-//__kernel void tea_leaf_dpcg_init_p
-// init_p - use cg_init_p but pass that there's a preconditioner?
+__kernel void tea_leaf_dpcg_init_p
+(kernel_info_t kernel_info,
+ __GLOBAL__ double * __restrict const p,
+ __GLOBAL__ double * __restrict const z)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
+    }
+}
 
 __kernel void tea_leaf_dpcg_store_r
 (kernel_info_t kernel_info,
@@ -178,11 +191,22 @@ __kernel void tea_leaf_dpcg_calc_rrn
     REDUCTION(rrn_shared, rrn, SUM)
 }
 
-//__kernel void tea_leaf_dpcg_calc_p
-// as above but with cg_calc_p?
+__kernel void tea_leaf_dpcg_calc_p
+(kernel_info_t kernel_info,
+ __GLOBAL__ double * __restrict const p,
+ __GLOBAL__ double * __restrict const z,
+ double beta)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+    }
+}
 
 //__kernel void tea_leaf_dpcg_calc_zrnorm
-// and again with ppcg_calc_zrnorm
+// Can just call 2norm kernel here with the correct arguments
 
 __kernel void tea_leaf_dpcg_solve_z
 (kernel_info_t kernel_info,

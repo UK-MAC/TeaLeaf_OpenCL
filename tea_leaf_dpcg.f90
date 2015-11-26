@@ -12,6 +12,7 @@ MODULE tea_leaf_dpcg_module
   IMPLICIT NONE
 
   LOGICAL :: inner_use_ppcg
+  INTEGER :: inner_use_ppcg_int
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE :: inner_cg_alphas, inner_cg_betas
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE :: inner_ch_alphas, inner_ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
@@ -39,6 +40,7 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
 
   ! just use CG on the first one
   inner_use_ppcg = .FALSE.
+  inner_use_ppcg_int = 0
 
   chunk%def%t1 = 0.0_8
   CALL tea_leaf_dpcg_restrict_ZT(.TRUE.)
@@ -68,11 +70,11 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   !    inner_cg_alphas, inner_cg_betas,      &
   !    inner_ch_alphas, inner_ch_betas       &
   !    )
-  CALL tea_leaf_dpcg_corse_solve_ocl(       &
+  CALL tea_leaf_dpcg_coarse_solve_ocl(       &
         coarse_solve_eps,                   &
         coarse_solve_max_iters,             &
         it_count, theta,                    &
-        inner_use_ppcg,                     &
+        inner_use_ppcg_int,                     &
         inner_cg_alphas, inner_cg_betas,    &
         inner_ch_alphas, inner_ch_betas     &
         )
@@ -82,6 +84,7 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
 
   ! for all subsequent steps, use ppcg
   inner_use_ppcg = .TRUE.
+  inner_use_ppcg_int = 1
 
   !CALL tea_calc_eigenvalues(inner_cg_alphas, inner_cg_betas, eigmin, eigmax, &
   !    max_iters, it_count, info)
@@ -149,7 +152,7 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
   !    inner_cg_alphas, inner_cg_betas,      &
   !    inner_ch_alphas, inner_ch_betas       &
   !    )
-  CALL tea_leaf_dpcg_corse_solve_ocl(       &
+  CALL tea_leaf_dpcg_coarse_solve_ocl(       &
         coarse_solve_eps,                   &
         coarse_solve_max_iters,             &
         it_count, theta,                    &
@@ -293,11 +296,13 @@ SUBROUTINE tea_leaf_dpcg_matmul_ZTA(solve_time)
 !!$OMP END DO NOWAIT
 !!$OMP END PARALLEL
 !  ENDIF
-  IF (use_opencl_kernels) THEN
-    DO t=1,tiles_per_task
-      CALL tea_leaf_dpcg_solce_z_kernel_ocl()
-    ENDDO
-  ENDIF
+
+  ! TODO can just call from when inside C++
+  !IF (use_opencl_kernels) THEN
+  !  DO t=1,tiles_per_task
+  !    CALL tea_leaf_dpcg_solve_z_kernel_ocl()
+  !  ENDDO
+  !ENDIF
 
   fields = 0
   fields(FIELD_Z) = 1
