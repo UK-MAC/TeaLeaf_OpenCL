@@ -165,10 +165,16 @@ void CloverChunk::initOcl
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
     bool tl_use_chebyshev = paramEnabled(input, "tl_use_chebyshev");
     bool tl_use_ppcg = paramEnabled(input, "tl_use_ppcg");
+    bool tl_use_dpcg = paramEnabled(input, "tl_use_dpcg");
 
     // set solve
     if(!rank)fprintf(stdout, "Solver to use: ");
-    if (tl_use_ppcg)
+    if (tl_use_dpcg)
+    {
+        tea_solver = TEA_ENUM_DPCG;
+        if(!rank)fprintf(stdout, "DPCG\n");
+    }
+    else if (tl_use_ppcg)
     {
         tea_solver = TEA_ENUM_PPCG;
         if(!rank)fprintf(stdout, "PPCG\n");

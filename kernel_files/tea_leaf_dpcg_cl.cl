@@ -114,7 +114,7 @@ __kernel void tea_leaf_dpcg_restrict_ZT
 
     if (WITHIN_BOUNDS)
     {
-        ZTr_sum_shared[lid] = ZTr[THARR2D(0, 0, 0)];
+        ZTr_sum_shared[lid] = r[THARR2D(0, 0, 0)];
     }
 
     DEFLATION_REDUCTION(ZTr_sum_shared, ZTr_coarse, SUM);
@@ -122,11 +122,10 @@ __kernel void tea_leaf_dpcg_restrict_ZT
 
 __kernel void tea_leaf_dpcg_matmul_ZTA
 (kernel_info_t kernel_info,
- __GLOBAL__       double * __restrict const pw,
- __GLOBAL__ const double * __restrict const p,
- __GLOBAL__       double * __restrict const w,
+ __GLOBAL__ const double * __restrict const z,
  __GLOBAL__ const double * __restrict const Kx,
- __GLOBAL__ const double * __restrict const ztaz_coarse)
+ __GLOBAL__ const double * __restrict const Ky,
+ __GLOBAL__       double * __restrict const ztaz_coarse)
 {
     __kernel_indexes;
 
@@ -142,7 +141,7 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
             - (Kx[THARR2D(1, 0, 0)]*z[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*z[THARR2D(-1, 0, 0)]);
     }
 
-    DEFLATION_REDUCTION(ztaz_sum_shared, ztaz_coarse, SUM);
+    DEFLATION_REDUCTION(ztaz_shared, ztaz_coarse, SUM);
 }
 
 __kernel void tea_leaf_dpcg_init_p
@@ -218,6 +217,8 @@ __kernel void tea_leaf_dpcg_solve_z
  __GLOBAL__ const double * __restrict const Kx,
  __GLOBAL__ const double * __restrict const Ky)
 {
+    __kernel_indexes;
+
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
         __SHARED__ double r_l[BLOCK_SZ];
@@ -243,8 +244,7 @@ __kernel void tea_leaf_dpcg_solve_z
 
         if (WITHIN_BOUNDS)
         {
-            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
-                                + beta[step]*z_l[lid];
+            z[THARR2D(0, 0, 0)] = z_l[lid];
         }
     }
     else if (WITHIN_BOUNDS)
