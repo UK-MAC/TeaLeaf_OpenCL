@@ -29,7 +29,7 @@ SUBROUTINE read_input()
 
   IMPLICIT NONE
 
-  INTEGER            :: state,stat,state_max,n
+  INTEGER            :: state,stat,state_max,n,total_tiles
 
   REAL(KIND=8) :: dx,dy
 
@@ -73,6 +73,7 @@ SUBROUTINE read_input()
   profiler%tea_reset=0.0
   profiler%dot_product=0.0
 
+  sub_tiles_per_tile = 1
   tl_ch_cg_presteps = 25
   tl_ch_cg_epslim = 1.0
   tl_check_result = .FALSE.
@@ -85,10 +86,14 @@ SUBROUTINE read_input()
   tl_use_chebyshev = .FALSE.
   tl_use_cg = .FALSE.
   tl_use_ppcg = .FALSE.
+  tl_use_dpcg = .FALSE.
   tl_use_jacobi = .TRUE.
   verbose_on = .FALSE.
 
   halo_exchange_depth=1
+
+  coarse_solve_max_iters=200
+  coarse_solve_eps=1.0e-15
 
   IF(parallel%boss)WRITE(g_out,*) 'Reading input file'
   IF(parallel%boss)WRITE(g_out,*)
@@ -162,6 +167,9 @@ SUBROUTINE read_input()
       CASE('summary_frequency')
         summary_frequency=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'summary_frequency',summary_frequency
+      case('sub_tiles_per_tile')
+        sub_tiles_per_tile=parse_getival(parse_getword(.true.))
+        if(parallel%boss)write(g_out,"(1x,a25,i12)")'sub_tiles_per_tile',sub_tiles_per_tile
       CASE('tl_ch_cg_presteps')
         tl_ch_cg_presteps=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ch_cg_presteps',tl_ch_cg_presteps
@@ -196,21 +204,31 @@ SUBROUTINE read_input()
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.FALSE.
+        tl_use_dpcg=.FALSE.
         tl_use_jacobi = .TRUE.
       CASE('tl_use_cg')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .TRUE.
         tl_use_ppcg=.FALSE.
+        tl_use_dpcg=.FALSE.
         tl_use_jacobi = .FALSE.
       CASE('tl_use_ppcg')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.TRUE.
+        tl_use_dpcg=.FALSE.
+        tl_use_jacobi = .FALSE.
+      CASE('tl_use_dpcg')
+        tl_use_chebyshev = .FALSE.
+        tl_use_cg = .FALSE.
+        tl_use_ppcg=.FALSE.
+        tl_use_dpcg=.TRUE.
         tl_use_jacobi = .FALSE.
       CASE('tl_use_chebyshev')
         tl_use_chebyshev = .TRUE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.FALSE.
+        tl_use_dpcg=.FALSE.
         tl_use_jacobi = .FALSE.
       CASE('reflective_boundary')
         reflective_boundary=.TRUE.
@@ -231,6 +249,12 @@ SUBROUTINE read_input()
       CASE('tl_coefficient_inverse_density')
         coefficient = RECIP_CONDUCTIVITY
         IF(parallel%boss)WRITE(g_out,"(1x,a40)")'Diffusion coefficient reciprocal density'
+      CASE('coarse_solve_max_iters')
+        coarse_solve_max_iters = parse_getival(parse_getword(.TRUE.))
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'coarse_solve_max_iters',coarse_solve_max_iters
+      CASE('coarse_solve_eps')
+        coarse_solve_eps = parse_getrval(parse_getword(.TRUE.))
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'coarse_solve_eps',coarse_solve_eps
       CASE('test_problem')
         test_problem=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'test_problem',test_problem
@@ -301,6 +325,7 @@ SUBROUTINE read_input()
   endif
 
   IF(parallel%boss) THEN
+    WRITE(g_out,"(1x,a25,i12)")'tiles per task ',tiles_per_task
     WRITE(g_out,*)
     ELSEIF(use_opencl_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using OpenCL Kernels'

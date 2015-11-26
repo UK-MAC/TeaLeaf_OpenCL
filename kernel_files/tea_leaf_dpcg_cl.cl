@@ -142,6 +142,7 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
     DEFLATION_REDUCTION(ztaz_sum_shared, ztaz_coarse, SUM);
 }
 
+//__kernel void tea_leaf_dpcg_init_p
 // init_p - use cg_init_p but pass that there's a preconditioner?
 
 __kernel void tea_leaf_dpcg_store_r
@@ -175,5 +176,56 @@ __kernel void tea_leaf_dpcg_calc_rrn
     }
 
     REDUCTION(rrn_shared, rrn, SUM)
+}
+
+//__kernel void tea_leaf_dpcg_calc_p
+// as above but with cg_calc_p?
+
+//__kernel void tea_leaf_dpcg_calc_zrnorm
+// and again with ppcg_calc_zrnorm
+
+__kernel void tea_leaf_dpcg_solve_z
+(kernel_info_t kernel_info,
+ __GLOBAL__ const double * __restrict const r,
+ __GLOBAL__       double * __restrict const z,
+ __GLOBAL__ const double * __restrict const cp,
+ __GLOBAL__ const double * __restrict const bfp,
+ __GLOBAL__ const double * __restrict const Mi,
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky)
+{
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    {
+        __SHARED__ double r_l[BLOCK_SZ];
+        __SHARED__ double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
+        {
+            r_l[lid] = r[THARR2D(0, 0, 0)];
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (loc_row == 0)
+        {
+            if (WITHIN_BOUNDS)
+            {
+                block_solve_func(kernel_info,r_l, z_l, cp, bfp, Kx, Ky);
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*z_l[lid];
+        }
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+    }
 }
 

@@ -27,6 +27,7 @@ MODULE tea_leaf_module
   USE tea_leaf_cg_module
   USE tea_leaf_cheby_module
   USE tea_leaf_ppcg_module
+  USE tea_leaf_dpcg_module
   USE tea_leaf_jacobi_module
   USE update_halo_module
 
@@ -115,7 +116,21 @@ SUBROUTINE tea_leaf()
       WRITE(g_out,*)"Initial residual ",initial_residual
   ENDIF
 
-  IF (tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
+  IF (tl_use_dpcg) THEN
+    CALL tea_leaf_dpcg_init_x0(solve_time)
+
+    ! need to update p when using CG due to matrix/vector multiplication
+    fields=0
+    fields(FIELD_U) = 1
+    fields(FIELD_P) = 1
+
+    IF (profiler_on) halo_time=timer()
+    CALL update_halo(fields,1)
+    IF (profiler_on) init_time=init_time+(timer()-halo_time)
+
+    fields=0
+    fields(FIELD_P) = 1
+  ELSEIF (tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
     ! All 3 of these solvers use the CG kernels
     CALL tea_leaf_cg_init(rro)
 
@@ -267,6 +282,49 @@ SUBROUTINE tea_leaf()
       ENDIF
 
       cheby_calc_steps = cheby_calc_steps + 1
+    ELSEIF (tl_use_dpcg) THEN
+      cg_calc_steps = cg_calc_steps + 1
+
+      ! w = Ap
+      ! pw = p.w
+      CALL tea_leaf_cg_calc_w(pw)
+
+      ! keep old value of r for rrn calculation
+      CALL tea_leaf_dpcg_store_r()
+
+      ! r.z
+      CALL tea_leaf_dpcg_calc_zrnorm(rro)
+
+      IF (profiler_on) dot_product_time=timer()
+      ! TODO coalesce
+      CALL tea_allsum(pw)
+      CALL tea_allsum(rro)
+      IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
+
+      alpha = rro/pw
+      cg_alphas(n) = alpha
+
+      ! u = u + a*p
+      ! r = r - a*w
+      CALL tea_leaf_cg_calc_ur(alpha, rrn)
+
+      ! not calculating rrn here
+
+      CALL tea_leaf_dpcg_setup_and_solve_E(solve_time)
+
+      CALL tea_leaf_dpcg_calc_rrn(rrn)
+      IF (profiler_on) dot_product_time=timer()
+      CALL tea_allsum(rrn)
+      IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
+
+      beta = rrn/rro
+      cg_betas(n) = beta
+
+      ! p = r + b*p
+      CALL tea_leaf_dpcg_calc_p(beta)
+
+      error = rrn
+      rro = rrn
     ELSEIF (tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
       fields(FIELD_P) = 1
       cg_calc_steps = cg_calc_steps + 1

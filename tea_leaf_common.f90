@@ -25,17 +25,11 @@ SUBROUTINE tea_leaf_init_common()
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      zero_boundary_mask = (chunk%chunk_neighbours .eq. external_face)
-
-      ! CG never needs matrix defined outside of boundaries
-      IF (tl_use_cg) THEN
-        zero_boundary_mask = (chunk%tiles(t)%tile_neighbours .eq. external_face) .and. zero_boundary_mask
-      ENDIF
-
-      zero_boundary = 0
-
-      WHERE (zero_boundary_mask .EQV. .TRUE.)
-        zero_boundary = 1
+      WHERE (chunk%tiles(t)%tile_neighbours .EQ. EXTERNAL_FACE .AND. &
+             chunk%chunk_neighbours .EQ. EXTERNAL_FACE)
+        zero_boundary = .TRUE.
+      ELSE WHERE
+        zero_boundary = .FALSE.
       END WHERE
 
       CALL tea_leaf_common_init_kernel_ocl(coefficient, dt, &

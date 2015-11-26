@@ -48,7 +48,8 @@ MODULE data_module
                                 ,FIELD_P          = 5         &
                                 ,FIELD_SD         = 6         &
                                 ,FIELD_R          = 7         &
-                                ,NUM_FIELDS       = 7
+                                ,FIELD_Z          = 8         &
+                                ,NUM_FIELDS       = 8
 
    INTEGER,         PARAMETER :: CELL_DATA     = 1,        &
                                  VERTEX_DATA   = 2,        &
@@ -87,6 +88,7 @@ MODULE data_module
 
    ! Hardcoded in OpenCL version
    INTEGER, PARAMETER        ::tiles_per_task=1
+   INTEGER                   ::sub_tiles_per_tile
 
    ! cartesian communicator
    INTEGER                   ::mpi_cart_comm
@@ -97,7 +99,5 @@ MODULE data_module
 
    ! depth of halo for matrix powers
    INTEGER :: halo_exchange_depth
-
-   INTEGER                   ::lr_pack_buffer_size,bt_pack_buffer_size
 
 END MODULE data_module

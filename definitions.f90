@@ -68,6 +68,7 @@ MODULE definitions_module
    LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg
    LOGICAL      :: tl_use_ppcg
+   LOGICAL      :: tl_use_dpcg
    LOGICAL      :: tl_use_jacobi
    LOGICAL      :: verbose_on
    INTEGER      :: max_iters
@@ -92,6 +93,10 @@ MODULE definitions_module
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 
    LOGICAL      :: profiler_on ! Internal code profiler to make comparisons across systems easier
+
+   ! coarse solve convergence options
+   INTEGER      :: coarse_solve_max_iters
+   REAL(KIND=8) :: coarse_solve_eps
 
    TYPE profiler_type
      REAL(KIND=8)       :: timestep        &
@@ -145,8 +150,25 @@ MODULE definitions_module
 
      INTEGER         :: tile_neighbours(4)
      INTEGER         :: tile_coords(2)
+
+     ! coordinate in the total deflation vector array for this tile
+     INTEGER         :: def_tile_coords(2)
+     ! absolute tile index
+     INTEGER         :: def_tile_idx
    END TYPE tile_type
 
+   TYPE deflate_type
+     ! Arrays the size of mpi_dims*tile_dims
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: t1, t2
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: def_Di
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: def_Kx, def_Ky
+     INTEGER            :: x_cells              &
+                          ,y_cells
+     INTEGER         :: x_min  &
+                       ,y_min  &
+                       ,x_max  &
+                       ,y_max
+   END TYPE deflate_type
    TYPE chunk_type
 
      INTEGER         :: task   !mpi task
@@ -174,9 +196,13 @@ MODULE definitions_module
      REAL(KIND=8),ALLOCATABLE:: left_snd_buffer(:),right_snd_buffer(:),bottom_snd_buffer(:),top_snd_buffer(:)
 
      TYPE(tile_type), DIMENSION(:), ALLOCATABLE :: tiles
+     TYPE(deflate_type) :: def
 
      ! how tiles are arranged
      INTEGER,DIMENSION(2) :: tile_dims
+
+     ! how sub-tiles are arranged
+     INTEGER,DIMENSION(2) :: sub_tile_dims
 
   END TYPE chunk_type
 

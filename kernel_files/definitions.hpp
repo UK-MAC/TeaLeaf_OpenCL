@@ -18,12 +18,14 @@
 #define FIELD_p             5
 #define FIELD_sd            6
 #define FIELD_r             7
-#define NUM_FIELDS          7
+#define FIELD_z             8
+#define NUM_FIELDS          8
 #define FIELD_vector_p FIELD_p
 #define FIELD_vector_sd FIELD_sd
 #define FIELD_vector_r FIELD_r
+#define FIELD_vector_z FIELD_z
 
-#define NUM_BUFFERED_FIELDS 7
+#define NUM_BUFFERED_FIELDS 8
 
 // which side to pack - keep the same as in fortran file
 #define CHUNK_LEFT 1
@@ -50,6 +52,7 @@
 #define TEA_ENUM_CG         2
 #define TEA_ENUM_CHEBYSHEV  3
 #define TEA_ENUM_PPCG       4
+#define TEA_ENUM_DPCG       5
 
 // same as in fortran
 #define COEF_CONDUCTIVITY 1

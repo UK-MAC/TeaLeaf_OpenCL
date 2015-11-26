@@ -1,9 +1,13 @@
 #ifndef __CL_TYPE_HDR
 #define __CL_TYPE_HDR
 
+#include "CL/cl.hpp"
+
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+
+#include "kernel_files/definitions.hpp"
 
 typedef struct cell_info_struct {
     cl_int x_extra;
@@ -76,19 +80,18 @@ private:
     cl::Buffer bottom_buffer;
     cl::Buffer top_buffer;
 
-    #define TEA_ENUM_JACOBI     1
-    #define TEA_ENUM_CG         2
-    #define TEA_ENUM_CHEBYSHEV  3
-    #define TEA_ENUM_PPCG       4
     int tea_solver;
 
-    // tea leaf
+    // jacobi solver
+    cl::Kernel tea_leaf_jacobi_copy_u_device;
+    cl::Kernel tea_leaf_jacobi_solve_device;
+
+    // cg solver
     cl::Kernel tea_leaf_cg_solve_init_p_device;
     cl::Kernel tea_leaf_cg_solve_calc_w_device;
     cl::Kernel tea_leaf_cg_solve_calc_ur_device;
     cl::Kernel tea_leaf_cg_solve_calc_rrn_device;
     cl::Kernel tea_leaf_cg_solve_calc_p_device;
-    cl::Buffer vector_z;
 
     // chebyshev solver
     cl::Kernel tea_leaf_cheby_solve_init_p_device;
@@ -96,25 +99,34 @@ private:
     cl::Kernel tea_leaf_cheby_solve_calc_p_device;
     cl::Kernel tea_leaf_calc_2norm_device;
 
+    // ppcg solver
     cl::Kernel tea_leaf_ppcg_solve_init_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_calc_sd_device;
     cl::Kernel tea_leaf_ppcg_solve_update_r_device;
 
+    // deflated CG solver
+    cl::Kernel tea_leaf_dpcg_coarsen_matrix;
+    cl::Kernel tea_leaf_dpcg_prolong_Z;
+    cl::Kernel tea_leaf_dpcg_subtract_u;
+    cl::Kernel tea_leaf_dpcg_restrict_ZT;
+    cl::Kernel tea_leaf_dpcg_matmul_ZTA;
+    //cl::Kernel tea_leaf_dpcg_init_p;
+    cl::Kernel tea_leaf_dpcg_store_r;
+    cl::Kernel tea_leaf_dpcg_calc_rrn;
+    //cl::Kernel tea_leaf_dpcg_calc_p;
+    //cl::Kernel tea_leaf_dpcg_calc_zrnorm;
+    cl::Kernel tea_leaf_dpcg_solve_z;
+
     // used to hold the alphas/beta used in chebyshev solver - different from CG ones!
     cl::Buffer ch_alphas_device, ch_betas_device;
 
-    // need more for the Kx/Ky arrays
-    cl::Kernel tea_leaf_jacobi_copy_u_device;
-    cl::Kernel tea_leaf_jacobi_solve_device;
-
+    // preconditioner related
     cl::Kernel tea_leaf_block_init_device;
     cl::Kernel tea_leaf_block_solve_device;
     cl::Kernel tea_leaf_init_jac_diag_device;
-    cl::Buffer cp, bfp;
 
-    cl::Buffer u, u0;
+    // common
     cl::Kernel tea_leaf_finalise_device;
-    // TODO could be used by all - precalculate diagonal + scale Kx/Ky
     cl::Kernel tea_leaf_calc_residual_device;
     cl::Kernel tea_leaf_init_common_device;
     cl::Kernel tea_leaf_zero_boundary_device;
@@ -172,7 +184,6 @@ private:
     cl::Buffer xarea;
     cl::Buffer yarea;
 
-    // generic work arrays
     cl::Buffer vector_p;
     cl::Buffer vector_r;
     cl::Buffer vector_w;
@@ -181,9 +192,6 @@ private:
     cl::Buffer vector_Ky;
     cl::Buffer vector_sd;
 
-    // for reduction in PdV
-    cl::Buffer PdV_reduce_buf;
-
     // for reduction in field_summary
     cl::Buffer reduce_buf_1;
     cl::Buffer reduce_buf_2;
@@ -191,6 +199,11 @@ private:
     cl::Buffer reduce_buf_4;
     cl::Buffer reduce_buf_5;
     cl::Buffer reduce_buf_6;
+
+    cl::Buffer cp, bfp;
+
+    cl::Buffer u, u0;
+    cl::Buffer vector_z;
 
     // global size for kernels
     cl::NDRange global_size;

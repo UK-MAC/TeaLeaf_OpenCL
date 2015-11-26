@@ -83,8 +83,6 @@ SUBROUTINE start
   CALL initialise_chunk()
 
   IF (parallel%boss)THEN
-    WRITE(g_out,*)"Example tile size ",chunk%tiles(1)%x_cells," by ",chunk%tiles(1)%y_cells, " cells"
-    WRITE(g_out,*)
     WRITE(g_out,*) 'Generating chunk'
   ENDIF
 

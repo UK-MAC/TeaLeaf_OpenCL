@@ -165,6 +165,7 @@ FORTRAN_FILES=\
 	tea_leaf_cheby.o             	\
 	tea_leaf_ppcg.o             	\
 	tea_leaf_jacobi.o             \
+	tea_leaf_dpcg.o             \
 	tea_solve.o                   \
 	tea_leaf.o			\
 	diffuse.o
