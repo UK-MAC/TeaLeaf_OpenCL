@@ -2,7 +2,28 @@
 #include <sstream>
 #include <fstream>
 
-void CloverChunk::initProgram
+void TeaCLContext::initProgram
+(void)
+{
+    if (!rank)
+    {
+        fprintf(stdout, "Compiling kernels (may take some time)...");
+    }
+
+    FOR_EACH_TILE
+    {
+        tile->initProgram();
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(stdout, "done.\n");
+    }
+}
+
+void TeaCLTile::initProgram
 (void)
 {
     // options
@@ -17,7 +38,7 @@ void CloverChunk::initProgram
 
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge
     // rather expensive check so don't always do it
-    if (y_max % JACOBI_BLOCK_SIZE)
+    if (tile_y_cells % JACOBI_BLOCK_SIZE)
     {
         options << "-DBLOCK_TOP_CHECK ";
     }
@@ -32,7 +53,7 @@ void CloverChunk::initProgram
     options << device_type_prepro;
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << halo_exchange_depth << " ";
+    options << "-DHALO_DEPTH=" << run_flags.halo_allocate_depth << " ";
 
     if (!rank)
     {
@@ -40,11 +61,6 @@ void CloverChunk::initProgram
         fprintf(stdout, "Compiling kernels (may take some time)...");
         fflush(stdout);
     }
-
-    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device, 0, 0, 0, 0);
-    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_bottom", update_halo_bottom_device, 0, 0, 0, 0);
-    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_left", update_halo_left_device, 0, 0, 0, 0);
-    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_right", update_halo_right_device, 0, 0, 0, 0);
 
     // launch with special work group sizes to cover the whole grid
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
@@ -56,6 +72,11 @@ void CloverChunk::initProgram
 
     compileKernel(options, "./kernel_files/set_field_cl.cl", "set_field", set_field_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/field_summary_cl.cl", "field_summary", field_summary_device, 0, 0, 0, 0);
+
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_top", update_halo_top_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_bottom", update_halo_bottom_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_left", update_halo_left_device, 0, 0, 0, 0);
+    compileKernel(options, "./kernel_files/update_halo_cl.cl", "update_halo_right", update_halo_right_device, 0, 0, 0, 0);
 
     compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "pack_left_buffer", pack_left_buffer_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/pack_kernel_cl.cl", "unpack_left_buffer", unpack_left_buffer_device, 0, 0, 0, 0);
@@ -113,20 +134,84 @@ void CloverChunk::initProgram
     }
 }
 
-CloverChunk::launch_specs_t CloverChunk::findPaddingSize
+launch_specs_t TeaCLTile::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
-    int global_horz_size = (-(hmin)) + (hmax) + x_max;
+    size_t global_horz_size = (-(hmin)) + (hmax) + tile_x_cells;
     while (global_horz_size % LOCAL_X) global_horz_size++;
-    int global_vert_size = (-(vmin)) + (vmax) + y_max;
+    size_t global_vert_size = (-(vmin)) + (vmax) + tile_y_cells;
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((halo_exchange_depth) + (hmin), (halo_exchange_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((run_flags.halo_allocate_depth) + (hmin), (run_flags.halo_allocate_depth) + (vmin));
     return cur_specs;
 }
 
-void CloverChunk::compileKernel
+cl::Program TeaCLTile::compileProgram
+(const std::string& source,
+ const std::string& options)
+{
+    // catches any warnings/errors in the build
+    std::stringstream errstream("");
+
+    // very verbose
+    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
+    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
+    fflush(DBGOUT);
+    cl::Program program;
+
+    cl::Program::Sources sources;
+    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
+
+    try
+    {
+        program = cl::Program(context, sources);
+    }
+    catch (cl::Error e)
+    {
+        DIE("%s %d\n", e.what(), e.err());
+    }
+
+    std::vector<cl::Device> dev_vec(1, device);
+
+    try
+    {
+        program.build(dev_vec, options.c_str());
+    }
+    catch (cl::Error e)
+    {
+        fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
+
+        errstream << e.what() << std::endl;
+
+        try
+        {
+            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        }
+        catch (cl::Error ie)
+        {
+            DIE("Error %d in retrieving build info\n", e.err());
+        }
+
+        std::string errs(errstream.str());
+        //DIE("%s\n", errs.c_str());
+        throw KernelCompileError(errs.c_str(), e.err());
+    }
+
+    // return
+    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    std::string errs(errstream.str());
+
+    // some will print out an empty warning log
+    if (errs.size() > 10)
+    {
+        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
+    }
+
+    return program;
+}
+
+void TeaCLTile::compileKernel
 (std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
@@ -201,6 +286,16 @@ void CloverChunk::compileKernel
 
     size_t max_wg_size;
 
+    kernel.getWorkGroupInfo(device, CL_KERNEL_WORK_GROUP_SIZE, &max_wg_size);
+
+    if ((LOCAL_X*LOCAL_Y) > max_wg_size)
+    {
+        DIE("Work group size %dx%d is too big for kernel %s"
+            " - maximum is %zu\n",
+                int(LOCAL_X), int(LOCAL_Y), kernel_name,
+                max_wg_size);
+    }
+
     kernel_info_t kernel_info = {
         .x_min = x_min,
         .x_max = x_max,
@@ -232,102 +327,45 @@ void CloverChunk::compileKernel
         }
     }
 
-    cl::detail::errHandler(
-        clGetKernelWorkGroupInfo(kernel(),
-                                 device(),
-                                 CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t),
-                                 &max_wg_size,
-                                 NULL));
-    if ((LOCAL_X*LOCAL_Y) > max_wg_size)
-    {
-        DIE("Work group size %dx%d is too big for kernel %s"
-            " - maximum is %zu\n",
-                int(LOCAL_X), int(LOCAL_Y), kernel_name,
-                max_wg_size);
-    }
-
     fprintf(DBGOUT, "Done\n");
     fflush(DBGOUT);
 }
 
-cl::Program CloverChunk::compileProgram
-(const std::string& source,
- const std::string& options)
+void TeaCLContext::initSizes
+(void)
 {
-    // catches any warnings/errors in the build
-    std::stringstream errstream("");
-
-    // very verbose
-    //fprintf(stderr, "Making with source:\n%s\n", source.c_str());
-    //fprintf(DBGOUT, "Making with options string:\n%s\n", options.c_str());
-    fflush(DBGOUT);
-    cl::Program program;
-
-    cl::Program::Sources sources;
-    sources = cl::Program::Sources(1, std::make_pair(source.c_str(), source.length()));
-
-    try
+    if (!rank)
     {
-        program = cl::Program(context, sources);
-    }
-    catch (cl::Error e)
-    {
-        DIE("%s %d\n", e.what(), e.err());
+        fprintf(DBGOUT, "Calculating appropriate work group sizes\n");
     }
 
-    std::vector<cl::Device> dev_vec(1, device);
-
-    try
+    FOR_EACH_TILE
     {
-        program.build(dev_vec, options.c_str());
-    }
-    catch (cl::Error e)
-    {
-        fprintf(stderr, "Errors in creating program built with:\n%s\n", options.c_str());
-
-        errstream << e.what() << std::endl;
-
-        try
-        {
-            errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        }
-        catch (cl::Error ie)
-        {
-            DIE("Error %d in retrieving build info\n", e.err());
-        }
-
-        std::string errs(errstream.str());
-        //DIE("%s\n", errs.c_str());
-        throw KernelCompileError(errs.c_str(), e.err());
+        tile->initSizes();
     }
 
-    // return
-    errstream << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    std::string errs(errstream.str());
+    MPI_Barrier(MPI_COMM_WORLD);
 
-    // some will print out an empty warning log
-    if (errs.size() > 10)
+    if (!rank)
     {
-        fprintf(DBGOUT, "Warnings:\n%s\n", errs.c_str());
+        fprintf(DBGOUT, "Sizes calculated\n");
     }
-
-    return program;
 }
 
-void CloverChunk::initSizes
+void TeaCLTile::initSizes
 (void)
 {
     fprintf(DBGOUT, "Local size = %dx%d\n", int(LOCAL_X), int(LOCAL_Y));
 
     // pad the global size so the local size fits
-    const int glob_x = x_max+4 +
-        (((x_max+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max+4)%LOCAL_X)));
-    const int glob_y = y_max+4 +
-        (((y_max+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max+4)%LOCAL_Y)));
+    const int glob_x = tile_x_cells+4 +
+        (((tile_x_cells+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells+4)%LOCAL_X)));
+    const int glob_y = tile_y_cells+4 +
+        (((tile_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells+4)%LOCAL_Y)));
 
     fprintf(DBGOUT, "Global size = %dx%d\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
+    local_size = cl::NDRange(LOCAL_X, LOCAL_Y);
 
     /*
      *  all the reductions only operate on the inner cells, because the halo
@@ -335,10 +373,10 @@ void CloverChunk::initSizes
      *  that doesn't include these halo cells for the reduction which should
      *  speed it up a bit
      */
-    const int red_x = x_max +
-        (((x_max)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((x_max)%LOCAL_X)));
-    const int red_y = y_max +
-        (((y_max)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((y_max)%LOCAL_Y)));
+    const int red_x = tile_x_cells +
+        (((tile_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells)%LOCAL_X)));
+    const int red_y = tile_y_cells +
+        (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 
     /*
@@ -348,13 +386,7 @@ void CloverChunk::initSizes
      */
     // get max local size for the update kernels
     size_t max_update_wg_sz;
-    cl::detail::errHandler(
-        clGetKernelWorkGroupInfo(update_halo_bottom_device(),
-                                 device(),
-                                 CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t),
-                                 &max_update_wg_sz,
-                                 NULL));
+    update_halo_bottom_device.getWorkGroupInfo(device, CL_KERNEL_WORK_GROUP_SIZE, &max_update_wg_sz);
     fprintf(DBGOUT, "Max work group size for update halo is %zu\n", max_update_wg_sz);
 
     // ideally multiple of 32 for nvidia, ideally multiple of 64 for amd
@@ -378,8 +410,8 @@ void CloverChunk::initSizes
     update_bt_local_size[2] = cl::NDRange(local_row_size, 2);
 
     // start off doing minimum amount of work
-    size_t global_bt_update_size = x_max + 4;
-    size_t global_lr_update_size = y_max + 4;
+    size_t global_bt_update_size = tile_x_cells + 4;
+    size_t global_lr_update_size = tile_y_cells + 4;
 
     // increase just to fit in with local work group sizes
     while (global_bt_update_size % local_row_size)
@@ -393,8 +425,8 @@ void CloverChunk::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = x_max + 2*halo_exchange_depth;
-    size_t global_lr_pack_size = y_max + 2*halo_exchange_depth;
+    size_t global_bt_pack_size = tile_x_cells + 2*run_flags.halo_allocate_depth;
+    size_t global_lr_pack_size = tile_y_cells + 2*run_flags.halo_allocate_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)
@@ -402,12 +434,12 @@ void CloverChunk::initSizes
     while (global_lr_pack_size % local_column_size)
         global_lr_pack_size++;
 
-    update_lr_global_size[halo_exchange_depth] = cl::NDRange(halo_exchange_depth, global_lr_pack_size);
-    update_bt_global_size[halo_exchange_depth] = cl::NDRange(global_bt_pack_size, halo_exchange_depth);
+    update_lr_global_size[run_flags.halo_exchange_depth] = cl::NDRange(run_flags.halo_exchange_depth, global_lr_pack_size);
+    update_bt_global_size[run_flags.halo_exchange_depth] = cl::NDRange(global_bt_pack_size, run_flags.halo_exchange_depth);
 
     // use same local size as depth 1
-    update_lr_local_size[halo_exchange_depth] = update_lr_local_size[1];
-    update_bt_local_size[halo_exchange_depth] = update_bt_local_size[1];
+    update_lr_local_size[run_flags.halo_exchange_depth] = update_lr_local_size[1];
+    update_bt_local_size[run_flags.halo_exchange_depth] = update_bt_local_size[1];
 
     //for (int depth = 0; depth < 2; depth++)
     std::map<int, cl::NDRange>::iterator typedef irangeit;
@@ -416,8 +448,8 @@ void CloverChunk::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(halo_exchange_depth - depth, halo_exchange_depth - depth);
-        update_bt_offset[depth] = cl::NDRange(halo_exchange_depth - depth, halo_exchange_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",
@@ -433,7 +465,27 @@ void CloverChunk::initSizes
     fprintf(DBGOUT, "Update halo parameters calculated\n");
 }
 
-void CloverChunk::initArgs
+void TeaCLContext::initArgs
+(void)
+{
+    if (!rank)
+    {
+        fprintf(stdout, "Setting kernel arguments\n");
+    }
+
+    FOR_EACH_TILE
+    {
+        tile->initArgs();
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!rank)
+    {
+        fprintf(stdout, "Kernel arguments set\n");
+    }
+}
+
+void TeaCLTile::initArgs
 (void)
 {
     #define SETARG_CHECK(knl, idx, buf) \

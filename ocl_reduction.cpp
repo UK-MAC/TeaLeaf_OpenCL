@@ -4,13 +4,23 @@
 #include <sstream>
 #include <cmath>
 
-void CloverChunk::initReduction
+void TeaCLContext::initReduction
+(void)
+{
+    fprintf(DBGOUT, "\n---- Reduction ----\n");
+
+    FOR_EACH_TILE
+    {
+        tile->initReduction();
+    }
+}
+
+void TeaCLTile::initReduction
 (void)
 {
     /*
      *  create a reduction kernel, one for each layer, with the right parameters
      */
-    fprintf(DBGOUT, "\n---- Reduction ----\n");
 
     // each work group reduces to 1 value inside each kernel
     const int total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
@@ -167,7 +177,5 @@ void CloverChunk::initReduction
             break;
         }
     }
-
-    fprintf(DBGOUT, "---- Reduction ----\n\n");
 }
 

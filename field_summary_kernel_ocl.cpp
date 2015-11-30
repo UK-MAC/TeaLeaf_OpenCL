@@ -4,14 +4,18 @@
 extern "C" void field_summary_kernel_ocl_
 (double* vol, double* mass, double* ie, double* temp)
 {
-    chunk.field_summary_kernel(vol, mass, ie, temp);
+    tea_context.field_summary_kernel(vol, mass, ie, temp);
 }
 
-void CloverChunk::field_summary_kernel
+void TeaCLContext::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)
 {
-    //ENQUEUE(field_summary_device);
-    ENQUEUE_OFFSET(field_summary_device);
+    FOR_EACH_TILE
+    {
+        ENQUEUE(field_summary_device);
+    }
+
+    // FIXME do a reduction
 
     *vol = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
     *mass = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);

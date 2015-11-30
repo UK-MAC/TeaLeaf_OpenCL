@@ -9,9 +9,7 @@
 #include "kernel_files/definitions.hpp"
 #include "types.hpp"
 
-static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-
-extern CloverChunk chunk;
+extern TeaCLContext tea_context;
 
 // this function gets called when something goes wrong
 #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)

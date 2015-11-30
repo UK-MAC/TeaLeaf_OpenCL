@@ -1,10 +1,29 @@
 #include "ocl_common.hpp"
 
-void CloverChunk::initBuffers
+void TeaCLContext::initBuffers
 (void)
 {
-    size_t total_cells = (x_max+2*halo_exchange_depth+1) * (y_max+2*halo_exchange_depth+1);
-    const std::vector<double> zeros(total_cells, 0.0);
+    if (!rank)
+    {
+        fprintf(stdout, "Allocating buffers\n");
+    }
+
+    FOR_EACH_TILE
+    {
+        tile->initBuffers();
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!rank)
+    {
+        fprintf(stdout, "Buffers allocated\n");
+    }
+}
+
+void TeaCLTile::initBuffers
+(void)
+{
+    size_t total_cells = (tile_x_cells+2*run_flags.halo_allocate_depth+1) * (tile_y_cells+2*run_flags.halo_allocate_depth+1);
 
     #define BUF_ALLOC(name, buf_sz)                 \
         try                                         \
@@ -25,13 +44,13 @@ void CloverChunk::initBuffers
         }
 
     #define BUF1DX_ALLOC(name, x_e)     \
-        BUF_ALLOC(name, (x_max+2*halo_exchange_depth+x_e) * sizeof(double))
+        BUF_ALLOC(name, (tile_x_cells+2*run_flags.halo_allocate_depth+x_e) * sizeof(double))
 
     #define BUF1DY_ALLOC(name, y_e)     \
-        BUF_ALLOC(name, (y_max+2*halo_exchange_depth+y_e) * sizeof(double))
+        BUF_ALLOC(name, (tile_y_cells+2*run_flags.halo_allocate_depth+y_e) * sizeof(double))
 
     #define BUF2D_ALLOC(name, x_e, y_e) \
-        BUF_ALLOC(name, (x_max+2*halo_exchange_depth+x_e) * (y_max+2*halo_exchange_depth+y_e) * sizeof(double))
+        BUF_ALLOC(name, (tile_x_cells+2*run_flags.halo_allocate_depth+x_e) * (tile_y_cells+2*run_flags.halo_allocate_depth+y_e) * sizeof(double))
 
     BUF2D_ALLOC(density, 0, 0);
     BUF2D_ALLOC(energy0, 0, 0);
@@ -70,24 +89,31 @@ void CloverChunk::initBuffers
 
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
-    BUF_ALLOC(reduce_buf_1, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_2, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_3, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_4, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_5, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
-    BUF_ALLOC(reduce_buf_6, 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y)));
+    size_t reduce_buf_sz = 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y));
+    BUF_ALLOC(reduce_buf_1, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_2, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_3, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_4, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_5, reduce_buf_sz);
+    BUF_ALLOC(reduce_buf_6, reduce_buf_sz);
+
+    const std::vector<double> zeros(total_cells, 0.0);
+    queue.enqueueWriteBuffer(reduce_buf_1, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_2, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_3, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_4, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_5, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
+    queue.enqueueWriteBuffer(reduce_buf_6, CL_TRUE, 0, reduce_buf_sz, &zeros.front());
 
     // size of one side of mesh, plus one extra on the side for each depth, times the number of halos to be exchanged
-    size_t lr_mpi_buf_sz = sizeof(double)*(y_max + 2*halo_exchange_depth)*halo_exchange_depth;
-    size_t bt_mpi_buf_sz = sizeof(double)*(x_max + 2*halo_exchange_depth)*halo_exchange_depth;
+    size_t lr_mpi_buf_sz = sizeof(double)*(tile_y_cells + 2*run_flags.halo_allocate_depth)*run_flags.halo_allocate_depth;
+    size_t bt_mpi_buf_sz = sizeof(double)*(tile_x_cells + 2*run_flags.halo_allocate_depth)*run_flags.halo_allocate_depth;
 
     // enough for 1 for each array - overkill, but not that much extra space
     BUF_ALLOC(left_buffer, NUM_BUFFERED_FIELDS*lr_mpi_buf_sz);
     BUF_ALLOC(right_buffer, NUM_BUFFERED_FIELDS*lr_mpi_buf_sz);
     BUF_ALLOC(bottom_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
     BUF_ALLOC(top_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
-
-    fprintf(DBGOUT, "Buffers allocated\n");
 
     #undef BUF2D_ALLOC
     #undef BUF1DX_ALLOC

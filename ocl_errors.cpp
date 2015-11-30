@@ -61,7 +61,7 @@ std::string errToString(cl_int err)
     }
 }
 
-void CloverChunk::enqueueKernel
+void TeaCLTile::enqueueKernel
 (cl::Kernel const& kernel,
  int line, const char* file,
  const cl::NDRange offset_range,
@@ -72,7 +72,7 @@ void CloverChunk::enqueueKernel
 {
     try
     {
-        if (profiler_on)
+        if (run_flags.profiler_on)
         {
             // time it
             cl::Event *prof_event;
@@ -117,8 +117,16 @@ void CloverChunk::enqueueKernel
             prof_event->getProfilingInfo(CL_PROFILING_COMMAND_END, &end);
             double taken = static_cast<double>(end-start)*1.0e-6;
 
-            kernel_calls.at(func_name) += 1;
-            kernel_times.at(func_name) += taken;
+            if (kernel_times.end() != kernel_times.find(func_name))
+            {
+                kernel_calls.at(func_name) += 1;
+                kernel_times.at(func_name) += taken;
+            }
+            else
+            {
+                kernel_calls[func_name] = 1;
+                kernel_times[func_name] = taken;
+            }
         }
         else
         {
@@ -200,24 +208,46 @@ extern "C" void print_opencl_profiling_info_
 }
 
 // print out timing info when done
-void CloverChunk::print_profiling_info
+void TeaCLContext::print_profiling_info
 (void)
 {
-    if (profiler_on)
+    if (run_flags.profiler_on)
     {
-        if (!rank)
+        fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
+
+        std::map<std::string, double> all_kernel_times;
+        std::map<std::string, int> all_kernel_calls;
+
+        std::map<std::string, double>::iterator ii;
+        std::map<std::string, int>::iterator jj;
+
+        FOR_EACH_TILE
         {
-            fprintf(stdout, "@@@@@ OpenCL Profiling information @@@@@\n");
+            for (ii = tile->kernel_times.begin(), jj = tile->kernel_calls.begin();
+                ii != tile->kernel_times.end(); ii++, jj++)
+            {
+                std::string func_name = ii->first;
+
+                if (all_kernel_times.end() != all_kernel_times.find(func_name))
+                {
+                    all_kernel_calls.at(func_name) += jj->second;
+                    all_kernel_times.at(func_name) += ii->second;
+                }
+                else
+                {
+                    all_kernel_calls[func_name] = jj->second;
+                    all_kernel_times[func_name] = ii->second;
+                }
+            }
         }
 
-        std::map<std::string, double>::iterator ii = kernel_times.begin();
-        std::map<std::string, int>::iterator jj = kernel_calls.begin();
-
-        for (ii = kernel_times.begin(), jj = kernel_calls.begin();
-            ii != kernel_times.end(); ii++, jj++)
+        for (ii = all_kernel_times.begin(), jj = all_kernel_calls.begin();
+            ii != all_kernel_times.end(); ii++, jj++)
         {
-            double total_time;
-            int total_calls;
+            fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
+                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
+        }
+    }
 
             MPI_Reduce(&ii->second, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
             MPI_Reduce(&jj->second, &total_calls, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -227,17 +257,15 @@ void CloverChunk::print_profiling_info
                 fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
                     ii->first.c_str(), total_time, 1e3*total_time/total_calls, total_calls);
             }
-        }
-    }
 }
 
-std::vector<double> CloverChunk::dumpArray
+std::vector<double> TeaCLTile::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 2*halo_exchange_depth + x_extra)       \
-        * ((y_max) + 2*halo_exchange_depth + y_extra)       \
+        ( ((tile_x_cells) + 2*run_flags.halo_allocate_depth + x_extra)       \
+        * ((tile_y_cells) + 2*run_flags.halo_allocate_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

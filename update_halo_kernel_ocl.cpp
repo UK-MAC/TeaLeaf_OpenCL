@@ -8,8 +8,10 @@ extern "C" void update_halo_kernel_ocl_
 const int* fields,
 const int* depth)
 {
-    chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
+    tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
+
+// FIXME make work with tiles
 
 void CloverChunk::update_array
 (cl::Buffer& cur_array,

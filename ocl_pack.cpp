@@ -5,17 +5,31 @@ extern "C" void ocl_pack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
  int * face, double * host_buffer)
 {
-    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, host_buffer);
+    tea_context.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, host_buffer);
 }
 
 extern "C" void ocl_unpack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
  int * face, double * host_buffer)
 {
-    chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, host_buffer);
+    tea_context.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, host_buffer);
 }
 
-void CloverChunk::packUnpackAllBuffers
+void TeaCLContext::packUnpackAllBuffers
+(int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
+ const int depth, const int face, const int pack,
+ double * host_buffer)
+{
+    FOR_EACH_TILE
+    {
+        // TODO only pack in selected tiles
+        tile->packUnpackAllBuffers(fields, offsets, depth, face, pack, host_buffer);
+    }
+
+    // TODO aggregate into packing buffer
+}
+
+void TeaCLTile::packUnpackAllBuffers
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
  const int depth, const int face, const int pack,
  double * host_buffer)
@@ -104,14 +118,14 @@ void CloverChunk::packUnpackAllBuffers
     {
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        side_size = depth*(y_max + 2*depth);
+        side_size = depth*(run_flags.y_cells + 2*depth);
         pack_global = update_lr_global_size[depth];
         pack_local = update_lr_local_size[depth];
         pack_offset = update_lr_offset[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        side_size = depth*(x_max + 2*depth);
+        side_size = depth*(run_flags.x_cells + 2*depth);
         pack_global = update_bt_global_size[depth];
         pack_local = update_bt_local_size[depth];
         pack_offset = update_bt_offset[depth];

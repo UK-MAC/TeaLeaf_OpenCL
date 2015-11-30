@@ -6,42 +6,20 @@
 #include <iostream>
 #include <algorithm>
 
-CloverChunk chunk;
+TeaCLContext tea_context;
 
 extern "C" void initialise_ocl_
-(int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max)
-{
-    chunk = CloverChunk(in_x_min, in_x_max,
-                        in_y_min, in_y_max);
-}
-
-// default ctor
-CloverChunk::CloverChunk
 (void)
 {
-    ;
+    tea_context = TeaCLContext();
+    tea_context.initialise();
 }
 
 extern "C" void timer_c_(double*);
 
-CloverChunk::CloverChunk
-(int* in_x_min, int* in_x_max,
- int* in_y_min, int* in_y_max)
-:x_min(*in_x_min),
- x_max(*in_x_max),
- y_min(*in_y_min),
- y_max(*in_y_max)
+void TeaCLContext::initialise
+(void)
 {
-#ifdef OCL_VERBOSE
-    DBGOUT = stdout;
-#else
-    if (NULL == (DBGOUT = fopen("/dev/null", "w")))
-    {
-        DIE("Unable to open /dev/null to discard output\n");
-    }
-#endif
-
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     double t0;
@@ -109,7 +87,7 @@ static void listPlatforms
     }
 }
 
-void CloverChunk::initOcl
+void TeaCLContext::initOcl
 (void)
 {
     std::vector<cl::Platform> platforms;
@@ -150,16 +128,17 @@ void CloverChunk::initOcl
     fprintf(DBGOUT, "Preferred device is %d\n", preferred_device);
 
     std::string type_name = readString(input, "opencl_type");
-    desired_type = typeMatch(type_name);
+    int desired_type = typeMatch(type_name);
 
     int file_halo_depth = readInt(input, "halo_depth");
 
-    halo_exchange_depth = file_halo_depth;
+    // FIXME levels
+    int file_n_tiles = readInt(input, "tiles");
 
-    if (halo_exchange_depth < 1)
-    {
-        DIE("Halo exchange depth unspecified or was too small");
-    }
+    // No error checking - assume fortran does it correctly
+    run_flags.halo_exchange_depth = file_halo_depth;
+
+    run_flags.halo_allocate_depth = std::max(file_halo_depth, 2);
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
@@ -171,32 +150,32 @@ void CloverChunk::initOcl
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_dpcg)
     {
-        tea_solver = TEA_ENUM_DPCG;
+        run_flags.tea_solver = TEA_ENUM_DPCG;
         if(!rank)fprintf(stdout, "DPCG\n");
     }
     else if (tl_use_ppcg)
     {
-        tea_solver = TEA_ENUM_PPCG;
+        run_flags.tea_solver = TEA_ENUM_PPCG;
         if(!rank)fprintf(stdout, "PPCG\n");
     }
     else if (tl_use_chebyshev)
     {
-        tea_solver = TEA_ENUM_CHEBYSHEV;
+        run_flags.tea_solver = TEA_ENUM_CHEBYSHEV;
         if(!rank)fprintf(stdout, "Chebyshev + CG\n");
     }
     else if (tl_use_cg)
     {
-        tea_solver = TEA_ENUM_CG;
+        run_flags.tea_solver = TEA_ENUM_CG;
         if(!rank)fprintf(stdout, "Conjugate gradient\n");
     }
     else if (tl_use_jacobi)
     {
-        tea_solver = TEA_ENUM_JACOBI;
+        run_flags.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi\n");
     }
     else
     {
-        tea_solver = TEA_ENUM_JACOBI;
+        run_flags.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
@@ -206,22 +185,22 @@ void CloverChunk::initOcl
     if(!rank)fprintf(stdout, "Preconditioner to use: ");
     if (desired_preconditioner.find("jac_diag") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_JAC_DIAG;
+        run_flags.preconditioner_type = TL_PREC_JAC_DIAG;
         if(!rank)fprintf(stdout, "Diagonal Jacobi\n");
     }
     else if (desired_preconditioner.find("jac_block") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_JAC_BLOCK;
+        run_flags.preconditioner_type = TL_PREC_JAC_BLOCK;
         if(!rank)fprintf(stdout, "Block Jacobi\n");
     }
     else if (desired_preconditioner.find("none") != std::string::npos)
     {
-        preconditioner_type = TL_PREC_NONE;
+        run_flags.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None\n");
     }
     else
     {
-        preconditioner_type = TL_PREC_NONE;
+        run_flags.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
@@ -330,7 +309,7 @@ void CloverChunk::initOcl
 
         try
         {
-            context = cl::Context(desired_type, properties);
+            cl::Context test_context(desired_type, properties);
         }
         catch (cl::Error e)
         {
@@ -421,6 +400,10 @@ void CloverChunk::initOcl
                 device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
                 break;
             }
+
+            TeaCLTile new_tile(run_flags, context);
+
+            tiles.push_back(new_tile);
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
@@ -428,7 +411,7 @@ void CloverChunk::initOcl
     MPI_Barrier(MPI_COMM_WORLD);
 
     // initialise command queue
-    if (profiler_on)
+    if (run_flags.profiler_on)
     {
         // turn on profiling
         queue = cl::CommandQueue(context, device,
@@ -438,5 +421,13 @@ void CloverChunk::initOcl
     {
         queue = cl::CommandQueue(context, device);
     }
+}
+
+TeaCLTile::TeaCLTile
+(run_flags_t run_flags, cl::Context context)
+:context(context),
+ run_flags(run_flags)
+{
+    ;
 }
 
