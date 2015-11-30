@@ -581,6 +581,21 @@ void CloverChunk::initArgs
     tea_leaf_ppcg_solve_calc_sd_device.setArg(7, vector_Kx);
     tea_leaf_ppcg_solve_calc_sd_device.setArg(8, vector_Ky);
 
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(1, vector_Kx);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(2, vector_Ky);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(3, Kx_coarse);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(4, Ky_coarse);
+
+    //tea_leaf_dpcg_prolong_Z_device.setArg(
+    //tea_leaf_dpcg_subtract_u_device.setArg(
+    //tea_leaf_dpcg_restrict_ZT_device.setArg(
+    //tea_leaf_dpcg_matmul_ZTA_device.setArg(
+    //tea_leaf_dpcg_init_p_device.setArg(
+    //tea_leaf_dpcg_store_r_device.setArg(
+    //tea_leaf_dpcg_calc_rrn_device.setArg(
+    //tea_leaf_dpcg_calc_p_device.setArg(
+    //tea_leaf_dpcg_solve_z_device.setArg(
+
     // reusing Mi here as 'un'
     tea_leaf_jacobi_copy_u_device.setArg(1, u);
     tea_leaf_jacobi_copy_u_device.setArg(2, vector_Mi);

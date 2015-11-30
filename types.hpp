@@ -192,6 +192,13 @@ private:
     cl::Buffer vector_Ky;
     cl::Buffer vector_sd;
 
+    // dpcg coarse grids
+    cl::Buffer Kx_coarse;
+    cl::Buffer Ky_coarse;
+    cl::Buffer Di_coarse;
+    cl::Buffer t1_coarse;
+    cl::Buffer t2_coarse;
+
     // for reduction in field_summary
     cl::Buffer reduce_buf_1;
     cl::Buffer reduce_buf_2;
