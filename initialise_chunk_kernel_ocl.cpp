@@ -11,8 +11,8 @@ void TeaCLContext::initialise_chunk_kernel
 {
     FOR_EACH_TILE
     {
-        double tile_d_xmin = d_xmin + (d_dx*tile->left);
-        double tile_d_ymin = d_ymin + (d_dy*tile->bottom);
+        double tile_d_xmin = d_xmin;
+        double tile_d_ymin = d_ymin;
 
         tile->launch_specs.at("initialise_chunk_first_device").offset = cl::NullRange;
         tile->initialise_chunk_first_device.setArg(8, tile_d_xmin);

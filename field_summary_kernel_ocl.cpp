@@ -13,13 +13,11 @@ void TeaCLContext::field_summary_kernel
     FOR_EACH_TILE
     {
         ENQUEUE(field_summary_device);
+
+        *vol = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_1);
+        *mass = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_2);
+        *ie = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_3);
+        *temp = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_4);
     }
-
-    // FIXME do a reduction
-
-    *vol = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
-    *mass = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
-    *ie = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
-    *temp = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
 }
 

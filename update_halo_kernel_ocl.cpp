@@ -11,9 +11,7 @@ const int* depth)
     tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
-// FIXME make work with tiles
-
-void CloverChunk::update_array
+void TeaCLTile::update_array
 (cl::Buffer& cur_array,
 const cell_info_t& array_type,
 const int* chunk_neighbours,
@@ -41,7 +39,7 @@ int depth)
     CHECK_LAUNCH(right, lr)
 }
 
-void CloverChunk::update_halo_kernel
+void TeaCLContext::update_halo_kernel
 (const int* fields,
 int depth,
 const int* chunk_neighbours)
@@ -49,7 +47,10 @@ const int* chunk_neighbours)
     #define HALO_UPDATE_RESIDENT(arr, type)                 \
     if (fields[FIELD_ ## arr - 1] == 1)                     \
     {                                                       \
-        update_array(arr, type, chunk_neighbours, depth);   \
+        FOR_EACH_TILE                                       \
+        {                                                   \
+            tile->update_array(tile->arr, type, chunk_neighbours, depth);   \
+        }                                                   \
     }
 
     HALO_UPDATE_RESIDENT(density, CELL);

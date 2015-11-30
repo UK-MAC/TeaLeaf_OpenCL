@@ -53,17 +53,19 @@ void TeaCLTile::initProgram
     options << device_type_prepro;
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << run_flags.halo_allocate_depth << " ";
+    options << "-DHALO_DEPTH=" << run_params.halo_allocate_depth << " ";
 
+    /*
     if (!rank)
     {
         fprintf(DBGOUT, "Compiling kernels with options:\n%s\n", options.str().c_str());
         fprintf(stdout, "Compiling kernels (may take some time)...");
         fflush(stdout);
     }
+    */
 
     // launch with special work group sizes to cover the whole grid
-    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+    compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_first", initialise_chunk_first_device, -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
 
     compileKernel(options, "./kernel_files/initialise_chunk_cl.cl", "initialise_chunk_second", initialise_chunk_second_device, -1, 1, -1, 1);
     compileKernel(options, "./kernel_files/generate_chunk_cl.cl", "generate_chunk_init", generate_chunk_init_device, 0, 0, 0, 0);
@@ -98,9 +100,9 @@ void TeaCLTile::initProgram
 
     compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_init_sd", tea_leaf_ppcg_solve_init_sd_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_calc_sd", tea_leaf_ppcg_solve_calc_sd_device,
-        -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+        -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
     compileKernel(options, "./kernel_files/tea_leaf_ppcg_cl.cl", "tea_leaf_ppcg_solve_update_r", tea_leaf_ppcg_solve_update_r_device, 
-        -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+        -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
 
     compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_coarsen_matrix", tea_leaf_dpcg_coarsen_matrix_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_dpcg_cl.cl", "tea_leaf_dpcg_prolong_Z", tea_leaf_dpcg_prolong_Z_device, 0, 0, 0, 0);
@@ -123,15 +125,9 @@ void TeaCLTile::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_init", tea_leaf_block_init_device, 0, 0, 0, 0);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_block_solve", tea_leaf_block_solve_device, 0, 0, 0, 0);
 
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_zero_boundary", tea_leaf_zero_boundary_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
-    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
-
-    if (!rank)
-    {
-        fprintf(stdout, "done.\n");
-        fprintf(DBGOUT, "All kernels compiled\n");
-    }
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-run_params.halo_exchange_depth, run_params.halo_exchange_depth, 1-run_params.halo_exchange_depth, run_params.halo_exchange_depth);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_zero_boundary", tea_leaf_zero_boundary_device, -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
+    compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
 }
 
 launch_specs_t TeaCLTile::findPaddingSize
@@ -143,7 +139,7 @@ launch_specs_t TeaCLTile::findPaddingSize
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((run_flags.halo_allocate_depth) + (hmin), (run_flags.halo_allocate_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((run_params.halo_allocate_depth) + (hmin), (run_params.halo_allocate_depth) + (vmin));
     return cur_specs;
 }
 
@@ -297,13 +293,13 @@ void TeaCLTile::compileKernel
     }
 
     kernel_info_t kernel_info = {
-        .x_min = x_min,
-        .x_max = x_max,
-        .y_min = y_min,
-        .y_max = y_max,
+        .x_min = 1,
+        .x_max = tile_x_cells,
+        .y_min = 1,
+        .y_max = tile_y_cells,
         // no halo depth
         .halo_depth = 0,
-        .preconditioner_type = preconditioner_type,
+        .preconditioner_type = run_params.preconditioner_type,
         // no x_offset
         .x_offset = 0,
         // no y_offset
@@ -425,8 +421,8 @@ void TeaCLTile::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = tile_x_cells + 2*run_flags.halo_allocate_depth;
-    size_t global_lr_pack_size = tile_y_cells + 2*run_flags.halo_allocate_depth;
+    size_t global_bt_pack_size = tile_x_cells + 2*run_params.halo_allocate_depth;
+    size_t global_lr_pack_size = tile_y_cells + 2*run_params.halo_allocate_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)
@@ -434,12 +430,12 @@ void TeaCLTile::initSizes
     while (global_lr_pack_size % local_column_size)
         global_lr_pack_size++;
 
-    update_lr_global_size[run_flags.halo_exchange_depth] = cl::NDRange(run_flags.halo_exchange_depth, global_lr_pack_size);
-    update_bt_global_size[run_flags.halo_exchange_depth] = cl::NDRange(global_bt_pack_size, run_flags.halo_exchange_depth);
+    update_lr_global_size[run_params.halo_exchange_depth] = cl::NDRange(run_params.halo_exchange_depth, global_lr_pack_size);
+    update_bt_global_size[run_params.halo_exchange_depth] = cl::NDRange(global_bt_pack_size, run_params.halo_exchange_depth);
 
     // use same local size as depth 1
-    update_lr_local_size[run_flags.halo_exchange_depth] = update_lr_local_size[1];
-    update_bt_local_size[run_flags.halo_exchange_depth] = update_bt_local_size[1];
+    update_lr_local_size[run_params.halo_exchange_depth] = update_lr_local_size[1];
+    update_bt_local_size[run_params.halo_exchange_depth] = update_bt_local_size[1];
 
     //for (int depth = 0; depth < 2; depth++)
     std::map<int, cl::NDRange>::iterator typedef irangeit;
@@ -448,8 +444,8 @@ void TeaCLTile::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
-        update_bt_offset[depth] = cl::NDRange(run_flags.halo_allocate_depth - depth, run_flags.halo_allocate_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(run_params.halo_allocate_depth - depth, run_params.halo_allocate_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(run_params.halo_allocate_depth - depth, run_params.halo_allocate_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",

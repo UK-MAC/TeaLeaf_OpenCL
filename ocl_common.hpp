@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "mpi.h"
+
 #include "kernel_files/definitions.hpp"
 #include "types.hpp"
 

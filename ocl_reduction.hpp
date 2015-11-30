@@ -4,7 +4,7 @@
 #include "ocl_common.hpp"
 
 template <typename T>
-T CloverChunk::reduceValue
+T TeaCLTile::reduceValue
 (reduce_info_vec_t& red_kernels,
  const cl::Buffer& results_buf)
 {
@@ -12,7 +12,7 @@ T CloverChunk::reduceValue
     for (size_t ii = 0; ii < red_kernels.size(); ii++)
     {
         red_kernels.at(ii).kernel.setArg(0, results_buf);
-        CloverChunk::enqueueKernel(red_kernels.at(ii).kernel,
+        TeaCLTile::enqueueKernel(red_kernels.at(ii).kernel,
                                    __LINE__, __FILE__,
                                    cl::NullRange,
                                    red_kernels.at(ii).global_size,
@@ -33,8 +33,6 @@ T CloverChunk::reduceValue
 
     return result;
 }
-
-// FIXME make it work with multiple tiles
 
 #endif
 

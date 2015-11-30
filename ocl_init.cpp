@@ -119,7 +119,7 @@ void TeaCLContext::initOcl
     // use first device whatever happens (ignore MPI rank) for running across different platforms
     bool usefirst = paramEnabled(input, "opencl_usefirst");
 
-    profiler_on = paramEnabled(input, "profiler_on");
+    run_params.profiler_on = paramEnabled(input, "profiler_on");
 
     std::string desired_vendor = readString(input, "opencl_vendor");
 
@@ -136,9 +136,7 @@ void TeaCLContext::initOcl
     int file_n_tiles = readInt(input, "tiles");
 
     // No error checking - assume fortran does it correctly
-    run_flags.halo_exchange_depth = file_halo_depth;
-
-    run_flags.halo_allocate_depth = std::max(file_halo_depth, 2);
+    run_params.halo_exchange_depth = file_halo_depth;
 
     bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = paramEnabled(input, "tl_use_cg");
@@ -150,32 +148,32 @@ void TeaCLContext::initOcl
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_dpcg)
     {
-        run_flags.tea_solver = TEA_ENUM_DPCG;
+        run_params.tea_solver = TEA_ENUM_DPCG;
         if(!rank)fprintf(stdout, "DPCG\n");
     }
     else if (tl_use_ppcg)
     {
-        run_flags.tea_solver = TEA_ENUM_PPCG;
+        run_params.tea_solver = TEA_ENUM_PPCG;
         if(!rank)fprintf(stdout, "PPCG\n");
     }
     else if (tl_use_chebyshev)
     {
-        run_flags.tea_solver = TEA_ENUM_CHEBYSHEV;
+        run_params.tea_solver = TEA_ENUM_CHEBYSHEV;
         if(!rank)fprintf(stdout, "Chebyshev + CG\n");
     }
     else if (tl_use_cg)
     {
-        run_flags.tea_solver = TEA_ENUM_CG;
+        run_params.tea_solver = TEA_ENUM_CG;
         if(!rank)fprintf(stdout, "Conjugate gradient\n");
     }
     else if (tl_use_jacobi)
     {
-        run_flags.tea_solver = TEA_ENUM_JACOBI;
+        run_params.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi\n");
     }
     else
     {
-        run_flags.tea_solver = TEA_ENUM_JACOBI;
+        run_params.tea_solver = TEA_ENUM_JACOBI;
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
@@ -185,22 +183,22 @@ void TeaCLContext::initOcl
     if(!rank)fprintf(stdout, "Preconditioner to use: ");
     if (desired_preconditioner.find("jac_diag") != std::string::npos)
     {
-        run_flags.preconditioner_type = TL_PREC_JAC_DIAG;
+        run_params.preconditioner_type = TL_PREC_JAC_DIAG;
         if(!rank)fprintf(stdout, "Diagonal Jacobi\n");
     }
     else if (desired_preconditioner.find("jac_block") != std::string::npos)
     {
-        run_flags.preconditioner_type = TL_PREC_JAC_BLOCK;
+        run_params.preconditioner_type = TL_PREC_JAC_BLOCK;
         if(!rank)fprintf(stdout, "Block Jacobi\n");
     }
     else if (desired_preconditioner.find("none") != std::string::npos)
     {
-        run_flags.preconditioner_type = TL_PREC_NONE;
+        run_params.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None\n");
     }
     else
     {
-        run_flags.preconditioner_type = TL_PREC_NONE;
+        run_params.preconditioner_type = TL_PREC_NONE;
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
@@ -262,7 +260,14 @@ void TeaCLContext::initOcl
                 cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,
                     reinterpret_cast<cl_context_properties>(platform()), 0};
 
-                context = cl::Context(desired_type, properties);
+                try
+                {
+                    context = cl::Context(desired_type, properties);
+                }
+                catch (cl::Error e)
+                {
+                    DIE("Error %d (%s) in creating context\n", e.err(), e.what());
+                }
 
                 break;
             }
@@ -350,6 +355,8 @@ void TeaCLContext::initOcl
             std::vector<cl::Device> devices;
             context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
+            cl::Device device;
+
             if (usefirst)
             {
                 // always use specified device and ignore rank
@@ -384,34 +391,52 @@ void TeaCLContext::initOcl
             fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
                 actual_device, devname.c_str(), rank);
 
-            // choose reduction based on device type
-            switch (desired_type)
-            {
-            case CL_DEVICE_TYPE_GPU : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-                break;
-            case CL_DEVICE_TYPE_CPU : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
-                break;
-            case CL_DEVICE_TYPE_ACCELERATOR : 
-                device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
-                break;
-            default :
-                device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-                break;
-            }
-
-            TeaCLTile new_tile(run_flags, context);
+            TeaCLTile new_tile(run_params, context, device);
+            new_tile.initTileQueue();
 
             tiles.push_back(new_tile);
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
 
+    if (!rank)
+    {
+        fprintf(stdout, "Finished creating tiles\n");
+    }
+
     MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void TeaCLTile::initTileQueue
+(void)
+{
+    int device_type = device.getInfo<CL_DEVICE_TYPE>();
+
+    // choose reduction based on device type
+    switch (device_type)
+    {
+    case CL_DEVICE_TYPE_GPU : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        break;
+    case CL_DEVICE_TYPE_CPU : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
+        break;
+    case CL_DEVICE_TYPE_ACCELERATOR : 
+        device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
+        break;
+    default :
+        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        break;
+    }
+
+    std::string devname;
+    device.getInfo(CL_DEVICE_NAME, &devname);
+
+    //fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
+    //    actual_device, devname.c_str(), rank);
 
     // initialise command queue
-    if (run_flags.profiler_on)
+    if (run_params.profiler_on)
     {
         // turn on profiling
         queue = cl::CommandQueue(context, device,
@@ -424,10 +449,12 @@ void TeaCLContext::initOcl
 }
 
 TeaCLTile::TeaCLTile
-(run_flags_t run_flags, cl::Context context)
-:context(context),
- run_flags(run_flags)
+(run_params_t run_params, cl::Context context, cl::Device device)
+:device(device),
+ context(context),
+ run_params(run_params)
 {
     ;
+    // FIXME need to initialise the x_cells, y_cells, maybe some others
 }
 

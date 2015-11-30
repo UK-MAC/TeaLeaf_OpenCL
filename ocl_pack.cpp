@@ -118,14 +118,14 @@ void TeaCLTile::packUnpackAllBuffers
     {
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        side_size = depth*(run_flags.y_cells + 2*depth);
+        side_size = depth*(run_params.y_cells + 2*depth);
         pack_global = update_lr_global_size[depth];
         pack_local = update_lr_local_size[depth];
         pack_offset = update_lr_offset[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        side_size = depth*(run_flags.x_cells + 2*depth);
+        side_size = depth*(run_params.x_cells + 2*depth);
         pack_global = update_bt_global_size[depth];
         pack_local = update_bt_local_size[depth];
         pack_offset = update_bt_offset[depth];

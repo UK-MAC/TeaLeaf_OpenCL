@@ -72,7 +72,7 @@ void TeaCLTile::enqueueKernel
 {
     try
     {
-        if (run_flags.profiler_on)
+        if (run_params.profiler_on)
         {
             // time it
             cl::Event *prof_event;
@@ -204,14 +204,14 @@ void cloverDie
 extern "C" void print_opencl_profiling_info_
 (void)
 {
-    chunk.print_profiling_info();
+    tea_context.print_profiling_info();
 }
 
 // print out timing info when done
 void TeaCLContext::print_profiling_info
 (void)
 {
-    if (run_flags.profiler_on)
+    if (run_params.profiler_on)
     {
         fprintf(stdout, "@@@@@ OpenCL Profiling information (from rank 0) @@@@@\n");
 
@@ -241,22 +241,18 @@ void TeaCLContext::print_profiling_info
             }
         }
 
-        for (ii = all_kernel_times.begin(), jj = all_kernel_calls.begin();
-            ii != all_kernel_times.end(); ii++, jj++)
+        double total_time;
+        int total_calls;
+
+        MPI_Reduce(&ii->second, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&jj->second, &total_calls, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        if (!rank && total_calls)
         {
             fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
-                ii->first.c_str(), ii->second, 1e3*ii->second/jj->second, jj->second);
+                ii->first.c_str(), total_time, 1e3*total_time/total_calls, total_calls);
         }
     }
-
-            MPI_Reduce(&ii->second, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-            MPI_Reduce(&jj->second, &total_calls, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
-            if (!rank && total_calls)
-            {
-                fprintf(stdout, "%30s : %10.3f ms (%.2f μs avg. over %d calls)\n",
-                    ii->first.c_str(), total_time, 1e3*total_time/total_calls, total_calls);
-            }
 }
 
 std::vector<double> TeaCLTile::dumpArray
@@ -264,8 +260,8 @@ std::vector<double> TeaCLTile::dumpArray
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((tile_x_cells) + 2*run_flags.halo_allocate_depth + x_extra)       \
-        * ((tile_y_cells) + 2*run_flags.halo_allocate_depth + y_extra)       \
+        ( ((tile_x_cells) + 2*run_params.halo_allocate_depth + x_extra)       \
+        * ((tile_y_cells) + 2*run_params.halo_allocate_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

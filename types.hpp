@@ -60,13 +60,12 @@ typedef struct {
     int preconditioner_type;
     // which solver to use, enumerated
     int tea_solver;
-    // total number of cells
+    // total number of cells in this MPI rank
     size_t x_cells;
     size_t y_cells;
     // halo size
     size_t halo_exchange_depth;
-    size_t halo_allocate_depth;
-} run_flags_t;
+} run_params_t;
 
 // vectors of kernels and work group sizes for a specific reduction
 typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
@@ -206,6 +205,8 @@ private:
     cl::Context context;
     cl::CommandQueue queue;
 
+    std::string device_type_prepro;
+
     // global size for kernels
     cl::NDRange global_size;
     cl::NDRange local_size;
@@ -215,12 +216,7 @@ private:
     // recording number of times each kernel was called
     std::map<std::string, int> kernel_calls;
 
-    /*
-    // 2 dimensional arrays - use a 2D tile for local group
-    const static size_t LOCAL_Y = JACOBI_BLOCK_SIZE;
-    const static size_t LOCAL_X = 128/LOCAL_Y;
-    const static cl::NDRange local_group_size(LOCAL_X, LOCAL_Y);
-    */
+    reduce_info_vec_t sum_red_kernels_double;
 
     // compile a file and the contained kernels, and check for errors
     void compileKernel
@@ -233,6 +229,8 @@ private:
 
     // number of cells reduced
     int reduced_cells;
+
+    // number of cells
     int tile_x_cells;
     int tile_y_cells;
 
@@ -264,19 +262,14 @@ private:
                       tile->launch_specs.at(#knl).global,   \
                       tile->local_size);
 
-    // reduction
     template <typename T>
-    void sumReduceValue
-    (int buffer, T* result, cl::Event* event, cl::Event*);
-
-    template <typename T>
-    void reduceValue
+    T reduceValue
     (reduce_info_vec_t& red_kernels,
-     const cl::Buffer& results_buf,
-     T* result, cl::Event* copy_event, cl::Event*);
+     const cl::Buffer& results_buf);
+     //T* result, cl::Event* copy_event, cl::Event*);
 
     void initTileQueue
-    (run_flags_t run_flags, cl::Device chosen_device, cl::Context context);
+    (void);
 
     launch_specs_t findPaddingSize
     (int vmin, int vmax, int hmin, int hmax);
@@ -315,18 +308,18 @@ private:
 
     std::map<std::string, cl::Program> built_programs;
 
-    run_flags_t run_flags;
+    std::map<std::string, launch_specs_t> launch_specs;
+
+    run_params_t run_params;
 public:
     TeaCLTile
-    (run_flags_t run_flags, cl::Context context,
-     int x_pos, int y_pos,
-     int left, int right, int bottom, int top);
+    (run_params_t run_params, cl::Context context, cl::Device device);
 }; // TeaCLTile
 
 class TeaCLContext
 {
 private:
-    run_flags_t run_flags;
+    run_params_t run_params;
 
     // tolerance specified in tea.in
     float tolerance;
