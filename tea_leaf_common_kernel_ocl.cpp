@@ -4,59 +4,127 @@
 #include <cmath>
 
 // copy back dx/dy and calculate rx/ry
-void CloverChunk::calcrxry
+void TeaCLContext::calcrxry
 (double dt, double * rx, double * ry)
 {
-    // make sure intialise chunk has finished
-    queue.finish();
-
-    double dx, dy;
-
-    try
+    FOR_EACH_TILE
     {
-        // celldx/celldy never change, but done for consistency with fortran
-        queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dx);
-        queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*(1 + halo_exchange_depth), sizeof(double), &dy);
-    }
-    catch (cl::Error e)
-    {
-        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
-            e.err(), e.what());
-    }
+        // make sure intialise tea_context has finished
+        tile->queue.finish();
 
-    *rx = dt/(dx*dx);
-    *ry = dt/(dy*dy);
+        double dx, dy;
+
+        try
+        {
+            // celldx/celldy never change, but done for consistency with fortran
+            tile->queue.enqueueReadBuffer(tile->celldx, CL_TRUE,
+                sizeof(double)*(1 + run_params.halo_exchange_depth), sizeof(double), &dx);
+            tile->queue.enqueueReadBuffer(tile->celldy, CL_TRUE,
+                sizeof(double)*(1 + run_params.halo_exchange_depth), sizeof(double), &dy);
+        }
+        catch (cl::Error e)
+        {
+            DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
+                e.err(), e.what());
+        }
+
+        *rx = dt/(dx*dx);
+        *ry = dt/(dy*dy);
+    }
 }
 
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 (int* norm_array, double* norm)
 {
-    chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
+    tea_context.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
 
 extern "C" void tea_leaf_common_init_kernel_ocl_
 (const int * coefficient, double * dt, double * rx, double * ry,
  int * zero_boundary, int * reflective_boundary)
 {
-    chunk.tea_leaf_common_init(*coefficient, *dt, rx, ry,
+    tea_context.tea_leaf_common_init(*coefficient, *dt, rx, ry,
         zero_boundary, *reflective_boundary);
 }
 
 extern "C" void tea_leaf_common_finalise_kernel_ocl_
 (void)
 {
-    chunk.tea_leaf_finalise();
+    tea_context.tea_leaf_finalise();
 }
 
 extern "C" void tea_leaf_calc_residual_ocl_
 (void)
 {
-    chunk.tea_leaf_calc_residual();
+    tea_context.tea_leaf_calc_residual();
 }
 
-void CloverChunk::tea_leaf_common_init
+/********************/
+
+void TeaCLContext::tea_leaf_calc_2norm_kernel
+(int norm_array, double* norm)
+{
+    if (norm_array == 0)
+    {
+        // norm of u0
+        FOR_EACH_TILE
+        {
+            tile->tea_leaf_calc_2norm_device.setArg(1, tile->u0);
+            tile->tea_leaf_calc_2norm_device.setArg(2, tile->u0);
+        }
+    }
+    else if (norm_array == 1)
+    {
+        // norm of r
+        FOR_EACH_TILE
+        {
+            tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_r);
+            tile->tea_leaf_calc_2norm_device.setArg(2, tile->vector_r);
+        }
+    }
+    else if (norm_array == 2)
+    {
+        // ddot(z, r)
+        FOR_EACH_TILE
+        {
+            tile->tea_leaf_calc_2norm_device.setArg(1, tile->vector_r);
+        }
+
+        if (run_params.preconditioner_type == TL_PREC_JAC_BLOCK)
+        {
+            FOR_EACH_TILE
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(2, tile->vector_z);
+            }
+        }
+        else if (run_params.preconditioner_type == TL_PREC_JAC_DIAG)
+        {
+            FOR_EACH_TILE
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(2, tile->vector_z);
+            }
+        }
+        else if (run_params.preconditioner_type == TL_PREC_NONE)
+        {
+            FOR_EACH_TILE
+            {
+                tile->tea_leaf_calc_2norm_device.setArg(2, tile->vector_r);
+            }
+        }
+    }
+    else
+    {
+        DIE("Invalid value '%d' for norm_array passed, should be 0 for u0, 1 for r, 2 for r*z", norm_array);
+    }
+
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_calc_2norm_device);
+        *norm = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_1);
+    }
+}
+
+void TeaCLContext::tea_leaf_common_init
 (int coefficient, double dt, double * rx, double * ry,
  int * zero_boundary, int reflective_boundary)
 {
@@ -67,10 +135,13 @@ void CloverChunk::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
-    tea_leaf_init_common_device.setArg(7, *rx);
-    tea_leaf_init_common_device.setArg(8, *ry);
-    tea_leaf_init_common_device.setArg(9, coefficient);
-    ENQUEUE_OFFSET(tea_leaf_init_common_device);
+    FOR_EACH_TILE
+    {
+        tile->tea_leaf_init_common_device.setArg(7, *rx);
+        tile->tea_leaf_init_common_device.setArg(8, *ry);
+        tile->tea_leaf_init_common_device.setArg(9, coefficient);
+        ENQUEUE(tea_leaf_init_common_device);
+    }
 
     if (!reflective_boundary)
     {
@@ -79,30 +150,42 @@ void CloverChunk::tea_leaf_common_init
         int zero_bottom = zero_boundary[2];
         int zero_top = zero_boundary[3];
 
-        tea_leaf_zero_boundary_device.setArg(1, vector_Kx);
-        tea_leaf_zero_boundary_device.setArg(2, vector_Ky);
-        tea_leaf_zero_boundary_device.setArg(3, zero_left);
-        tea_leaf_zero_boundary_device.setArg(4, zero_right);
-        tea_leaf_zero_boundary_device.setArg(5, zero_bottom);
-        tea_leaf_zero_boundary_device.setArg(6, zero_top);
+        FOR_EACH_TILE
+        {
+            tile->tea_leaf_zero_boundary_device.setArg(1, tile->vector_Kx);
+            tile->tea_leaf_zero_boundary_device.setArg(2, tile->vector_Ky);
+            tile->tea_leaf_zero_boundary_device.setArg(3, zero_left);
+            tile->tea_leaf_zero_boundary_device.setArg(4, zero_right);
+            tile->tea_leaf_zero_boundary_device.setArg(5, zero_bottom);
+            tile->tea_leaf_zero_boundary_device.setArg(6, zero_top);
 
-        ENQUEUE_OFFSET(tea_leaf_zero_boundary_device);
+            ENQUEUE(tea_leaf_zero_boundary_device);
+        }
     }
 
-    generate_chunk_init_u_device.setArg(2, energy1);
-    ENQUEUE_OFFSET(generate_chunk_init_u_device);
+    FOR_EACH_TILE
+    {
+        tile->generate_chunk_init_u_device.setArg(2, tile->energy1);
+        ENQUEUE(generate_chunk_init_u_device);
+    }
 }
 
-void CloverChunk::tea_leaf_finalise
+void TeaCLContext::tea_leaf_finalise
 (void)
 {
-    ENQUEUE_OFFSET(tea_leaf_finalise_device);
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_finalise_device);
+    }
 }
 
-void CloverChunk::tea_leaf_calc_residual
+void TeaCLContext::tea_leaf_calc_residual
 (void)
 {
-    ENQUEUE_OFFSET(tea_leaf_calc_residual_device);
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_calc_residual_device);
+    }
 }
 
 /********************/

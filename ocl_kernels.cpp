@@ -53,7 +53,7 @@ void TeaCLTile::initProgram
     options << device_type_prepro;
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << run_params.halo_allocate_depth << " ";
+    options << "-DHALO_DEPTH=" << run_params.halo_exchange_depth << " ";
 
     /*
     if (!rank)
@@ -139,7 +139,7 @@ launch_specs_t TeaCLTile::findPaddingSize
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
-    cur_specs.offset = cl::NDRange((run_params.halo_allocate_depth) + (hmin), (run_params.halo_allocate_depth) + (vmin));
+    cur_specs.offset = cl::NDRange((run_params.halo_exchange_depth) + (hmin), (run_params.halo_exchange_depth) + (vmin));
     return cur_specs;
 }
 
@@ -421,8 +421,8 @@ void TeaCLTile::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = tile_x_cells + 2*run_params.halo_allocate_depth;
-    size_t global_lr_pack_size = tile_y_cells + 2*run_params.halo_allocate_depth;
+    size_t global_bt_pack_size = tile_x_cells + 2*run_params.halo_exchange_depth;
+    size_t global_lr_pack_size = tile_y_cells + 2*run_params.halo_exchange_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)
@@ -444,8 +444,8 @@ void TeaCLTile::initSizes
     {
         int depth = key->first;
 
-        update_lr_offset[depth] = cl::NDRange(run_params.halo_allocate_depth - depth, run_params.halo_allocate_depth - depth);
-        update_bt_offset[depth] = cl::NDRange(run_params.halo_allocate_depth - depth, run_params.halo_allocate_depth - depth);
+        update_lr_offset[depth] = cl::NDRange(run_params.halo_exchange_depth - depth, run_params.halo_exchange_depth - depth);
+        update_bt_offset[depth] = cl::NDRange(run_params.halo_exchange_depth - depth, run_params.halo_exchange_depth - depth);
 
         fprintf(DBGOUT, "Depth %d:\n", depth);
         fprintf(DBGOUT, "Left/right update halo size: [%zu %zu] split by [%zu %zu], offset [%zu %zu]\n",

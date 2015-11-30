@@ -258,10 +258,10 @@ void TeaCLContext::print_profiling_info
 std::vector<double> TeaCLTile::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
-    // number of bytes to allocate for 2d array
+    // number of bytes to exchange for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((tile_x_cells) + 2*run_params.halo_allocate_depth + x_extra)       \
-        * ((tile_y_cells) + 2*run_params.halo_allocate_depth + y_extra)       \
+        ( ((tile_x_cells) + 2*run_params.halo_exchange_depth + x_extra)       \
+        * ((tile_y_cells) + 2*run_params.halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));
