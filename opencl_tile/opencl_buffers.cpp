@@ -1,6 +1,6 @@
 #include "opencl_tile.hpp"
 
-void TeaOpenCLTile::initBuffers
+void TeaOpenCLTile::initMemory
 (void)
 {
     if (!rank)

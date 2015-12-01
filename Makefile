@@ -170,23 +170,42 @@ FORTRAN_FILES=\
 	tea_leaf.o			\
 	diffuse.o
 
+CTX_FILES=\
+	ctx_errors.o \
+	ctx_field_summary_kernel.o \
+	ctx_generate_chunk_kernel.o \
+	ctx_init.o \
+	ctx_initialise_chunk_kernel.o \
+	ctx_pack.o \
+	ctx_set_field_kernel.o \
+	ctx_strings.o \
+	ctx_tea_leaf_cg_kernel.o \
+	ctx_tea_leaf_cheby_kernel.o \
+	ctx_tea_leaf_common_kernel.o \
+	ctx_tea_leaf_dpcg_kernel.o \
+	ctx_tea_leaf_jacobi_kernel.o \
+	ctx_tea_leaf_ppcg_kernel.o \
+	ctx_update_halo_kernel.o
+
 OCL_FILES=\
-	ocl_pack.o \
-	ocl_init.o \
-	ocl_strings.o \
-	ocl_errors.o \
-	ocl_kernels.o \
-	set_field_kernel_ocl.o \
-	field_summary_kernel_ocl.o \
-	generate_chunk_kernel_ocl.o \
-	update_halo_kernel_ocl.o \
-	initialise_chunk_kernel_ocl.o \
-	tea_leaf_common_kernel_ocl.o \
-	tea_leaf_cg_kernel_ocl.o \
-	tea_leaf_cheby_kernel_ocl.o \
-	tea_leaf_jacobi_kernel_ocl.o \
-	tea_leaf_ppcg_kernel_ocl.o \
-	tea_leaf_dpcg_kernel_ocl.o
+	opencl_buffers.o \
+	opencl_field_summary.o \
+	opencl_generate_chunk.o \
+	opencl_init.o \
+	opencl_initialise_chunk.o \
+	opencl_kernels.o \
+	opencl_pack.o \
+	opencl_reduction.o \
+	opencl_set_field.o \
+	opencl_tea_leaf_cg.o \
+	opencl_tea_leaf_cheby.o \
+	opencl_tea_leaf_common.o \
+	opencl_tea_leaf_dpcg.o \
+	opencl_tea_leaf_jacobi.o \
+	opencl_tea_leaf_ppcg.o \
+	opencl_update_halo.o
+
+VPATH+=./opencl_tile
 
 tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\

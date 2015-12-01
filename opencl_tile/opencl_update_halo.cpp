@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 // types of array data
 cell_info_t CELL = {.x_extra=0, .y_extra=0, .x_invert=1, .y_invert=1, .x_face=0, .y_face=0, .grid_type=CELL_DATA};

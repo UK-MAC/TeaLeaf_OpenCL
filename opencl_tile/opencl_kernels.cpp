@@ -1,4 +1,4 @@
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 #include <sstream>
 #include <fstream>
 

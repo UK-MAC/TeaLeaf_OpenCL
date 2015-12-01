@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::generate_chunk_kernel
 (const int number_of_states, 

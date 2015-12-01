@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * Kx_local, double * Ky_local)

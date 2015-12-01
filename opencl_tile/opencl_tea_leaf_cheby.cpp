@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::tea_leaf_cheby_init_kernel
 (const double * ch_alphas, const double * ch_betas, int n_coefs,

@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)

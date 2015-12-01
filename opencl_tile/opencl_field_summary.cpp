@@ -1,4 +1,4 @@
-#include "ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)

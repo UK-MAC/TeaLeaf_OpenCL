@@ -220,10 +220,6 @@ private:
     void calcrxry
     (double dt, double * rx, double * ry);
 
-    // ocl things
-    cl::Platform platform;
-    cl::Context context;
-
     // mpi rank
     int rank;
 
@@ -277,11 +273,6 @@ public:
 
     void update_halo_kernel(const int* fields, int depth,
         const int* chunk_neighbours);
-    void update_array
-    (cl::Buffer& cur_array,
-    const cell_info_t& array_type,
-    const int* chunk_neighbours,
-    int depth);
 
     void set_field_kernel();
 

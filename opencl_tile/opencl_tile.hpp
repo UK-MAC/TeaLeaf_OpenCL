@@ -1,6 +1,9 @@
 #ifndef __TEA_OPENCL_TILE_HEADER
 #define __TEA_OPENCL_TILE_HEADER
 
+#include <map>
+#include "../ctx_common.hpp"
+
 #include "CL/cl.hpp"
 
 #define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
@@ -212,6 +215,8 @@ private:
     (void);
     // initialise all program stuff, kernels, etc
     void initProgram
+    (void);
+    void initMemory
     (void);
     // initialise all the arguments for each kernel
     void initArgs

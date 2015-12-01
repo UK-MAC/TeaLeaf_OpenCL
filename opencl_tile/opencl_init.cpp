@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 TeaOpenCLTile::TeaTile
 (run_params_t run_params, cl::Context context, cl::Device device)

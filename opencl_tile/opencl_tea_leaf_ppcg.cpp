@@ -1,4 +1,4 @@
-#include "../ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 void TeaOpenCLTile::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
