@@ -174,9 +174,7 @@ OCL_FILES=\
 	ocl_pack.o \
 	ocl_init.o \
 	ocl_strings.o \
-	ocl_buffers.o \
 	ocl_errors.o \
-	ocl_reduction.o \
 	ocl_kernels.o \
 	set_field_kernel_ocl.o \
 	field_summary_kernel_ocl.o \

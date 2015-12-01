@@ -95,11 +95,27 @@ public:
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer)=0;
 
-    virtual void initMemory
-    (void)=0;
-
     virtual void set_field_kernel
     (void)=0;
+
+    virtual void field_summary_kernel
+    (double* vol, double* mass, double* ie, double* temp)=0;
+
+    virtual void generate_chunk_kernel
+    (const int number_of_states, 
+    const double* state_density, const double* state_energy,
+    const double* state_xmin, const double* state_xmax,
+    const double* state_ymin, const double* state_ymax,
+    const double* state_radius, const int* state_geometry,
+    const int g_rect, const int g_circ, const int g_point)=0;
+
+    virtual void update_halo_kernel
+    (const int* chunk_neighbours,
+     const int* fields,
+     const int depth)=0;
+
+    virtual void initialise_chunk_kernel
+    (double d_xmin, double d_ymin, double d_dx, double d_dy)=0;
 
     // mpi rank
     int rank;

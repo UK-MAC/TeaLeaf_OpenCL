@@ -3,6 +3,11 @@
 void TeaOpenCLTile::initBuffers
 (void)
 {
+    if (!rank)
+    {
+        fprintf(stdout, "Allocating buffers\n");
+    }
+
     size_t total_cells = (tile_x_cells+2*run_params.halo_exchange_depth+1) * (tile_y_cells+2*run_params.halo_exchange_depth+1);
 
     const std::vector<double> zeros(total_cells, 0.0);
@@ -128,5 +133,12 @@ void TeaOpenCLTile::initBuffers
     ADD_BUFFER_DBG_MAP(vertexdx);
     ADD_BUFFER_DBG_MAP(vertexdy);
 #undef ADD_BUFFER_DBG_MAP
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(stdout, "Buffers allocated\n");
+    }
 }
 

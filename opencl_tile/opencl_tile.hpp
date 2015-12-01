@@ -186,10 +186,10 @@ private:
      cl::Event * const event=NULL);
 
     #define ENQUEUE(knl)                                    \
-        tile->enqueueKernel(tile->knl, __LINE__, __FILE__,  \
-                      tile->launch_specs.at(#knl).offset,   \
-                      tile->launch_specs.at(#knl).global,   \
-                      tile->local_size);
+        enqueueKernel(knl, __LINE__, __FILE__,  \
+                      launch_specs.at(#knl).offset,   \
+                      launch_specs.at(#knl).global,   \
+                      local_size);
 
     template <typename T>
     T reduceValue
@@ -228,10 +228,6 @@ private:
     void tea_leaf_calc_2norm_set_vector
     (int norm_array);
 
-    void packUnpackAllBuffers
-    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
-     int face, int pack, double * buffer);
-
     std::map<std::string, cl::Program> built_programs;
 
     std::map<std::string, launch_specs_t> launch_specs;
@@ -241,12 +237,31 @@ public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device);
 
+    void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
+
     virtual void set_field_kernel
     (void);
 
-    // initialise buffers for device
-    void initMemory
-    (void);
+    virtual void field_summary_kernel
+    (double* vol, double* mass, double* ie, double* temp);
+
+    virtual void generate_chunk_kernel
+    (const int number_of_states, 
+    const double* state_density, const double* state_energy,
+    const double* state_xmin, const double* state_xmax,
+    const double* state_ymin, const double* state_ymax,
+    const double* state_radius, const int* state_geometry,
+    const int g_rect, const int g_circ, const int g_point);
+
+    virtual void update_halo_kernel
+    (const int* chunk_neighbours,
+     const int* fields,
+     const int depth);
+
+    virtual void initialise_chunk_kernel
+    (double d_xmin, double d_ymin, double d_dx, double d_dy);
 }; // TeaOpenCLTile
 
 #endif
