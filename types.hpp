@@ -11,8 +11,8 @@
 
 #define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
 
-    // this function gets called when something goes wrong
-    #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
+// this function gets called when something goes wrong
+#define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
 
 typedef struct cell_info_struct {
     cl_int x_extra;
@@ -451,10 +451,6 @@ public:
     (void);
 
     void initialise(void);
-
-    // ctor
-    ~TeaCLContext
-    (void);
 
     void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,

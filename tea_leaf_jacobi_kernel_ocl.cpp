@@ -4,14 +4,17 @@
 extern "C" void tea_leaf_jacobi_solve_kernel_ocl_
 (double * error)
 {
-    chunk.tea_leaf_jacobi_solve_kernel(error);
+    tea_context.tea_leaf_jacobi_solve_kernel(error);
 }
 
-void CloverChunk::tea_leaf_jacobi_solve_kernel
+void TeaCLContext::tea_leaf_jacobi_solve_kernel
 (double* error)
 {
-    ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
+    FOR_EACH_TILE
+    {
+        ENQUEUE(tea_leaf_jacobi_copy_u_device);
+        ENQUEUE(tea_leaf_jacobi_solve_device);
 
-    *error = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
+        *error = tile->reduceValue<double>(tile->sum_red_kernels_double, tile->reduce_buf_1);
+    }
 }
