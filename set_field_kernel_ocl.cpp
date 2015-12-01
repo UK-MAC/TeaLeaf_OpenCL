@@ -9,9 +9,6 @@ extern "C" void set_field_kernel_ocl_
 void TeaCLContext::set_field_kernel
 (void)
 {
-    FOR_EACH_TILE
-    {
-        ENQUEUE(set_field_device)
-    }
+    tiles.at(fine_tile)->set_field_kernel();
 }
 

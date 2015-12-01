@@ -1,8 +1,6 @@
 #ifndef __CL_COMMON_HDR
 #define __CL_COMMON_HDR
 
-#include "CL/cl.hpp"
-
 #include <cstdio>
 #include <cstdlib>
 

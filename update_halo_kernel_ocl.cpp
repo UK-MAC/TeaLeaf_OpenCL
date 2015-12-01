@@ -11,7 +11,7 @@ const int* depth)
     tea_context.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
-void TeaCLTile::update_array
+void TeaOpenCLTile::update_array
 (cl::Buffer& cur_array,
 const cell_info_t& array_type,
 const int* chunk_neighbours,

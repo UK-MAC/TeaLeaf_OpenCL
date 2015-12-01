@@ -31,11 +31,6 @@ void TeaCLContext::initialise
     }
 
     initOcl();
-    initProgram();
-    initSizes();
-    initReduction();
-    initBuffers();
-    initArgs();
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -367,8 +362,6 @@ void TeaCLContext::initOcl
                 actual_device = preferred_device + (rank % devices.size());
             }
 
-            std::string devname;
-
             if (preferred_device < 0)
             {
                 // if none specified or invalid choice, choose 0
@@ -386,15 +379,18 @@ void TeaCLContext::initOcl
                 device = devices.at(actual_device);
             }
 
+            std::string devname;
             device.getInfo(CL_DEVICE_NAME, &devname);
 
             fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
                 actual_device, devname.c_str(), rank);
 
-            TeaCLTile new_tile(run_params, context, device);
-            new_tile.initTileQueue();
+            // TODO should be able to use a fortran one instead
+            // TODO need to pass size of chunk (calculated in Fortran)
+            tile_ptr_t new_tile(new TeaOpenCLTile(run_params, context, device));
 
-            tiles.push_back(new_tile);
+            tiles[fine_tile] = new_tile;
+            // FIXME create coarse tile
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
@@ -405,56 +401,5 @@ void TeaCLContext::initOcl
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-}
-
-void TeaCLTile::initTileQueue
-(void)
-{
-    int device_type = device.getInfo<CL_DEVICE_TYPE>();
-
-    // choose reduction based on device type
-    switch (device_type)
-    {
-    case CL_DEVICE_TYPE_GPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-        break;
-    case CL_DEVICE_TYPE_CPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
-        break;
-    case CL_DEVICE_TYPE_ACCELERATOR : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
-        break;
-    default :
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
-        break;
-    }
-
-    std::string devname;
-    device.getInfo(CL_DEVICE_NAME, &devname);
-
-    //fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
-    //    actual_device, devname.c_str(), rank);
-
-    // initialise command queue
-    if (run_params.profiler_on)
-    {
-        // turn on profiling
-        queue = cl::CommandQueue(context, device,
-                                 CL_QUEUE_PROFILING_ENABLE, NULL);
-    }
-    else
-    {
-        queue = cl::CommandQueue(context, device);
-    }
-}
-
-TeaCLTile::TeaCLTile
-(run_params_t run_params, cl::Context context, cl::Device device)
-:device(device),
- context(context),
- run_params(run_params)
-{
-    ;
-    // FIXME need to initialise the x_cells, y_cells, maybe some others
 }
 

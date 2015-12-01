@@ -2,7 +2,7 @@
 #include <sstream>
 #include <fstream>
 
-void TeaCLContext::initProgram
+void TeaOpenCLTile::initProgram
 (void)
 {
     if (!rank)
@@ -10,22 +10,6 @@ void TeaCLContext::initProgram
         fprintf(stdout, "Compiling kernels (may take some time)...");
     }
 
-    FOR_EACH_TILE
-    {
-        tile->initProgram();
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    if (!rank)
-    {
-        fprintf(stdout, "done.\n");
-    }
-}
-
-void TeaCLTile::initProgram
-(void)
-{
     // options
     std::stringstream options("");
 
@@ -128,9 +112,16 @@ void TeaCLTile::initProgram
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_common", tea_leaf_init_common_device, 1-run_params.halo_exchange_depth, run_params.halo_exchange_depth, 1-run_params.halo_exchange_depth, run_params.halo_exchange_depth);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_zero_boundary", tea_leaf_zero_boundary_device, -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
     compileKernel(options, "./kernel_files/tea_leaf_common_cl.cl", "tea_leaf_init_jac_diag", tea_leaf_init_jac_diag_device, -run_params.halo_exchange_depth, run_params.halo_exchange_depth, -run_params.halo_exchange_depth, run_params.halo_exchange_depth);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(stdout, "done.\n");
+    }
 }
 
-launch_specs_t TeaCLTile::findPaddingSize
+launch_specs_t TeaOpenCLTile::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
     size_t global_horz_size = (-(hmin)) + (hmax) + tile_x_cells;
@@ -143,7 +134,7 @@ launch_specs_t TeaCLTile::findPaddingSize
     return cur_specs;
 }
 
-cl::Program TeaCLTile::compileProgram
+cl::Program TeaOpenCLTile::compileProgram
 (const std::string& source,
  const std::string& options)
 {
@@ -207,7 +198,7 @@ cl::Program TeaCLTile::compileProgram
     return program;
 }
 
-void TeaCLTile::compileKernel
+void TeaOpenCLTile::compileKernel
 (std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
@@ -327,7 +318,7 @@ void TeaCLTile::compileKernel
     fflush(DBGOUT);
 }
 
-void TeaCLContext::initSizes
+void TeaOpenCLTile::initSizes
 (void)
 {
     if (!rank)
@@ -335,22 +326,6 @@ void TeaCLContext::initSizes
         fprintf(DBGOUT, "Calculating appropriate work group sizes\n");
     }
 
-    FOR_EACH_TILE
-    {
-        tile->initSizes();
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    if (!rank)
-    {
-        fprintf(DBGOUT, "Sizes calculated\n");
-    }
-}
-
-void TeaCLTile::initSizes
-(void)
-{
     fprintf(DBGOUT, "Local size = %dx%d\n", int(LOCAL_X), int(LOCAL_Y));
 
     // pad the global size so the local size fits
@@ -362,18 +337,6 @@ void TeaCLTile::initSizes
     fprintf(DBGOUT, "Global size = %dx%d\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
     local_size = cl::NDRange(LOCAL_X, LOCAL_Y);
-
-    /*
-     *  all the reductions only operate on the inner cells, because the halo
-     *  cells aren't really part of the simulation. create a new global size
-     *  that doesn't include these halo cells for the reduction which should
-     *  speed it up a bit
-     */
-    const int red_x = tile_x_cells +
-        (((tile_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells)%LOCAL_X)));
-    const int red_y = tile_y_cells +
-        (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
-    reduced_cells = red_x*red_y;
 
     /*
      *  update halo kernels need specific work group sizes - not doing a
@@ -459,9 +422,16 @@ void TeaCLTile::initSizes
     }
 
     fprintf(DBGOUT, "Update halo parameters calculated\n");
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(DBGOUT, "Sizes calculated\n");
+    }
 }
 
-void TeaCLContext::initArgs
+void TeaOpenCLTile::initArgs
 (void)
 {
     if (!rank)
@@ -469,21 +439,6 @@ void TeaCLContext::initArgs
         fprintf(stdout, "Setting kernel arguments\n");
     }
 
-    FOR_EACH_TILE
-    {
-        tile->initArgs();
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!rank)
-    {
-        fprintf(stdout, "Kernel arguments set\n");
-    }
-}
-
-void TeaCLTile::initArgs
-(void)
-{
     #define SETARG_CHECK(knl, idx, buf) \
         try \
         { \
@@ -694,6 +649,11 @@ void TeaCLTile::initArgs
     tea_leaf_init_jac_diag_device.setArg(2, vector_Kx);
     tea_leaf_init_jac_diag_device.setArg(3, vector_Ky);
 
-    fprintf(DBGOUT, "Kernel arguments set\n");
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (!rank)
+    {
+        fprintf(stdout, "Kernel arguments set\n");
+    }
 }
 

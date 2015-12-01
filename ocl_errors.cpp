@@ -61,7 +61,7 @@ std::string errToString(cl_int err)
     }
 }
 
-void TeaCLTile::enqueueKernel
+void TeaOpenCLTile::enqueueKernel
 (cl::Kernel const& kernel,
  int line, const char* file,
  const cl::NDRange offset_range,
@@ -223,8 +223,8 @@ void TeaCLContext::print_profiling_info
 
         FOR_EACH_TILE
         {
-            for (ii = tile->kernel_times.begin(), jj = tile->kernel_calls.begin();
-                ii != tile->kernel_times.end(); ii++, jj++)
+            for (ii = tile_it->second->kernel_times.begin(), jj = tile_it->second->kernel_calls.begin();
+                ii != tile_it->second->kernel_times.end(); ii++, jj++)
             {
                 std::string func_name = ii->first;
 
@@ -255,7 +255,7 @@ void TeaCLContext::print_profiling_info
     }
 }
 
-std::vector<double> TeaCLTile::dumpArray
+std::vector<double> TeaOpenCLTile::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to exchange for 2d array
