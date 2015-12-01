@@ -236,32 +236,6 @@ private:
 public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device);
-
-    void packUnpackAllBuffers
-    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
-     int face, int pack, double * buffer);
-
-    virtual void set_field_kernel
-    (void);
-
-    virtual void field_summary_kernel
-    (double* vol, double* mass, double* ie, double* temp);
-
-    virtual void generate_chunk_kernel
-    (const int number_of_states, 
-    const double* state_density, const double* state_energy,
-    const double* state_xmin, const double* state_xmax,
-    const double* state_ymin, const double* state_ymax,
-    const double* state_radius, const int* state_geometry,
-    const int g_rect, const int g_circ, const int g_point);
-
-    virtual void update_halo_kernel
-    (const int* chunk_neighbours,
-     const int* fields,
-     const int depth);
-
-    virtual void initialise_chunk_kernel
-    (double d_xmin, double d_ymin, double d_dx, double d_dy);
 }; // TeaOpenCLTile
 
 #endif
