@@ -12,16 +12,16 @@ void block_solve_func
  __GLOBAL__ const double * __restrict const Kx,
  __GLOBAL__ const double * __restrict const Ky)
 {
-    const size_t column = get_global_id(0);
-    const size_t row = get_global_id(1);
+    const int column = get_global_id(0);
+    const int row = get_global_id(1);
 
-    const size_t loc_column = get_local_id(0);
-    const size_t loc_row_size = LOCAL_X;
+    const int loc_column = get_local_id(0);
+    const int loc_row_size = LOCAL_X;
 
     const int x_max = kernel_info.x_max;
     const int y_max = kernel_info.y_max;
 
-    const size_t upper_limit = BLOCK_TOP;
+    const int upper_limit = BLOCK_TOP;
 
     int k = 0;
 #define LOC_K (loc_column + k*loc_row_size)
@@ -91,7 +91,7 @@ __kernel void tea_leaf_block_init
 {
     __kernel_indexes;
 
-    const size_t upper_limit = BLOCK_TOP;
+    const int upper_limit = BLOCK_TOP;
 
     if (WITHIN_BOUNDS)
     {
