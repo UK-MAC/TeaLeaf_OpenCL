@@ -461,9 +461,9 @@ void TeaOpenCLTile::initArgs
     initialise_chunk_first_device.setArg(11, celly);
     initialise_chunk_first_device.setArg(12, celldy);
 
-    initialise_chunk_second_device.setArg(5, volume);
-    initialise_chunk_second_device.setArg(6, xarea);
-    initialise_chunk_second_device.setArg(7, yarea);
+    initialise_chunk_second_device.setArg(3, volume);
+    initialise_chunk_second_device.setArg(4, xarea);
+    initialise_chunk_second_device.setArg(5, yarea);
 
     // set field
     set_field_device.setArg(1, energy0);

@@ -51,8 +51,6 @@ __kernel void initialise_chunk_first
 
 __kernel void initialise_chunk_second
 (kernel_info_t kernel_info,
- const double d_xmin,
- const double d_ymin,
  const double d_dx,
  const double d_dy,
  __GLOBAL__     double * __restrict const volume,
