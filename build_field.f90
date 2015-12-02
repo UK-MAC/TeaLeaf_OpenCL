@@ -28,18 +28,18 @@ SUBROUTINE build_field()
 
   INTEGER :: j,k, t
 
+  ! TODO will be (2, n_levels) eventually
+  INTEGER :: tile_bounds(2, 2)
+  INTEGER :: n_levels
+
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      chunk%tiles(t)%field%x_min=1
-      chunk%tiles(t)%field%y_min=1
+      tile_bounds(:,1) = (/chunk%tiles(t)%x_cells, chunk%tiles(t)%y_cells/)
+      tile_bounds(:,2) = (/chunk%def%x_cells, chunk%def%y_cells/)
 
-      chunk%tiles(t)%field%x_max=chunk%tiles(t)%x_cells
-      chunk%tiles(t)%field%y_max=chunk%tiles(t)%y_cells
+      n_levels = SIZE(tile_bounds(1,:))
 
-      CALL initialise_ocl(chunk%tiles(t)%field%x_min, &
-                          chunk%tiles(t)%field%x_max, &
-                          chunk%tiles(t)%field%y_min, &
-                          chunk%tiles(t)%field%y_max)
+      CALL initialise_ocl(tile_bounds, n_levels)
     ENDDO
   ENDIF
 

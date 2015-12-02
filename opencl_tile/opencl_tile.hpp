@@ -162,10 +162,6 @@ private:
     // number of cells reduced
     int reduced_cells;
 
-    // number of cells
-    int tile_x_cells;
-    int tile_y_cells;
-
     // sizes for launching update halo kernels - l/r and u/d updates
     std::map<int, cl::NDRange> update_lr_global_size;
     std::map<int, cl::NDRange> update_bt_global_size;
@@ -238,9 +234,15 @@ private:
     std::map<std::string, launch_specs_t> launch_specs;
 
     run_params_t run_params;
+
+    // number of cells
+    const int tile_x_cells;
+    const int tile_y_cells;
+
 public:
     TeaOpenCLTile
-    (run_params_t run_params, cl::Context context, cl::Device device);
+    (run_params_t run_params, cl::Context context, cl::Device device,
+     int x_cells, int y_cells);
 
     virtual void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,

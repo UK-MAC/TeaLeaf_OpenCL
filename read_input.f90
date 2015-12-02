@@ -167,9 +167,10 @@ SUBROUTINE read_input()
       CASE('summary_frequency')
         summary_frequency=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'summary_frequency',summary_frequency
-      case('sub_tiles_per_tile')
-        sub_tiles_per_tile=parse_getival(parse_getword(.true.))
-        if(parallel%boss)write(g_out,"(1x,a25,i12)")'sub_tiles_per_tile',sub_tiles_per_tile
+      ! Calculated later for the OpenCL
+      !case('sub_tiles_per_tile')
+      !  sub_tiles_per_tile=parse_getival(parse_getword(.true.))
+      !  if(parallel%boss)write(g_out,"(1x,a25,i12)")'sub_tiles_per_tile',sub_tiles_per_tile
       CASE('tl_ch_cg_presteps')
         tl_ch_cg_presteps=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'tl_ch_cg_presteps',tl_ch_cg_presteps

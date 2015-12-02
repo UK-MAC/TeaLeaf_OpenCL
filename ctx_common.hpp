@@ -16,4 +16,6 @@ extern TeaCLContext tea_context;
 extern void cloverDie
 (int line, const char* filename, const char* format, ...);
 
+extern "C" void timer_c_(double*);
+
 #endif

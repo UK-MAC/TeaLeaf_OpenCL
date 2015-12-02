@@ -160,6 +160,7 @@ MODULE definitions_module
    TYPE deflate_type
      ! Arrays the size of mpi_dims*tile_dims
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: t1, t2
+     ! Don't really want to store the diagonal, but otherwise it's impossible to know what the tile size was in the local solve
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: def_Di
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: def_Kx, def_Ky
      INTEGER            :: x_cells              &
@@ -169,6 +170,7 @@ MODULE definitions_module
                        ,x_max  &
                        ,y_max
    END TYPE deflate_type
+
    TYPE chunk_type
 
      INTEGER         :: task   !mpi task

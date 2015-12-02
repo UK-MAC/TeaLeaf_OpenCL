@@ -88,6 +88,8 @@ MODULE data_module
 
    ! Hardcoded in OpenCL version
    INTEGER, PARAMETER        ::tiles_per_task=1
+   ! TODO maybe add a input option for this. 8x8 should be fine for now
+   INTEGER, PARAMETER        ::opencl_sub_tile_size=8
    INTEGER                   ::sub_tiles_per_tile
 
    ! cartesian communicator

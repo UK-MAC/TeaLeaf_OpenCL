@@ -1,13 +1,14 @@
 #include "../ctx_common.hpp"
 
 TeaOpenCLTile::TeaOpenCLTile
-(run_params_t run_params, cl::Context context, cl::Device device)
+(run_params_t run_params, cl::Context context, cl::Device device,
+ int x_cells, int y_cells)
 :device(device),
  context(context),
- run_params(run_params)
+ run_params(run_params),
+ tile_x_cells(x_cells), tile_y_cells(y_cells)
 {
-    ;
-    // FIXME need to initialise the x_cells, y_cells, maybe some others
+    fprintf(stdout, "%d %d\n", tile_x_cells, tile_y_cells);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

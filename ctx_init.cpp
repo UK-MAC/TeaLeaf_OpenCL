@@ -10,17 +10,24 @@
 TeaCLContext tea_context;
 
 extern "C" void initialise_ocl_
-(void)
+(int * tile_sizes, int * n_tiles)
 {
     tea_context = TeaCLContext();
-    tea_context.initialise();
+    tea_context.initialise(tile_sizes, *n_tiles);
 }
 
-extern "C" void timer_c_(double*);
-
 void TeaCLContext::initialise
-(void)
+(int * tile_sizes, int n_tiles)
 {
+#ifdef OCL_VERBOSE
+    DBGOUT = stdout;
+#else
+    if (NULL == (DBGOUT = fopen("/dev/null", "w")))
+    {
+        DIE("Unable to open /dev/null to discard output\n");
+    }
+#endif
+
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     double t0;
@@ -31,7 +38,7 @@ void TeaCLContext::initialise
         fprintf(stdout, "Initialising OpenCL\n");
     }
 
-    initOcl();
+    initOcl(tile_sizes, n_tiles);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -84,7 +91,7 @@ static void listPlatforms
 }
 
 void TeaCLContext::initOcl
-(void)
+(int * tile_sizes, int n_tiles)
 {
     std::vector<cl::Platform> platforms;
 
@@ -390,12 +397,25 @@ void TeaCLContext::initOcl
             fprintf(stdout, "OpenCL using device %d (%s) in rank %d\n",
                 actual_device, devname.c_str(), rank);
 
-            // TODO should be able to use a fortran one instead
-            // TODO need to pass size of chunk (calculated in Fortran)
-            tile_ptr_t new_tile(new TeaOpenCLTile(run_params, context, device));
+            // needs to be 2 - 0->fine, 1->coarse
+            // TODO remove
+            if (!(n_tiles == 2))
+            {
+                DIE("Only supports 2 tiles at the moment");
+            }
 
-            tiles[fine_tile] = new_tile;
-            // FIXME create coarse tile
+            for (int ii = 0; ii < n_tiles; ii++)
+            {
+                int x_cells = tile_sizes[ii*2 + 0];
+                int y_cells = tile_sizes[ii*2 + 1];
+
+                fprintf(stdout, "%d %d\n", x_cells, y_cells);
+
+                tile_ptr_t new_tile(new TeaOpenCLTile(run_params, context,
+                    device, x_cells, y_cells));
+
+                tiles[ii] = new_tile;
+            }
         }
         MPI_Barrier(MPI_COMM_WORLD);
     } while ((cur_rank++) < ranks);
@@ -404,7 +424,5 @@ void TeaCLContext::initOcl
     {
         fprintf(stdout, "Finished creating tiles\n");
     }
-
-    MPI_Barrier(MPI_COMM_WORLD);
 }
 

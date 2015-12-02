@@ -59,6 +59,11 @@ SUBROUTINE start
   chunk%x_cells = chunk%right -chunk%left  +1
   chunk%y_cells = chunk%top   -chunk%bottom+1
 
+  ! Calculated number of sub tiles based on the number of cells and the ocl tile size
+  sub_tiles_per_tile = &
+    CEILING(REAL(chunk%x_cells)/REAL(opencl_sub_tile_size))* &
+    CEILING(REAL(chunk%y_cells)/REAL(opencl_sub_tile_size))
+
   chunk%chunk_x_min = 1
   chunk%chunk_y_min = 1
   chunk%chunk_x_max = chunk%x_cells
@@ -75,6 +80,24 @@ SUBROUTINE start
     chunk%tiles(t)%field%x_max = chunk%tiles(t)%x_cells
     chunk%tiles(t)%field%y_max = chunk%tiles(t)%y_cells
   ENDDO
+
+  IF (parallel%boss)THEN
+    WRITE(g_out,*)"Tile size ",chunk%tiles(1)%x_cells," by ",chunk%tiles(1)%y_cells," cells"
+  ENDIF
+
+  ! Each chunk has an array the size of the _total_ deflation vector size
+  chunk%def%x_cells = mpi_dims(1)*chunk%tile_dims(1)*chunk%sub_tile_dims(1)
+  chunk%def%y_cells = mpi_dims(2)*chunk%tile_dims(2)*chunk%sub_tile_dims(2)
+
+  IF (parallel%boss)THEN
+    WRITE(g_out,*)"Sub-tile size ",opencl_sub_tile_size," by ", &
+                                   opencl_sub_tile_size," cells"
+  ENDIF
+
+  chunk%def%x_min = 1
+  chunk%def%y_min = 1
+  chunk%def%x_max = chunk%def%x_cells
+  chunk%def%y_max = chunk%def%y_cells
 
   CALL build_field()
 

@@ -22,6 +22,8 @@ void TeaOpenCLTile::initReduction
         (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 
+    fprintf(stdout, "%d %d\n", tile_x_cells, tile_y_cells);
+
     // each work group reduces to 1 value inside each kernel
     const int total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));
 

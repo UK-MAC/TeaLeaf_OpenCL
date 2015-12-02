@@ -18,10 +18,10 @@ void block_solve_func
     const size_t loc_column = get_local_id(0);
     const size_t loc_row_size = LOCAL_X;
 
-    const size_t upper_limit = BLOCK_TOP;
-
     const int x_max = kernel_info.x_max;
     const int y_max = kernel_info.y_max;
+
+    const size_t upper_limit = BLOCK_TOP;
 
     int k = 0;
 #define LOC_K (loc_column + k*loc_row_size)
