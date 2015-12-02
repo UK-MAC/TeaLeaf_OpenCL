@@ -111,40 +111,124 @@ report.o :  \
 set_field.o :  \
 	tea.o
 
-field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-initialise_chunk_kernel_ocl.o: initialise_chunk_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-ocl_buffers.o: ocl_buffers.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-ocl_errors.o: ocl_errors.cpp \
- ocl_common.hpp kernel_files/definitions.hpp types.hpp
-ocl_init.o: ocl_init.cpp \
- ocl_common.hpp kernel_files/definitions.hpp types.hpp ocl_strings.hpp
-ocl_kernels.o: ocl_kernels.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-ocl_pack.o: ocl_pack.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-ocl_reduction.o: ocl_reduction.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-ocl_strings.o: ocl_strings.cpp ocl_strings.hpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-tea_leaf_cg_kernel_ocl.o: tea_leaf_cg_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-tea_leaf_cheby_kernel_ocl.o: tea_leaf_cheby_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-tea_leaf_common_kernel_ocl.o: tea_leaf_common_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-tea_leaf_dpcg_kernel_ocl.o: tea_leaf_dpcg_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-tea_leaf_jacobi_kernel_ocl.o: tea_leaf_jacobi_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-tea_leaf_ppcg_kernel_ocl.o: tea_leaf_ppcg_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp ocl_reduction.hpp
-update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp \
- kernel_files/definitions.hpp types.hpp
-
+ctx_errors.o: ctx_errors.cpp \
+ ctx_common.hpp kernel_files/definitions.hpp types.hpp \
+ opencl_tile/opencl_tile.hpp opencl_tile/../ctx_common.hpp
+ctx_field_summary_kernel.o: ctx_field_summary_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_generate_chunk_kernel.o: ctx_generate_chunk_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_init.o: ctx_init.cpp \
+ ctx_common.hpp kernel_files/definitions.hpp types.hpp \
+ opencl_tile/opencl_tile.hpp opencl_tile/../ctx_common.hpp ctx_strings.hpp
+ctx_initialise_chunk_kernel.o: ctx_initialise_chunk_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_pack.o: ctx_pack.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_set_field_kernel.o: ctx_set_field_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_strings.o: ctx_strings.cpp ctx_strings.hpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_cg_kernel.o: ctx_tea_leaf_cg_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_cheby_kernel.o: ctx_tea_leaf_cheby_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_common_kernel.o: ctx_tea_leaf_common_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_dpcg_kernel.o: ctx_tea_leaf_dpcg_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_jacobi_kernel.o: ctx_tea_leaf_jacobi_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_tea_leaf_ppcg_kernel.o: ctx_tea_leaf_ppcg_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+ctx_update_halo_kernel.o: ctx_update_halo_kernel.cpp ctx_common.hpp \
+ kernel_files/definitions.hpp types.hpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp
+opencl_buffers.o: opencl_tile/opencl_buffers.cpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp
+opencl_field_summary.o: opencl_tile/opencl_field_summary.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_generate_chunk.o: opencl_tile/opencl_generate_chunk.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_init.o: opencl_tile/opencl_init.cpp opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_initialise_chunk.o: opencl_tile/opencl_initialise_chunk.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_kernels.o: opencl_tile/opencl_kernels.cpp opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_pack.o: opencl_tile/opencl_pack.cpp opencl_tile/opencl_tile.hpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp
+opencl_reduction.o: opencl_tile/opencl_reduction.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_set_field.o: opencl_tile/opencl_set_field.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_tea_leaf_cg.o: opencl_tile/opencl_tea_leaf_cg.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp opencl_tile/opencl_reduction.hpp
+opencl_tea_leaf_cheby.o: opencl_tile/opencl_tea_leaf_cheby.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp opencl_tile/opencl_reduction.hpp
+opencl_tea_leaf_common.o: opencl_tile/opencl_tea_leaf_common.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_tea_leaf_dpcg.o: opencl_tile/opencl_tea_leaf_dpcg.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp opencl_tile/opencl_reduction.hpp
+opencl_tea_leaf_jacobi.o: opencl_tile/opencl_tea_leaf_jacobi.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp opencl_tile/opencl_reduction.hpp
+opencl_tea_leaf_ppcg.o: opencl_tile/opencl_tea_leaf_ppcg.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp
+opencl_update_halo.o: opencl_tile/opencl_update_halo.cpp \
+ opencl_tile/../ctx_common.hpp \
+ opencl_tile/../kernel_files/definitions.hpp opencl_tile/../types.hpp \
+ opencl_tile/../opencl_tile/opencl_tile.hpp \
+ opencl_tile/../opencl_tile/../ctx_common.hpp

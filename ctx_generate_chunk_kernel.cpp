@@ -1,4 +1,4 @@
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void generate_chunk_kernel_ocl_
 (const int* number_of_states,

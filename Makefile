@@ -207,10 +207,11 @@ OCL_FILES=\
 
 VPATH+=./opencl_tile
 
-tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(OCL_FILES)
+tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CTX_FILES) $(OCL_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\
 	$(FORTRAN_FILES)	\
 	$(C_FILES)	\
+	$(CTX_FILES) \
 	$(OCL_FILES) \
 	$(LDFLAGS) \
 	$(LDLIBS) \

@@ -1,4 +1,5 @@
 #include "../ctx_common.hpp"
+#include "opencl_reduction.hpp"
 
 void TeaOpenCLTile::tea_leaf_jacobi_solve_kernel
 (double* error)

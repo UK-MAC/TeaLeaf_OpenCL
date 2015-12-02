@@ -1,7 +1,6 @@
 #include <string>
-#include <fstream>
 
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 
 enum {AMD_PLAT, INTEL_PLAT, NVIDIA_PLAT, NO_PLAT, ANY_PLAT, LIST_PLAT};
 

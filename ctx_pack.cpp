@@ -1,4 +1,4 @@
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void ocl_pack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,

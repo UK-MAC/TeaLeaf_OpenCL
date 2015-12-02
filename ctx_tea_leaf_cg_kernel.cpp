@@ -1,5 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
+#include "ctx_common.hpp"
 
 #include <cassert>
 

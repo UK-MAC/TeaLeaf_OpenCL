@@ -1,7 +1,7 @@
 #ifndef __CL_REDUCTION_HDR
 #define __CL_REDUCTION_HDR
 
-#include "ocl_common.hpp"
+#include "../ctx_common.hpp"
 
 template <typename T>
 T TeaOpenCLTile::reduceValue

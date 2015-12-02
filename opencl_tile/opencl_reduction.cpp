@@ -1,5 +1,8 @@
 #include "../ctx_common.hpp"
 
+#include <cmath>
+#include <sstream>
+
 void TeaOpenCLTile::initReduction
 (void)
 {

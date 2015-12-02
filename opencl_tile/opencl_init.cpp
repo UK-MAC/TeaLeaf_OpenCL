@@ -1,6 +1,6 @@
 #include "../ctx_common.hpp"
 
-TeaOpenCLTile::TeaTile
+TeaOpenCLTile::TeaOpenCLTile
 (run_params_t run_params, cl::Context context, cl::Device device)
 :device(device),
  context(context),

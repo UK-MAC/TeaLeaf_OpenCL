@@ -1,7 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
-
-#include <cassert>
+#include "ctx_common.hpp"
 
 extern "C" void tea_leaf_dpcg_coarsen_matrix_kernel_ocl_
 (double * Kx_local, double * Ky_local)

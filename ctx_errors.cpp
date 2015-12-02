@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 
 #include <cstdio>
 #include <sstream>

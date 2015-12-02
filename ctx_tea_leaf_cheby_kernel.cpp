@@ -1,5 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void tea_leaf_cheby_init_kernel_ocl_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,

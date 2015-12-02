@@ -1,8 +1,9 @@
 #include "mpi.h"
-#include "ocl_common.hpp"
-#include "ocl_strings.hpp"
+#include "ctx_common.hpp"
+#include "ctx_strings.hpp"
 
 #include <sstream>
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -212,6 +213,8 @@ void TeaCLContext::initOcl
     {
         fprintf(stdout, "Choosing first platform that matches device type\n");
 
+        cl::Platform platform;
+
         // go through all platforms
         for (size_t ii = 0; ; ii++)
         {
@@ -270,6 +273,8 @@ void TeaCLContext::initOcl
     }
     else
     {
+        cl::Platform platform;
+
         // go through all platforms
         for (size_t ii = 0; ; )
         {

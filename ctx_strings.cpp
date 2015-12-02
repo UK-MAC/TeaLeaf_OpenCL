@@ -1,7 +1,8 @@
-#include "ocl_strings.hpp"
+#include "ctx_strings.hpp"
 
 #include <algorithm>
 #include <sstream>
+#include <fstream>
 #include <iostream>
 
 std::string matchParam

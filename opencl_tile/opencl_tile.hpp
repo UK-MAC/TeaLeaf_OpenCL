@@ -241,6 +241,108 @@ private:
 public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device);
+
+    virtual void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
+
+    virtual void set_field_kernel
+    (void);
+
+    // FIXME how does inheritance work again
+    virtual void field_summary_kernel
+    (double* vol, double* mass, double* ie, double* temp);
+
+    virtual void generate_chunk_kernel
+    (const int number_of_states, 
+    const double* state_density, const double* state_energy,
+    const double* state_xmin, const double* state_xmax,
+    const double* state_ymin, const double* state_ymax,
+    const double* state_radius, const int* state_geometry,
+    const int g_rect, const int g_circ, const int g_point);
+
+    virtual void update_halo_kernel
+    (const int* chunk_neighbours,
+     const int* fields,
+     const int depth);
+
+    virtual void initialise_chunk_kernel
+    (double d_xmin, double d_ymin, double d_dx, double d_dy);
+
+    virtual void calcrxry
+    (double dt, double * rx, double * ry);
+
+    virtual void tea_leaf_calc_2norm_kernel
+    (int norm_array, double* norm);
+
+    virtual void tea_leaf_common_init
+    (int coefficient, double dt, double * rx, double * ry,
+     int * zero_boundary, int reflective_boundary);
+
+    virtual void tea_leaf_finalise
+    (void);
+
+    virtual void tea_leaf_calc_residual
+    (void);
+
+    virtual void tea_leaf_cg_init_kernel
+    (double * rro);
+
+    virtual void tea_leaf_cg_calc_w_kernel
+    (double* pw);
+
+    virtual void tea_leaf_cg_calc_ur_kernel
+    (double alpha, double* rrn);
+
+    virtual void tea_leaf_cg_calc_p_kernel
+    (double beta);
+
+    virtual void tea_leaf_cheby_init_kernel
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const double theta);
+
+    virtual void tea_leaf_cheby_iterate_kernel
+    (const int cheby_calc_step);
+
+    virtual void tea_leaf_jacobi_solve_kernel
+    (double* error);
+
+    virtual void ppcg_init
+    (const double * ch_alphas, const double * ch_betas,
+     const double theta, const int n_inner_steps);
+
+    virtual void ppcg_init_sd_kernel
+    (void);
+
+    virtual void tea_leaf_ppcg_inner_kernel
+    (int inner_step, int bounds_extra, const int* chunk_neighbours);
+
+    virtual void tea_leaf_dpcg_coarsen_matrix_kernel
+    (double * Kx_local, double * Ky_local);
+
+    virtual void tea_leaf_dpcg_prolong_z_kernel
+    (double * t2_local);
+
+    virtual void tea_leaf_dpcg_subtract_u_kernel
+    (double * t2_local);
+
+    virtual void tea_leaf_dpcg_restrict_zt_kernel
+    (double * ztr_local);
+
+    virtual void tea_leaf_dpcg_matmul_zta_kernel
+    (double * ztaz_local);
+
+    virtual void tea_leaf_dpcg_init_p_kernel
+    (void);
+
+    virtual void tea_leaf_dpcg_store_r_kernel
+    (void);
+
+    virtual void tea_leaf_dpcg_calc_rrn_kernel
+    (double * rrn);
+
+    virtual void tea_leaf_dpcg_calc_p_kernel
+    (void);
 }; // TeaOpenCLTile
 
 #endif

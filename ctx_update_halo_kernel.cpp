@@ -1,4 +1,4 @@
-#include "ocl_common.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void update_halo_kernel_ocl_
 (const int* chunk_neighbours,

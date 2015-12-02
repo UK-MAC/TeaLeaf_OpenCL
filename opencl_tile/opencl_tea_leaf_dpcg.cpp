@@ -1,4 +1,5 @@
 #include "../ctx_common.hpp"
+#include "opencl_reduction.hpp"
 
 void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * Kx_local, double * Ky_local)

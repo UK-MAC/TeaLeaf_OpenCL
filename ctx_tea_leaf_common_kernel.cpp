@@ -1,7 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
-
-#include <cmath>
+#include "ctx_common.hpp"
 
 extern "C" void tea_leaf_calc_2norm_kernel_ocl_
 (int* norm_array, double* norm)

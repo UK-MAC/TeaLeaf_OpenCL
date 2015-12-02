@@ -8,13 +8,10 @@ void TeaOpenCLTile::update_halo_kernel
  const int* fields,
  const int depth)
 {
-    #define HALO_UPDATE_RESIDENT(arr, type)                     \
-    if (fields[FIELD_ ## arr - 1] == 1)                         \
-    {                                                           \
-        FOR_EACH_TILE                                           \
-        {                                                       \
-            update_array(arr, type, chunk_neighbours, depth);   \
-        }                                                       \
+    #define HALO_UPDATE_RESIDENT(arr, type)                 \
+    if (fields[FIELD_ ## arr - 1] == 1)                     \
+    {                                                       \
+        update_array(arr, type, chunk_neighbours, depth);   \
     }
 
     HALO_UPDATE_RESIDENT(density, CELL);

@@ -1,5 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void field_summary_kernel_ocl_
 (double* vol, double* mass, double* ie, double* temp)

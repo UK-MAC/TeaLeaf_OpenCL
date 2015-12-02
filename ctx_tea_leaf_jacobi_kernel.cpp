@@ -1,5 +1,4 @@
-#include "ocl_common.hpp"
-#include "ocl_reduction.hpp"
+#include "ctx_common.hpp"
 
 extern "C" void tea_leaf_jacobi_solve_kernel_ocl_
 (double * error)
