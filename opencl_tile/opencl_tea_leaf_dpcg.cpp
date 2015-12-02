@@ -1,14 +1,25 @@
 #include "../ctx_common.hpp"
 #include "opencl_reduction.hpp"
 
-void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
-(double * Kx_local, double * Ky_local)
+template <>
+void TeaOpenCLTile::getKxKy
+<cl::Buffer>
+(cl::Buffer * Kx, cl::Buffer * Ky)
 {
-    //ENQUEUE(tea_leaf_dpcg_coarsen_matrix_device);
+    Kx = &vector_Kx;
+    Ky = &vector_Ky;
+}
 
-    // TODO copy back memory
-    Kx_local[0] = 1;
-    Ky_local[1] = 1;
+void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
+(double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile)
+{
+    cl::Buffer *coarse_Kx=NULL, *coarse_Ky=NULL;
+    coarser_tile->getKxKy(coarse_Kx, coarse_Ky);
+
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(3, *coarse_Kx);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(4, *coarse_Ky);
+
+    // TODO copy back 
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel

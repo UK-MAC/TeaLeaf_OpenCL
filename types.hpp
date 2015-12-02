@@ -83,12 +83,7 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
 const static int fine_tile = 0;
 const static int coarse_tile = 1;
 
-#include "generic_tile.hpp"
-
-#include "opencl_tile/opencl_tile.hpp"
-
-// TODO
-//#include "fortran_tile/fortran_tile.hpp"
+class TeaTile;
 
 #if __cplusplus > 199711L
 #include <memory>
@@ -97,6 +92,13 @@ typedef std::shared_ptr<TeaTile> tile_ptr_t;
 #include <tr1/memory>
 typedef std::tr1::shared_ptr<TeaTile> tile_ptr_t;
 #endif
+
+#include "generic_tile.hpp"
+
+#include "opencl_tile/opencl_tile.hpp"
+
+// TODO
+//#include "fortran_tile/fortran_tile.hpp"
 
 class TeaCLContext
 {

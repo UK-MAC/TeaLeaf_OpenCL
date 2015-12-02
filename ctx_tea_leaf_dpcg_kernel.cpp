@@ -1,33 +1,33 @@
 #include "ctx_common.hpp"
 
 extern "C" void tea_leaf_dpcg_coarsen_matrix_kernel_ocl_
-(double * Kx_local, double * Ky_local)
+(double * host_Kx, double * host_Ky)
 {
-    tea_context.tea_leaf_dpcg_coarsen_matrix_kernel(Kx_local, Ky_local);
+    tea_context.tea_leaf_dpcg_coarsen_matrix_kernel(host_Kx, host_Ky);
 }
 
 extern "C" void tea_leaf_dpcg_prolong_z_kernel_ocl_
-(double * t2_local)
+(double * host_t2)
 {
-    tea_context.tea_leaf_dpcg_prolong_z_kernel(t2_local);
+    tea_context.tea_leaf_dpcg_prolong_z_kernel(host_t2);
 }
 
 extern "C" void tea_leaf_dpcg_subtract_u_kernel_ocl_
-(double * t2_local)
+(double * host_t2)
 {
-    tea_context.tea_leaf_dpcg_subtract_u_kernel(t2_local);
+    tea_context.tea_leaf_dpcg_subtract_u_kernel(host_t2);
 }
 
 extern "C" void tea_leaf_dpcg_restrict_zt_kernel_ocl_
-(double * ztr_local)
+(double * host_ztr)
 {
-    tea_context.tea_leaf_dpcg_restrict_zt_kernel(ztr_local);
+    tea_context.tea_leaf_dpcg_restrict_zt_kernel(host_ztr);
 }
 
 extern "C" void tea_leaf_dpcg_matmul_zta_kernel_ocl_
-(double * ztaz_local)
+(double * host_ztaz)
 {
-    tea_context.tea_leaf_dpcg_matmul_zta_kernel(ztaz_local);
+    tea_context.tea_leaf_dpcg_matmul_zta_kernel(host_ztaz);
 }
 
 extern "C" void tea_leaf_dpcg_init_p_kernel_ocl_
@@ -70,40 +70,37 @@ extern "C" void tea_leaf_dpcg_coarse_solve_ocl_
 /********************/
 
 void TeaCLContext::tea_leaf_dpcg_coarsen_matrix_kernel
-(double * Kx_local, double * Ky_local)
+(double * host_Kx, double * host_Ky)
 {
-    //ENQUEUE(tea_leaf_dpcg_coarsen_matrix_device);
-
-    // TODO copy back memory
-    Kx_local[0] = 1;
-    Ky_local[1] = 1;
+    tiles.at(fine_tile)->tea_leaf_dpcg_coarsen_matrix_kernel(host_Kx, host_Ky,
+        tiles.at(coarse_tile));
 }
 
 void TeaCLContext::tea_leaf_dpcg_prolong_z_kernel
-(double * t2_local)
+(double * host_t2)
 {
-    // TODO copy t2_local to device
+    // TODO copy host_t2 to device
     //ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
 }
 
 void TeaCLContext::tea_leaf_dpcg_subtract_u_kernel
-(double * t2_local)
+(double * host_t2)
 {
-    // TODO copy t2_local to device
+    // TODO copy host_t2 to device
     //ENQUEUE(tea_leaf_dpcg_subtract_u_device);
 }
 
 void TeaCLContext::tea_leaf_dpcg_restrict_zt_kernel
-(double * ztr_local)
+(double * host_ztr)
 {
-    // TODO copy ztr_local from device
+    // TODO copy host_ztr from device
     //ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
 }
 
 void TeaCLContext::tea_leaf_dpcg_matmul_zta_kernel
-(double * ztaz_local)
+(double * host_ztaz)
 {
-    // TODO copy ztr_local from device
+    // TODO copy ztaz from device
     //ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
 }
 

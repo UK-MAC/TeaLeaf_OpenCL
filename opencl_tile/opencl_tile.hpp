@@ -319,9 +319,6 @@ public:
     virtual void tea_leaf_ppcg_inner_kernel
     (int inner_step, int bounds_extra, const int* chunk_neighbours);
 
-    virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * Kx_local, double * Ky_local);
-
     virtual void tea_leaf_dpcg_prolong_z_kernel
     (double * t2_local);
 
@@ -345,6 +342,13 @@ public:
 
     virtual void tea_leaf_dpcg_calc_p_kernel
     (void);
+
+    virtual void tea_leaf_dpcg_coarsen_matrix_kernel
+    (double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile);
+
+    template <typename T>
+    void getKxKy
+    (T * Kx, T * Ky);
 }; // TeaOpenCLTile
 
 #endif

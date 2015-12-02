@@ -9,6 +9,9 @@ public:
     // recording number of times each kernel was called
     std::map<std::string, int> kernel_calls;
 
+    // mpi rank
+    int rank;
+
     virtual void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer)=0;
@@ -83,9 +86,6 @@ public:
     virtual void tea_leaf_ppcg_inner_kernel
     (int inner_step, int bounds_extra, const int* chunk_neighbours)=0;
 
-    virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * Kx_local, double * Ky_local)=0;
-
     virtual void tea_leaf_dpcg_prolong_z_kernel
     (double * t2_local)=0;
 
@@ -110,8 +110,21 @@ public:
     virtual void tea_leaf_dpcg_calc_p_kernel
     (void)=0;
 
-    // mpi rank
-    int rank;
+    virtual void tea_leaf_dpcg_coarsen_matrix_kernel
+    (double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile)=0;
+
+    // Returns the Kx or Ky arrays
+    // can be overloaded for different implementations (Fortran etc)
+    template <typename T>
+    void getKxKy
+    (T * Kx, T * Ky);
 }; // TeaTile
 
+template <typename T>
+void TeaTile::getKxKy
+(T * Kx, T * Ky)
+{
+}
+
 #endif
+
