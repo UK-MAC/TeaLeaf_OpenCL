@@ -92,29 +92,25 @@ void TeaCLContext::tea_leaf_dpcg_copy_reduced_coarse_grid
 void TeaCLContext::tea_leaf_dpcg_prolong_z_kernel
 (double * host_t2)
 {
-    // TODO copy host_t2 to device
-    //ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_prolong_z_kernel(host_t2);
 }
 
 void TeaCLContext::tea_leaf_dpcg_subtract_u_kernel
 (double * host_t2)
 {
-    // TODO copy host_t2 to device
-    //ENQUEUE(tea_leaf_dpcg_subtract_u_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_subtract_u_kernel(host_t2);
 }
 
 void TeaCLContext::tea_leaf_dpcg_restrict_zt_kernel
 (double * host_ztr)
 {
-    // TODO copy host_ztr from device
-    //ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_restrict_zt_kernel(host_ztr);
 }
 
 void TeaCLContext::tea_leaf_dpcg_matmul_zta_kernel
 (double * host_ztaz)
 {
-    // TODO copy ztaz from device
-    //ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_matmul_zta_kernel(host_ztaz);
 }
 
 void TeaCLContext::tea_leaf_dpcg_init_p_kernel

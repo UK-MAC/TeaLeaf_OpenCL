@@ -87,9 +87,11 @@ __kernel void tea_leaf_dpcg_prolong_Z
 
     if (WITHIN_BOUNDS)
     {
-        z[THARR2D(0, 0, 0)] = t2_coarse[DEFLATION_IDX];
+        z[THARR2D(0, 0, 0)] -= t2_coarse[DEFLATION_IDX];
     }
 }
+
+// these two are similar - could be reused
 
 __kernel void tea_leaf_dpcg_subtract_u
 (kernel_info_t kernel_info,
@@ -112,11 +114,14 @@ __kernel void tea_leaf_dpcg_restrict_ZT
     __kernel_indexes;
 
     __SHARED__ double ZTr_sum_shared[BLOCK_SZ];
-    ZTr_sum_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
     {
         ZTr_sum_shared[lid] = r[THARR2D(0, 0, 0)];
+    }
+    else
+    {
+        ZTr_sum_shared[lid] = 0.0;
     }
 
     DEFLATION_REDUCTION(ZTr_sum_shared, ZTr_coarse, SUM);

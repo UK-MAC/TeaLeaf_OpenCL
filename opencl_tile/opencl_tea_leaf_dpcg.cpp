@@ -69,29 +69,45 @@ void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_coarse_grid
 void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel
 (double * t2_local)
 {
-    // TODO copy t2_local to device
-    //ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
+    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        t2_local);
+
+    ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_subtract_u_kernel
 (double * t2_local)
 {
-    // TODO copy t2_local to device
-    //ENQUEUE(tea_leaf_dpcg_subtract_u_device);
+    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        t2_local);
+
+    ENQUEUE(tea_leaf_dpcg_subtract_u_device);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_restrict_zt_kernel
 (double * ztr_local)
 {
-    // TODO copy ztr_local from device
-    //ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
+    ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
+
+    queue.finish();
+
+    queue.enqueueReadBuffer(coarse_local_ztr, CL_TRUE, 0, 
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        ztr_local);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_matmul_zta_kernel
 (double * ztaz_local)
 {
-    // TODO copy ztr_local from device
-    //ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
+    ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
+
+    queue.finish();
+
+    queue.enqueueReadBuffer(coarse_local_ztaz, CL_TRUE, 0, 
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        ztaz_local);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_init_p_kernel

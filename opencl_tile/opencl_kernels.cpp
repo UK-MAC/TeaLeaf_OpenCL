@@ -589,10 +589,20 @@ void TeaOpenCLTile::initArgs
     tea_leaf_dpcg_coarsen_matrix_device.setArg(3, coarse_local_Kx);
     tea_leaf_dpcg_coarsen_matrix_device.setArg(4, coarse_local_Ky);
 
-    //tea_leaf_dpcg_prolong_Z_device.setArg(
-    //tea_leaf_dpcg_subtract_u_device.setArg(
-    //tea_leaf_dpcg_restrict_ZT_device.setArg(
-    //tea_leaf_dpcg_matmul_ZTA_device.setArg(
+    tea_leaf_dpcg_prolong_Z_device.setArg(1, vector_z);
+    tea_leaf_dpcg_prolong_Z_device.setArg(2, coarse_local_t2);
+
+    tea_leaf_dpcg_subtract_u_device.setArg(1, vector_z);
+    tea_leaf_dpcg_subtract_u_device.setArg(2, coarse_local_t2);
+
+    tea_leaf_dpcg_restrict_ZT_device.setArg(1, vector_r);
+    tea_leaf_dpcg_restrict_ZT_device.setArg(2, coarse_local_ztr);
+
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(1, vector_z);
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(2, vector_Kx);
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(3, vector_Ky);
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(4, coarse_local_ztaz);
+
     //tea_leaf_dpcg_init_p_device.setArg(
     //tea_leaf_dpcg_store_r_device.setArg(
     //tea_leaf_dpcg_calc_rrn_device.setArg(
