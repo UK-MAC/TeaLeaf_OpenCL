@@ -237,6 +237,13 @@ private:
 
     run_params_t run_params;
 
+    void getCoarseCopyParameters
+    (cl::size_t<3> * buffer_origin,
+     cl::size_t<3> * host_origin,
+     cl::size_t<3> * region,
+     size_t * buffer_row_pitch,
+     size_t * host_row_pitch);
+
 public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device,
@@ -346,9 +353,8 @@ public:
     virtual void tea_leaf_dpcg_copy_reduced_coarse_grid
     (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di);
 
-    template <typename T>
-    void getKxKy
-    (T * Kx, T * Ky);
+    virtual void tea_leaf_dpcg_copy_reduced_t2
+    (double * global_coarse_t2);
 }; // TeaOpenCLTile
 
 #endif

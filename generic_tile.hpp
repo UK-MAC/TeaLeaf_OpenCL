@@ -123,21 +123,12 @@ public:
     virtual void tea_leaf_dpcg_copy_reduced_coarse_grid
     (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)=0;
 
-    // Returns the Kx or Ky arrays
-    // can be overloaded for different implementations (Fortran etc)
-    template <typename T>
-    void getKxKy
-    (T * Kx, T * Ky);
+    virtual void tea_leaf_dpcg_copy_reduced_t2
+    (double * global_coarse_t2)=0;
 
     TeaTile
     (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
 }; // TeaTile
-
-template <typename T>
-void TeaTile::getKxKy
-(T * Kx, T * Ky)
-{
-}
 
 #endif
 

@@ -137,7 +137,6 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
     __kernel_indexes;
 
     __SHARED__ double ztaz_shared[BLOCK_SZ];
-    ztaz_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
     {
@@ -146,6 +145,10 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*z[THARR2D(0, 0, 0)]
             - (Ky[THARR2D(0, 1, 0)]*z[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*z[THARR2D(0, -1, 0)])
             - (Kx[THARR2D(1, 0, 0)]*z[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*z[THARR2D(-1, 0, 0)]);
+    }
+    else
+    {
+        ztaz_shared[lid] = 0.0;
     }
 
     DEFLATION_REDUCTION(ztaz_shared, ztaz_coarse, SUM);

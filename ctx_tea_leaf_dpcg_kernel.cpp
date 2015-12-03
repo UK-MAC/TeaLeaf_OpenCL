@@ -31,6 +31,12 @@ extern "C" void tea_leaf_dpcg_restrict_zt_kernel_ocl_
     tea_context.tea_leaf_dpcg_restrict_zt_kernel(host_ztr);
 }
 
+extern "C" void tea_leaf_dpcg_copy_reduced_t2_ocl_
+(double * global_coarse_t2)
+{
+    tea_context.tea_leaf_dpcg_copy_reduced_t2(global_coarse_t2);
+}
+
 extern "C" void tea_leaf_dpcg_matmul_zta_kernel_ocl_
 (double * host_ztaz)
 {
@@ -87,6 +93,13 @@ void TeaCLContext::tea_leaf_dpcg_copy_reduced_coarse_grid
 {
     // COARSE tile
     tiles.at(coarse_tile)->tea_leaf_dpcg_copy_reduced_coarse_grid(global_coarse_Kx, global_coarse_Ky, global_coarse_Di);
+}
+
+void TeaCLContext::tea_leaf_dpcg_copy_reduced_t2
+(double * global_coarse_t2)
+{
+    // COARSE tile
+    tiles.at(coarse_tile)->tea_leaf_dpcg_copy_reduced_t2(global_coarse_t2);
 }
 
 void TeaCLContext::tea_leaf_dpcg_prolong_z_kernel

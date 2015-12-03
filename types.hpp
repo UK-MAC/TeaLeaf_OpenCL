@@ -172,6 +172,8 @@ public:
     (double * Kx_local, double * Ky_local);
     void tea_leaf_dpcg_copy_reduced_coarse_grid
     (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di);
+    void tea_leaf_dpcg_copy_reduced_t2
+    (double * global_coarse_t2);
     void tea_leaf_dpcg_prolong_z_kernel
     (double * t2_local);
     void tea_leaf_dpcg_subtract_u_kernel
