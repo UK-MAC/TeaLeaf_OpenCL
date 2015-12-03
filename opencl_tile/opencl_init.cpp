@@ -1,12 +1,12 @@
 #include "../ctx_common.hpp"
 
-TeaOpenCLTile::TeaOpenCLTile
+TeaOpenCLChunk::TeaOpenCLChunk
 (run_params_t run_params, cl::Context context, cl::Device device,
  int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells)
 :device(device),
  context(context),
  run_params(run_params),
- TeaTile(x_cells, y_cells, coarse_x_cells, coarse_y_cells)
+ TeaChunk(x_cells, y_cells, coarse_x_cells, coarse_y_cells)
 {
     fprintf(stdout, "%d %d\n", tile_x_cells, tile_y_cells);
 

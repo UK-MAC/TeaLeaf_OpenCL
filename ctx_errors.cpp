@@ -61,7 +61,7 @@ std::string errToString(cl_int err)
     }
 }
 
-void TeaOpenCLTile::enqueueKernel
+void TeaOpenCLChunk::enqueueKernel
 (cl::Kernel const& kernel,
  int line, const char* file,
  const cl::NDRange offset_range,
@@ -255,7 +255,7 @@ void TeaCLContext::print_profiling_info
     }
 }
 
-std::vector<double> TeaOpenCLTile::dumpArray
+std::vector<double> TeaOpenCLChunk::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to exchange for 2d array

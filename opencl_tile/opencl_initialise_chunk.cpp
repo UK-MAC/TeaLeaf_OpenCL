@@ -1,6 +1,6 @@
 #include "../ctx_common.hpp"
 
-void TeaOpenCLTile::initialise_chunk_kernel
+void TeaOpenCLChunk::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)
 {
     launch_specs.at("initialise_chunk_first_device").offset = cl::NullRange;

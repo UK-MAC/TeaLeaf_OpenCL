@@ -3,7 +3,7 @@
 // types of array data
 cell_info_t CELL = {.x_extra=0, .y_extra=0, .x_invert=1, .y_invert=1, .x_face=0, .y_face=0, .grid_type=CELL_DATA};
 
-void TeaOpenCLTile::update_halo_kernel
+void TeaOpenCLChunk::update_halo_kernel
 (const int* chunk_neighbours,
  const int* fields,
  const int depth)
@@ -19,7 +19,7 @@ void TeaOpenCLTile::update_halo_kernel
     HALO_UPDATE_RESIDENT(energy1, CELL);
 }
 
-void TeaOpenCLTile::update_array
+void TeaOpenCLChunk::update_array
 (cl::Buffer& cur_array,
  const cell_info_t& array_type,
  const int* chunk_neighbours,

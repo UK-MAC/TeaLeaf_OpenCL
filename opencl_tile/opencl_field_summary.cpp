@@ -1,6 +1,6 @@
 #include "../ctx_common.hpp"
 
-void TeaOpenCLTile::field_summary_kernel
+void TeaOpenCLChunk::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)
 {
     ENQUEUE(field_summary_device);

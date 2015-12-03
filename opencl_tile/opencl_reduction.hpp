@@ -4,7 +4,7 @@
 #include "../ctx_common.hpp"
 
 template <typename T>
-T TeaOpenCLTile::reduceValue
+T TeaOpenCLChunk::reduceValue
 (reduce_info_vec_t& red_kernels,
  const cl::Buffer& results_buf)
 {
@@ -12,7 +12,7 @@ T TeaOpenCLTile::reduceValue
     for (size_t ii = 0; ii < red_kernels.size(); ii++)
     {
         red_kernels.at(ii).kernel.setArg(0, results_buf);
-        TeaOpenCLTile::enqueueKernel(red_kernels.at(ii).kernel,
+        TeaOpenCLChunk::enqueueKernel(red_kernels.at(ii).kernel,
                                    __LINE__, __FILE__,
                                    cl::NullRange,
                                    red_kernels.at(ii).global_size,

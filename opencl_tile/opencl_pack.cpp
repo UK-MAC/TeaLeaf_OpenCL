@@ -1,7 +1,7 @@
 #include "opencl_tile.hpp"
 #include <numeric>
 
-void TeaOpenCLTile::packUnpackAllBuffers
+void TeaOpenCLChunk::packUnpackAllBuffers
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
  const int depth, const int face, const int pack,
  double * host_buffer)

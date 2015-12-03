@@ -411,7 +411,7 @@ void TeaCLContext::initOcl
 
                 fprintf(stdout, "%d %d\n", x_cells, y_cells);
 
-                tile_ptr_t new_tile(new TeaOpenCLTile(run_params, context,
+                tile_ptr_t new_tile(new TeaOpenCLChunk(run_params, context,
                     device, x_cells, y_cells, coarse_x_cells, coarse_y_cells));
 
                 tiles[ii] = new_tile;
@@ -426,7 +426,7 @@ void TeaCLContext::initOcl
     }
 }
 
-TeaTile::TeaTile
+TeaChunk::TeaChunk
 (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells)
 :tile_x_cells(x_cells), tile_y_cells(y_cells),
 local_coarse_x_cells(coarse_x_cells),local_coarse_y_cells(coarse_y_cells)

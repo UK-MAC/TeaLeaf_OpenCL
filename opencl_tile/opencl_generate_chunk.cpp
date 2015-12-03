@@ -1,6 +1,6 @@
 #include "../ctx_common.hpp"
 
-void TeaOpenCLTile::generate_chunk_kernel
+void TeaOpenCLChunk::generate_chunk_kernel
 (const int number_of_states, 
 const double* state_density, const double* state_energy,
 const double* state_xmin, const double* state_xmax,

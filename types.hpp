@@ -75,7 +75,7 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
  *  layering of tiles at different coarse levels, corresponding to the 'chunk'
  *  value
  *
- *  The abstraction of the TeaTile class should also mean that a class can be
+ *  The abstraction of the TeaChunk class should also mean that a class can be
  *  created that just calls the Fortran kernels - this can be used when the
  *  problem size is small enough that it isn't worth running on a GPU, probably
  *  about 50x50 cells
@@ -83,14 +83,14 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
 const static int fine_tile = 0;
 const static int coarse_tile = 1;
 
-class TeaTile;
+class TeaChunk;
 
 #if __cplusplus > 199711L
 #include <memory>
-typedef std::shared_ptr<TeaTile> tile_ptr_t;
+typedef std::shared_ptr<TeaChunk> tile_ptr_t;
 #else
 #include <tr1/memory>
-typedef std::tr1::shared_ptr<TeaTile> tile_ptr_t;
+typedef std::tr1::shared_ptr<TeaChunk> tile_ptr_t;
 #endif
 
 #include "generic_tile.hpp"

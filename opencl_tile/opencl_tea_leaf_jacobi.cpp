@@ -1,7 +1,7 @@
 #include "../ctx_common.hpp"
 #include "opencl_reduction.hpp"
 
-void TeaOpenCLTile::tea_leaf_jacobi_solve_kernel
+void TeaOpenCLChunk::tea_leaf_jacobi_solve_kernel
 (double* error)
 {
     ENQUEUE(tea_leaf_jacobi_copy_u_device);

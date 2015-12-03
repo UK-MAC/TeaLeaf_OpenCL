@@ -1,7 +1,7 @@
 #include "../ctx_common.hpp"
 #include "opencl_reduction.hpp"
 
-void TeaOpenCLTile::tea_leaf_cg_init_kernel
+void TeaOpenCLChunk::tea_leaf_cg_init_kernel
 (double * rro)
 {
     if (run_params.preconditioner_type == TL_PREC_JAC_BLOCK)
@@ -19,7 +19,7 @@ void TeaOpenCLTile::tea_leaf_cg_init_kernel
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
 }
 
-void TeaOpenCLTile::tea_leaf_cg_calc_w_kernel
+void TeaOpenCLChunk::tea_leaf_cg_calc_w_kernel
 (double* pw)
 {
     ENQUEUE(tea_leaf_cg_solve_calc_w_device);
@@ -27,7 +27,7 @@ void TeaOpenCLTile::tea_leaf_cg_calc_w_kernel
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
 }
 
-void TeaOpenCLTile::tea_leaf_cg_calc_ur_kernel
+void TeaOpenCLChunk::tea_leaf_cg_calc_ur_kernel
 (double alpha, double* rrn)
 {
     tea_leaf_cg_solve_calc_ur_device.setArg(1, alpha);
@@ -37,7 +37,7 @@ void TeaOpenCLTile::tea_leaf_cg_calc_ur_kernel
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 }
 
-void TeaOpenCLTile::tea_leaf_cg_calc_p_kernel
+void TeaOpenCLChunk::tea_leaf_cg_calc_p_kernel
 (double beta)
 {
     tea_leaf_cg_solve_calc_p_device.setArg(1, beta);

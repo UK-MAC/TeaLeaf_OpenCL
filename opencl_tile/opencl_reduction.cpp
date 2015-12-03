@@ -3,7 +3,7 @@
 #include <cmath>
 #include <sstream>
 
-void TeaOpenCLTile::initReduction
+void TeaOpenCLChunk::initReduction
 (void)
 {
     /*

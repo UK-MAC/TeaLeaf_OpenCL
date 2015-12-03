@@ -2,7 +2,7 @@
 #include <sstream>
 #include <fstream>
 
-void TeaOpenCLTile::initProgram
+void TeaOpenCLChunk::initProgram
 (void)
 {
     if (!rank)
@@ -121,7 +121,7 @@ void TeaOpenCLTile::initProgram
     }
 }
 
-launch_specs_t TeaOpenCLTile::findPaddingSize
+launch_specs_t TeaOpenCLChunk::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
     size_t global_horz_size = (-(hmin)) + (hmax) + tile_x_cells;
@@ -134,7 +134,7 @@ launch_specs_t TeaOpenCLTile::findPaddingSize
     return cur_specs;
 }
 
-cl::Program TeaOpenCLTile::compileProgram
+cl::Program TeaOpenCLChunk::compileProgram
 (const std::string& source,
  const std::string& options)
 {
@@ -198,7 +198,7 @@ cl::Program TeaOpenCLTile::compileProgram
     return program;
 }
 
-void TeaOpenCLTile::compileKernel
+void TeaOpenCLChunk::compileKernel
 (std::stringstream& options_orig_knl,
  const std::string& source_name,
  const char* kernel_name,
@@ -318,7 +318,7 @@ void TeaOpenCLTile::compileKernel
     fflush(DBGOUT);
 }
 
-void TeaOpenCLTile::initSizes
+void TeaOpenCLChunk::initSizes
 (void)
 {
     if (!rank)
@@ -431,7 +431,7 @@ void TeaOpenCLTile::initSizes
     }
 }
 
-void TeaOpenCLTile::initArgs
+void TeaOpenCLChunk::initArgs
 (void)
 {
     if (!rank)

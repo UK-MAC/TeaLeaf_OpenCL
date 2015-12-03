@@ -1,6 +1,6 @@
 #include "../ctx_common.hpp"
 
-void TeaOpenCLTile::ppcg_init
+void TeaOpenCLChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
@@ -20,13 +20,13 @@ void TeaOpenCLTile::ppcg_init
     tea_leaf_ppcg_solve_calc_sd_device.setArg(10, ch_betas_device);
 }
 
-void TeaOpenCLTile::ppcg_init_sd_kernel
+void TeaOpenCLChunk::ppcg_init_sd_kernel
 (void)
 {
     ENQUEUE(tea_leaf_ppcg_solve_init_sd_device);
 }
 
-void TeaOpenCLTile::tea_leaf_ppcg_inner_kernel
+void TeaOpenCLChunk::tea_leaf_ppcg_inner_kernel
 (int inner_step, int bounds_extra, const int* chunk_neighbours)
 {
     int step_depth = run_params.halo_exchange_depth - bounds_extra;

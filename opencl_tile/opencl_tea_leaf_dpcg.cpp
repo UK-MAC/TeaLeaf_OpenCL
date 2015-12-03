@@ -3,7 +3,7 @@
 
 // FIXME some of these might not have to copy memory back and forth as much as they do
 
-void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * host_Kx, double * host_Ky)
 {
     ENQUEUE(tea_leaf_dpcg_coarsen_matrix_device);
@@ -19,7 +19,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
         host_Ky);
 }
 
-void TeaOpenCLTile::getCoarseCopyParameters
+void TeaOpenCLChunk::getCoarseCopyParameters
 (cl::size_t<3> * buffer_origin,
  cl::size_t<3> * host_origin,
  cl::size_t<3> * region,
@@ -49,7 +49,7 @@ void TeaOpenCLTile::getCoarseCopyParameters
 
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_coarse_grid
+void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
 (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)
 {
     cl::size_t<3> buffer_origin;
@@ -93,7 +93,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_coarse_grid
     //    global_coarse_Di);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
 (double * t2_local)
 {
     queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
@@ -103,7 +103,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel
     ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_subtract_u_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_subtract_u_kernel
 (double * t2_local)
 {
     queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
@@ -113,7 +113,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_subtract_u_kernel
     ENQUEUE(tea_leaf_dpcg_subtract_u_device);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_restrict_zt_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_restrict_zt_kernel
 (double * ztr_local)
 {
     ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
@@ -125,7 +125,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_restrict_zt_kernel
         ztr_local);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_t2
+void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_t2
 (double * global_coarse_t2)
 {
     cl::size_t<3> buffer_origin;
@@ -150,7 +150,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_t2
         global_coarse_t2);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_matmul_zta_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_matmul_zta_kernel
 (double * ztaz_local)
 {
     ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
@@ -162,19 +162,19 @@ void TeaOpenCLTile::tea_leaf_dpcg_matmul_zta_kernel
         ztaz_local);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_init_p_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_init_p_kernel
 (void)
 {
     ENQUEUE(tea_leaf_dpcg_init_p_device);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_store_r_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_store_r_kernel
 (void)
 {
     ENQUEUE(tea_leaf_dpcg_store_r_device);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_calc_rrn_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_calc_rrn_kernel
 (double * rrn)
 {
     ENQUEUE(tea_leaf_dpcg_calc_rrn_device);
@@ -182,7 +182,7 @@ void TeaOpenCLTile::tea_leaf_dpcg_calc_rrn_kernel
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
 }
 
-void TeaOpenCLTile::tea_leaf_dpcg_calc_p_kernel
+void TeaOpenCLChunk::tea_leaf_dpcg_calc_p_kernel
 (void)
 {
     ENQUEUE(tea_leaf_dpcg_calc_p_device);

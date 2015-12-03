@@ -3,7 +3,7 @@
 #include <cmath>
 
 // copy back dx/dy and calculate rx/ry
-void TeaOpenCLTile::calcrxry
+void TeaOpenCLChunk::calcrxry
 (double dt, double * rx, double * ry)
 {
     // make sure intialise tea_context has finished
@@ -31,7 +31,7 @@ void TeaOpenCLTile::calcrxry
 
 /********************/
 
-void TeaOpenCLTile::tea_leaf_calc_2norm_kernel
+void TeaOpenCLChunk::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
     if (norm_array == 0)
@@ -73,7 +73,7 @@ void TeaOpenCLTile::tea_leaf_calc_2norm_kernel
     *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
 }
 
-void TeaOpenCLTile::tea_leaf_common_init
+void TeaOpenCLChunk::tea_leaf_common_init
 (int coefficient, double dt, double * rx, double * ry,
  int * zero_boundary, int reflective_boundary)
 {
@@ -110,13 +110,13 @@ void TeaOpenCLTile::tea_leaf_common_init
     ENQUEUE(generate_chunk_init_u_device);
 }
 
-void TeaOpenCLTile::tea_leaf_finalise
+void TeaOpenCLChunk::tea_leaf_finalise
 (void)
 {
     ENQUEUE(tea_leaf_finalise_device);
 }
 
-void TeaOpenCLTile::tea_leaf_calc_residual
+void TeaOpenCLChunk::tea_leaf_calc_residual
 (void)
 {
     ENQUEUE(tea_leaf_calc_residual_device);

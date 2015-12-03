@@ -1,7 +1,7 @@
 #include "../ctx_common.hpp"
 #include "opencl_reduction.hpp"
 
-void TeaOpenCLTile::tea_leaf_cheby_init_kernel
+void TeaOpenCLChunk::tea_leaf_cheby_init_kernel
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const double theta)
 {
@@ -37,7 +37,7 @@ void TeaOpenCLTile::tea_leaf_cheby_init_kernel
     ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
 }
 
-void TeaOpenCLTile::tea_leaf_cheby_iterate_kernel
+void TeaOpenCLChunk::tea_leaf_cheby_iterate_kernel
 (const int cheby_calc_step)
 {
     tea_leaf_cheby_solve_calc_p_device.setArg(15, cheby_calc_step-1);

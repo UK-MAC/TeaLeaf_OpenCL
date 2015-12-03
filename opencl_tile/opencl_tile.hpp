@@ -8,7 +8,7 @@
 
 #define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
 
-class TeaOpenCLTile : public TeaTile
+class TeaOpenCLChunk : public TeaChunk
 {
 private:
     // kernels
@@ -245,7 +245,7 @@ private:
      size_t * host_row_pitch);
 
 public:
-    TeaOpenCLTile
+    TeaOpenCLChunk
     (run_params_t run_params, cl::Context context, cl::Device device,
      int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
 
@@ -355,7 +355,7 @@ public:
 
     virtual void tea_leaf_dpcg_copy_reduced_t2
     (double * global_coarse_t2);
-}; // TeaOpenCLTile
+}; // TeaOpenCLChunk
 
 #endif
 

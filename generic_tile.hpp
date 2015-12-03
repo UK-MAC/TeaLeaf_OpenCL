@@ -1,7 +1,7 @@
 #ifndef __GENERIC_TILE_HDR
 #define __GENERIC_TILE_HDR
 
-class TeaTile
+class TeaChunk
 {
 public:
     // for recording times if profiling is on
@@ -126,9 +126,9 @@ public:
     virtual void tea_leaf_dpcg_copy_reduced_t2
     (double * global_coarse_t2)=0;
 
-    TeaTile
+    TeaChunk
     (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
-}; // TeaTile
+}; // TeaChunk
 
 #endif
 
