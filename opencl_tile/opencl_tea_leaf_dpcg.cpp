@@ -11,15 +11,21 @@ void TeaOpenCLTile::getKxKy
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
-(double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile)
+(double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile)
 {
     cl::Buffer *coarse_Kx=NULL, *coarse_Ky=NULL;
-    coarser_tile->getKxKy(coarse_Kx, coarse_Ky);
+    coarse_tile->getKxKy(coarse_Kx, coarse_Ky);
 
     tea_leaf_dpcg_coarsen_matrix_device.setArg(3, *coarse_Kx);
     tea_leaf_dpcg_coarsen_matrix_device.setArg(4, *coarse_Ky);
 
-    // TODO copy back 
+    queue.enqueueReadBuffer(*coarse_Kx, CL_TRUE, 0,
+        coarse_tile->tile_x_cells*coarse_tile->tile_y_cells*sizeof(double),
+        host_Kx, NULL, NULL);
+
+    queue.enqueueReadBuffer(*coarse_Ky, CL_TRUE, 0,
+        coarse_tile->tile_x_cells*coarse_tile->tile_y_cells*sizeof(double),
+        host_Ky, NULL, NULL);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel

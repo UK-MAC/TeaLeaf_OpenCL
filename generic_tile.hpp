@@ -9,6 +9,10 @@ public:
     // recording number of times each kernel was called
     std::map<std::string, int> kernel_calls;
 
+    // number of cells
+    const int tile_x_cells;
+    const int tile_y_cells;
+
     // mpi rank
     int rank;
 
@@ -111,13 +115,16 @@ public:
     (void)=0;
 
     virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile)=0;
+    (double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile)=0;
 
     // Returns the Kx or Ky arrays
     // can be overloaded for different implementations (Fortran etc)
     template <typename T>
     void getKxKy
     (T * Kx, T * Ky);
+
+    TeaTile
+    (int x_cells, int y_cells);
 }; // TeaTile
 
 template <typename T>

@@ -426,3 +426,10 @@ void TeaCLContext::initOcl
     }
 }
 
+TeaTile::TeaTile
+(int x_cells, int y_cells)
+:tile_x_cells(x_cells), tile_y_cells(y_cells)
+{
+    ;
+}
+

@@ -6,7 +6,7 @@ TeaOpenCLTile::TeaOpenCLTile
 :device(device),
  context(context),
  run_params(run_params),
- tile_x_cells(x_cells), tile_y_cells(y_cells)
+ TeaTile(x_cells, y_cells)
 {
     fprintf(stdout, "%d %d\n", tile_x_cells, tile_y_cells);
 

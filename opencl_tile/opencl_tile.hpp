@@ -235,10 +235,6 @@ private:
 
     run_params_t run_params;
 
-    // number of cells
-    const int tile_x_cells;
-    const int tile_y_cells;
-
 public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device,
@@ -343,7 +339,7 @@ public:
     (void);
 
     virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * host_Kx, double * host_Ky, tile_ptr_t & coarser_tile);
+    (double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile);
 
     template <typename T>
     void getKxKy
