@@ -135,9 +135,6 @@ void TeaCLContext::initOcl
 
     int file_halo_depth = readInt(input, "halo_depth");
 
-    // TODO multiple levels instead of tiles
-    int file_n_tiles = readInt(input, "tiles");
-
     // No error checking - assume fortran does it correctly
     run_params.halo_exchange_depth = file_halo_depth;
 
@@ -406,13 +403,16 @@ void TeaCLContext::initOcl
 
             for (int ii = 0; ii < n_tiles; ii++)
             {
-                int x_cells = tile_sizes[ii*2 + 0];
-                int y_cells = tile_sizes[ii*2 + 1];
+                int x_cells = tile_sizes[ii*4 + 0];
+                int y_cells = tile_sizes[ii*4 + 1];
+
+                int coarse_x_cells = tile_sizes[ii*4 + 2];
+                int coarse_y_cells = tile_sizes[ii*4 + 3];
 
                 fprintf(stdout, "%d %d\n", x_cells, y_cells);
 
                 tile_ptr_t new_tile(new TeaOpenCLTile(run_params, context,
-                    device, x_cells, y_cells));
+                    device, x_cells, y_cells, coarse_x_cells, coarse_y_cells));
 
                 tiles[ii] = new_tile;
             }
@@ -427,8 +427,9 @@ void TeaCLContext::initOcl
 }
 
 TeaTile::TeaTile
-(int x_cells, int y_cells)
-:tile_x_cells(x_cells), tile_y_cells(y_cells)
+(int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells)
+:tile_x_cells(x_cells), tile_y_cells(y_cells),
+local_coarse_x_cells(coarse_x_cells),local_coarse_y_cells(coarse_y_cells)
 {
     ;
 }

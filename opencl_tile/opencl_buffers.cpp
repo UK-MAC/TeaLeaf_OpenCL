@@ -74,6 +74,16 @@ void TeaOpenCLTile::initMemory
     BUF2D_ALLOC(cp, 0, 0);
     BUF2D_ALLOC(bfp, 0, 0);
 
+    // When these are allocated, we don't need any kind of padding round the edges
+    #define BUF2D_ALLOC_SMALL(name, x_e, y_e) \
+        BUF_ALLOC(name, local_coarse_x_cells*local_coarse_y_cells*sizeof(double))
+
+    BUF2D_ALLOC_SMALL(coarse_local_Kx, 0, 0);
+    BUF2D_ALLOC_SMALL(coarse_local_Ky, 0, 0);
+    BUF2D_ALLOC_SMALL(coarse_local_t2, 0, 0);
+    BUF2D_ALLOC_SMALL(coarse_local_ztr, 0, 0);
+    BUF2D_ALLOC_SMALL(coarse_local_ztaz, 0, 0);
+
     // allocate enough for 1 item per work group, and then a bit extra for the reduction
     // 1.5 should work even if wg size is 2
     size_t reduce_buf_sz = 1.5*((sizeof(double)*reduced_cells)/(LOCAL_X*LOCAL_Y));
@@ -102,6 +112,7 @@ void TeaOpenCLTile::initMemory
     BUF_ALLOC(top_buffer, NUM_BUFFERED_FIELDS*bt_mpi_buf_sz);
 
     #undef BUF2D_ALLOC
+    #undef BUF2D_ALLOC_SMALL
     #undef BUF1DX_ALLOC
     #undef BUF1DY_ALLOC
     #undef BUF_ALLOC

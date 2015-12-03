@@ -11,21 +11,55 @@ void TeaOpenCLTile::getKxKy
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
-(double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile)
+(double * host_Kx, double * host_Ky)
 {
-    cl::Buffer *coarse_Kx=NULL, *coarse_Ky=NULL;
-    coarse_tile->getKxKy(coarse_Kx, coarse_Ky);
+    queue.enqueueReadBuffer(coarse_local_Kx, CL_TRUE, 0,
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        host_Kx);
 
-    tea_leaf_dpcg_coarsen_matrix_device.setArg(3, *coarse_Kx);
-    tea_leaf_dpcg_coarsen_matrix_device.setArg(4, *coarse_Ky);
+    queue.enqueueReadBuffer(coarse_local_Ky, CL_TRUE, 0,
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        host_Ky);
+}
 
-    queue.enqueueReadBuffer(*coarse_Kx, CL_TRUE, 0,
-        coarse_tile->tile_x_cells*coarse_tile->tile_y_cells*sizeof(double),
-        host_Kx, NULL, NULL);
+void TeaOpenCLTile::tea_leaf_dpcg_copy_reduced_coarse_grid
+(double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)
+{
+    cl::size_t<3> buffer_origin;
+    cl::size_t<3> host_origin;
+    cl::size_t<3> region;
 
-    queue.enqueueReadBuffer(*coarse_Ky, CL_TRUE, 0,
-        coarse_tile->tile_x_cells*coarse_tile->tile_y_cells*sizeof(double),
-        host_Ky, NULL, NULL);
+    // copying from the host, needs to take halos into account
+    host_origin[0] = run_params.halo_exchange_depth;
+    host_origin[1] = run_params.halo_exchange_depth;
+    host_origin[2] = 0;
+
+    buffer_origin[0] = run_params.halo_exchange_depth;
+    buffer_origin[1] = run_params.halo_exchange_depth;
+    buffer_origin[2] = 0;
+
+    region[0] = tile_x_cells;
+    region[1] = tile_y_cells;
+    region[2] = 1;
+
+    // convert to bytes
+    host_origin[0] *= sizeof(double);
+    buffer_origin[0] *= sizeof(double);
+    region[0] *= sizeof(double);
+
+    size_t buffer_row_pitch = (tile_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
+    size_t host_row_pitch = (tile_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
+
+    // Need to copy back into the middle of the grid, not in the halos
+    queue.enqueueWriteBufferRect(vector_Kx, CL_TRUE,
+        buffer_origin,
+        host_origin,
+        region,
+        buffer_row_pitch,
+        0,
+        host_row_pitch,
+        0,
+        global_coarse_Kx);
 }
 
 void TeaOpenCLTile::tea_leaf_dpcg_prolong_z_kernel

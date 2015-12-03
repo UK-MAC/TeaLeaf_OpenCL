@@ -12,6 +12,9 @@ public:
     // number of cells
     const int tile_x_cells;
     const int tile_y_cells;
+    // size of local portion of next coarsest grid
+    const int local_coarse_x_cells;
+    const int local_coarse_y_cells;
 
     // mpi rank
     int rank;
@@ -115,7 +118,10 @@ public:
     (void)=0;
 
     virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile)=0;
+    (double * host_Kx, double * host_Ky)=0;
+
+    virtual void tea_leaf_dpcg_copy_reduced_coarse_grid
+    (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)=0;
 
     // Returns the Kx or Ky arrays
     // can be overloaded for different implementations (Fortran etc)
@@ -124,7 +130,7 @@ public:
     (T * Kx, T * Ky);
 
     TeaTile
-    (int x_cells, int y_cells);
+    (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
 }; // TeaTile
 
 template <typename T>

@@ -586,8 +586,8 @@ void TeaOpenCLTile::initArgs
 
     tea_leaf_dpcg_coarsen_matrix_device.setArg(1, vector_Kx);
     tea_leaf_dpcg_coarsen_matrix_device.setArg(2, vector_Ky);
-    tea_leaf_dpcg_coarsen_matrix_device.setArg(3, Kx_coarse);
-    tea_leaf_dpcg_coarsen_matrix_device.setArg(4, Ky_coarse);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(3, coarse_local_Kx);
+    tea_leaf_dpcg_coarsen_matrix_device.setArg(4, coarse_local_Ky);
 
     //tea_leaf_dpcg_prolong_Z_device.setArg(
     //tea_leaf_dpcg_subtract_u_device.setArg(

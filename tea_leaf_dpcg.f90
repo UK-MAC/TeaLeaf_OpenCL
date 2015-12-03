@@ -255,6 +255,12 @@ SUBROUTINE tea_leaf_dpcg_coarsen_matrix()
 
   CALL MPI_Allreduce(MPI_IN_PLACE, chunk%def%def_di, size(chunk%def%def_di), MPI_DOUBLE_PRECISION, MPI_SUM, mpi_cart_comm, err)
 
+  IF (use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_dpcg_copy_reduced_coarse_grid_ocl(chunk%def%def_Kx, chunk%def%def_Ky, chunk%def%def_di)
+    ENDDO
+  ENDIF
+
 END SUBROUTINE tea_leaf_dpcg_coarsen_matrix
 
 SUBROUTINE tea_leaf_dpcg_matmul_ZTA(solve_time)

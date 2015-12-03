@@ -118,13 +118,6 @@ private:
     cl::Buffer vector_Ky;
     cl::Buffer vector_sd;
 
-    // dpcg coarse grids
-    cl::Buffer Kx_coarse;
-    cl::Buffer Ky_coarse;
-    cl::Buffer Di_coarse;
-    cl::Buffer t1_coarse;
-    cl::Buffer t2_coarse;
-
     // for reduction in field_summary
     cl::Buffer reduce_buf_1;
     cl::Buffer reduce_buf_2;
@@ -137,6 +130,14 @@ private:
 
     cl::Buffer u, u0;
     cl::Buffer vector_z;
+
+    // small arrays that are the size of the number of work groups launched
+    // could reuse them but they're tiny
+    cl::Buffer coarse_local_Kx;
+    cl::Buffer coarse_local_Ky;
+    cl::Buffer coarse_local_t2;
+    cl::Buffer coarse_local_ztr;
+    cl::Buffer coarse_local_ztaz;
 
     cl::Device device;
     cl::Context context;
@@ -238,7 +239,7 @@ private:
 public:
     TeaOpenCLTile
     (run_params_t run_params, cl::Context context, cl::Device device,
-     int x_cells, int y_cells);
+     int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
 
     virtual void packUnpackAllBuffers
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
@@ -339,7 +340,10 @@ public:
     (void);
 
     virtual void tea_leaf_dpcg_coarsen_matrix_kernel
-    (double * host_Kx, double * host_Ky, tile_ptr_t & coarse_tile);
+    (double * host_Kx, double * host_Ky);
+
+    virtual void tea_leaf_dpcg_copy_reduced_coarse_grid
+    (double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di);
 
     template <typename T>
     void getKxKy

@@ -28,16 +28,29 @@ SUBROUTINE build_field()
 
   INTEGER :: j,k, t
 
-  ! TODO will be (2, n_levels) eventually
-  INTEGER :: tile_bounds(2, 2)
-  INTEGER :: n_levels
+  ! TODO won't be hardcoded in future
+  INTEGER :: n_levels=2
+  ! TODO make a 3d array?
+  INTEGER :: tile_bounds(4, 2)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      tile_bounds(:,1) = (/chunk%tiles(t)%x_cells, chunk%tiles(t)%y_cells/)
-      tile_bounds(:,2) = (/chunk%def%x_cells, chunk%def%y_cells/)
+      ! this is the number of cells
+      tile_bounds(1,1) = chunk%tiles(t)%x_cells
+      tile_bounds(2,1) = chunk%tiles(t)%y_cells
 
-      n_levels = SIZE(tile_bounds(1,:))
+      ! this is the LOCAL size of this tile's portion of the GLOBAL coarser
+      ! array, where the GLOBAL size of the coarser array is just the size of the
+      ! next coarsest grid
+      tile_bounds(3,1) = chunk%sub_tile_dims(1)
+      tile_bounds(4,1) = chunk%sub_tile_dims(2)
+
+      ! again for coarse grid
+      tile_bounds(1,2) = chunk%def%x_cells
+      tile_bounds(2,2) = chunk%def%y_cells
+      ! This is a bit irrelevant, will never be used with 2 level scheme
+      tile_bounds(3,2) = 1
+      tile_bounds(4,2) = 1
 
       CALL initialise_ocl(tile_bounds, n_levels)
     ENDDO
