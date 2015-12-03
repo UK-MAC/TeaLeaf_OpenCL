@@ -188,3 +188,47 @@ void TeaOpenCLChunk::tea_leaf_dpcg_calc_p_kernel
     ENQUEUE(tea_leaf_dpcg_calc_p_device);
 }
 
+void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
+(double * coarse_solve_eps,
+ int    * coarse_solve_max_iters,
+ int    * it_count,
+ double * theta,
+ int    * inner_use_ppcg,
+ double * inner_cg_alphas,
+ double * inner_cg_betas,
+ double * inner_ch_alphas,
+ double * inner_ch_betas,
+ double * t2_result)
+{
+    double rx, ry;
+    int zeros[4] = {0};
+
+    double rro, rrn, pw;
+
+    // FIXME read in from input file
+    tea_leaf_common_init(COEF_CONDUCTIVITY, 0.04, &rx, &ry, zeros, 0);
+    tea_leaf_calc_residual();
+    tea_leaf_cg_init_kernel(&rro);
+
+    for (int ii = 0; ii < 100; ii++)
+    {
+        // FIXME redo these so it doesnt copy back memory repeatedly
+        tea_leaf_cg_calc_w_kernel(&pw);
+
+        double alpha = rro/pw;
+
+        tea_leaf_cg_calc_ur_kernel(alpha, &rrn);
+
+        double beta = rrn/rro;
+
+        tea_leaf_cg_calc_p_kernel(beta);
+
+        rro = rrn;
+    }
+
+    // FIXME copy back correctly
+    queue.enqueueReadBuffer(coarse_local_ztaz, CL_TRUE, 0, 
+        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
+        ztaz_local);
+}
+

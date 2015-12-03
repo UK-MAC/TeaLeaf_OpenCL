@@ -200,7 +200,8 @@ public:
      double * inner_cg_alphas,
      double * inner_cg_betas,
      double * inner_ch_alphas,
-     double * inner_ch_betas);
+     double * inner_ch_betas,
+     double * t2_result);
 
     void tea_leaf_cheby_init_kernel
     (const double * ch_alphas, const double * ch_betas, int n_coefs,

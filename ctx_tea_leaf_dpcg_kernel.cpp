@@ -76,12 +76,13 @@ extern "C" void tea_leaf_dpcg_coarse_solve_ocl_
  double * inner_cg_alphas,
  double * inner_cg_betas,
  double * inner_ch_alphas,
- double * inner_ch_betas)
+ double * inner_ch_betas,
+ double * t2_result)
 {
     tea_context.tea_leaf_dpcg_local_solve(coarse_solve_eps,
         coarse_solve_max_iters, it_count, theta, inner_use_ppcg,
         inner_cg_alphas, inner_cg_betas, inner_ch_alphas,
-        inner_ch_betas);
+        inner_ch_betas, t2_result);
 }
 
 /********************/
@@ -163,7 +164,12 @@ void TeaCLContext::tea_leaf_dpcg_local_solve
  double * inner_cg_alphas,
  double * inner_cg_betas,
  double * inner_ch_alphas,
- double * inner_ch_betas)
+ double * inner_ch_betas,
+ double * t2_result)
 {
+    chunks.at(coarse_chunk)->tea_leaf_dpcg_local_solve(coarse_solve_eps,
+        coarse_solve_max_iters, it_count, theta, inner_use_ppcg,
+        inner_cg_alphas, inner_cg_betas, inner_ch_alphas,
+        inner_ch_betas, t2_result);
 }
 

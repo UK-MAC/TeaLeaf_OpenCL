@@ -79,6 +79,8 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
         inner_ch_alphas, inner_ch_betas     &
         )
 
+  ! FIXME needs to copy back t2 as well (or at least make sure fine chunk is aware of it)
+
   ! add back onto the fine grid
   CALL tea_leaf_dpcg_subtract_z()
 

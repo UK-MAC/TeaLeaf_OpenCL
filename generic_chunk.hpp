@@ -126,6 +126,18 @@ public:
     virtual void tea_leaf_dpcg_copy_reduced_t2
     (double * global_coarse_t2)=0;
 
+    virtual void tea_leaf_dpcg_local_solve
+    (double * coarse_solve_eps,
+     int    * coarse_solve_max_iters,
+     int    * it_count,
+     double * theta,
+     int    * inner_use_ppcg,
+     double * inner_cg_alphas,
+     double * inner_cg_betas,
+     double * inner_ch_alphas,
+     double * inner_ch_betas,
+     double * t2_result)=0;
+
     TeaChunk
     (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);
 }; // TeaChunk
