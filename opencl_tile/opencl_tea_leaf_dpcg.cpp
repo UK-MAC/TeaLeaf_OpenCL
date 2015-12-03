@@ -13,6 +13,10 @@ void TeaOpenCLTile::getKxKy
 void TeaOpenCLTile::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * host_Kx, double * host_Ky)
 {
+    ENQUEUE(tea_leaf_dpcg_coarsen_matrix_device);
+
+    queue.finish();
+
     queue.enqueueReadBuffer(coarse_local_Kx, CL_TRUE, 0,
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         host_Kx);

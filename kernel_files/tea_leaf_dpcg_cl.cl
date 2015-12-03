@@ -4,13 +4,12 @@
 // TODO this might need to be switched round because of the fortran order of tile indexing
 
 // special indexing to write into the correct position in the 'coarse' arrays
+// NB: coarse arrays have no halo data! They are one contiguous block
 #define DEFLATION_IDX \
     /* column */ \
-    ((get_group_id(0) + get_global_offset(0)) \
+    ((get_group_id(0)) \
     /* row */ \
-    + (get_group_id(1) + get_global_offset(1)) \
-    /* size of each row */ \
-    *(get_num_groups(0) + 2*HALO_DEPTH))
+    + get_group_id(1)*get_num_groups(0))
 
 /*
  *  Deflation needs a reduction which only reduces within the work then then
@@ -63,13 +62,16 @@ __kernel void tea_leaf_dpcg_coarsen_matrix
 
     __SHARED__ double Kx_sum_shared[BLOCK_SZ];
     __SHARED__ double Ky_sum_shared[BLOCK_SZ];
-    Kx_sum_shared[lid] = 0.0;
-    Ky_sum_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
     {
         Kx_sum_shared[lid] = Kx[THARR2D(0, 0, 0)];
         Ky_sum_shared[lid] = Ky[THARR2D(0, 0, 0)];
+    }
+    else
+    {
+        Kx_sum_shared[lid] = 0.0;
+        Ky_sum_shared[lid] = 0.0;
     }
 
     DEFLATION_REDUCTION(Kx_sum_shared, Kx_coarse, SUM);
