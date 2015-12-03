@@ -251,7 +251,6 @@ public:
     virtual void set_field_kernel
     (void);
 
-    // FIXME how does inheritance work again
     virtual void field_summary_kernel
     (double* vol, double* mass, double* ie, double* temp);
 

@@ -135,7 +135,7 @@ void TeaCLContext::initOcl
 
     int file_halo_depth = readInt(input, "halo_depth");
 
-    // FIXME levels
+    // TODO multiple levels instead of tiles
     int file_n_tiles = readInt(input, "tiles");
 
     // No error checking - assume fortran does it correctly
