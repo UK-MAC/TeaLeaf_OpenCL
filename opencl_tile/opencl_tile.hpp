@@ -130,6 +130,7 @@ private:
 
     cl::Buffer u, u0;
     cl::Buffer vector_z;
+    cl::Buffer vector_rm1;
 
     // small arrays that are the size of the number of work groups launched
     // could reuse them but they're tiny

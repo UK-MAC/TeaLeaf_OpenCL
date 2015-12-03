@@ -116,27 +116,25 @@ void TeaCLContext::tea_leaf_dpcg_matmul_zta_kernel
 void TeaCLContext::tea_leaf_dpcg_init_p_kernel
 (void)
 {
-    //ENQUEUE(tea_leaf_dpcg_init_p_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_init_p_kernel();
 }
 
 void TeaCLContext::tea_leaf_dpcg_store_r_kernel
 (void)
 {
-    //ENQUEUE(tea_leaf_dpcg_store_r_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_store_r_kernel();
 }
 
 void TeaCLContext::tea_leaf_dpcg_calc_rrn_kernel
 (double * rrn)
 {
-    //ENQUEUE(tea_leaf_dpcg_calc_rrn_device);
-
-    //*rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_5);
+    tiles.at(fine_tile)->tea_leaf_dpcg_calc_rrn_kernel(rrn);
 }
 
 void TeaCLContext::tea_leaf_dpcg_calc_p_kernel
 (void)
 {
-    //ENQUEUE(tea_leaf_dpcg_calc_p_device);
+    tiles.at(fine_tile)->tea_leaf_dpcg_calc_p_kernel();
 }
 
 

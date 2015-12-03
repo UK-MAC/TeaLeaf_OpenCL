@@ -187,11 +187,14 @@ __kernel void tea_leaf_dpcg_calc_rrn
     __kernel_indexes;
 
     __SHARED__ double rrn_shared[BLOCK_SZ];
-    rrn_shared[lid] = 0.0;
 
     if (WITHIN_BOUNDS)
     {
         rrn_shared[lid] = (r[THARR2D(0, 0, 0)] - r_m1[THARR2D(0, 0, 0)])*z[THARR2D(0, 0, 0)];
+    }
+    else
+    {
+        rrn_shared[lid] = 0.0;
     }
 
     REDUCTION(rrn_shared, rrn, SUM)

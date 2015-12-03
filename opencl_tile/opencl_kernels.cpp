@@ -603,11 +603,19 @@ void TeaOpenCLTile::initArgs
     tea_leaf_dpcg_matmul_ZTA_device.setArg(3, vector_Ky);
     tea_leaf_dpcg_matmul_ZTA_device.setArg(4, coarse_local_ztaz);
 
-    //tea_leaf_dpcg_init_p_device.setArg(
-    //tea_leaf_dpcg_store_r_device.setArg(
-    //tea_leaf_dpcg_calc_rrn_device.setArg(
-    //tea_leaf_dpcg_calc_p_device.setArg(
-    //tea_leaf_dpcg_solve_z_device.setArg(
+    tea_leaf_dpcg_init_p_device.setArg(1, vector_p);
+    tea_leaf_dpcg_init_p_device.setArg(2, vector_z);
+
+    tea_leaf_dpcg_store_r_device.setArg(1, vector_r);
+    tea_leaf_dpcg_store_r_device.setArg(2, vector_rm1);
+
+    tea_leaf_dpcg_calc_rrn_device.setArg(1, vector_r);
+    tea_leaf_dpcg_calc_rrn_device.setArg(2, vector_rm1);
+    tea_leaf_dpcg_calc_rrn_device.setArg(3, vector_z);
+    tea_leaf_dpcg_calc_rrn_device.setArg(4, reduce_buf_5);
+
+    tea_leaf_dpcg_calc_p_device.setArg(1, vector_p);
+    tea_leaf_dpcg_calc_p_device.setArg(2, vector_z);
 
     // reusing Mi here as 'un'
     tea_leaf_jacobi_copy_u_device.setArg(1, u);
