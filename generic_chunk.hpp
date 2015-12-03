@@ -1,5 +1,5 @@
-#ifndef __GENERIC_TILE_HDR
-#define __GENERIC_TILE_HDR
+#ifndef __GENERIC_CHUNK_HDR
+#define __GENERIC_CHUNK_HDR
 
 class TeaChunk
 {
@@ -10,8 +10,8 @@ public:
     std::map<std::string, int> kernel_calls;
 
     // number of cells
-    const int tile_x_cells;
-    const int tile_y_cells;
+    const int chunk_x_cells;
+    const int chunk_y_cells;
     // size of local portion of next coarsest grid
     const int local_coarse_x_cells;
     const int local_coarse_y_cells;

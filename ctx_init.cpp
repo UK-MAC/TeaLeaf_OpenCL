@@ -398,7 +398,7 @@ void TeaCLContext::initOcl
             // TODO remove
             if (!(n_tiles == 2))
             {
-                DIE("Only supports 2 tiles at the moment");
+                DIE("Only supports 2 chunks.at the moment");
             }
 
             for (int ii = 0; ii < n_tiles; ii++)
@@ -411,10 +411,10 @@ void TeaCLContext::initOcl
 
                 fprintf(stdout, "%d %d\n", x_cells, y_cells);
 
-                tile_ptr_t new_tile(new TeaOpenCLChunk(run_params, context,
+                chunk_ptr_t new_chunk(new TeaOpenCLChunk(run_params, context,
                     device, x_cells, y_cells, coarse_x_cells, coarse_y_cells));
 
-                tiles[ii] = new_tile;
+                chunks[ii] = new_chunk;
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -422,13 +422,13 @@ void TeaCLContext::initOcl
 
     if (!rank)
     {
-        fprintf(stdout, "Finished creating tiles\n");
+        fprintf(stdout, "Finished creating chunks\n");
     }
 }
 
 TeaChunk::TeaChunk
 (int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells)
-:tile_x_cells(x_cells), tile_y_cells(y_cells),
+:chunk_x_cells(x_cells), chunk_y_cells(y_cells),
 local_coarse_x_cells(coarse_x_cells),local_coarse_y_cells(coarse_y_cells)
 {
     ;

@@ -13,6 +13,6 @@ void TeaCLContext::update_halo_kernel
  int depth,
  const int* chunk_neighbours)
 {
-    tiles.at(fine_tile)->update_halo_kernel(chunk_neighbours, fields, depth);
+    chunks.at(fine_chunk)->update_halo_kernel(chunk_neighbours, fields, depth);
 }
 

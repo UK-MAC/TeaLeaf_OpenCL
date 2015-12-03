@@ -32,13 +32,13 @@ extern "C" void tea_leaf_calc_residual_ocl_
 void TeaCLContext::calcrxry
 (double dt, double * rx, double * ry)
 {
-    tiles.at(fine_tile)->calcrxry(dt, rx, ry);
+    chunks.at(fine_chunk)->calcrxry(dt, rx, ry);
 }
 
 void TeaCLContext::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
-    tiles.at(fine_tile)->tea_leaf_calc_2norm_kernel(norm_array, norm);
+    chunks.at(fine_chunk)->tea_leaf_calc_2norm_kernel(norm_array, norm);
 }
 
 void TeaCLContext::tea_leaf_common_init
@@ -52,20 +52,20 @@ void TeaCLContext::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
-    tiles.at(fine_tile)->tea_leaf_common_init(coefficient, dt, rx, ry,
+    chunks.at(fine_chunk)->tea_leaf_common_init(coefficient, dt, rx, ry,
         zero_boundary, reflective_boundary);
 }
 
 void TeaCLContext::tea_leaf_finalise
 (void)
 {
-    tiles.at(fine_tile)->tea_leaf_finalise();
+    chunks.at(fine_chunk)->tea_leaf_finalise();
 }
 
 void TeaCLContext::tea_leaf_calc_residual
 (void)
 {
-    tiles.at(fine_tile)->tea_leaf_calc_residual();
+    chunks.at(fine_chunk)->tea_leaf_calc_residual();
 }
 
 /********************/

@@ -11,5 +11,5 @@ extern "C" void tea_leaf_jacobi_solve_kernel_ocl_
 void TeaCLContext::tea_leaf_jacobi_solve_kernel
 (double* error)
 {
-    tiles.at(fine_tile)->tea_leaf_jacobi_solve_kernel(error);
+    chunks.at(fine_chunk)->tea_leaf_jacobi_solve_kernel(error);
 }

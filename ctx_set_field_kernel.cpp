@@ -9,6 +9,6 @@ extern "C" void set_field_kernel_ocl_
 void TeaCLContext::set_field_kernel
 (void)
 {
-    tiles.at(fine_tile)->set_field_kernel();
+    chunks.at(fine_chunk)->set_field_kernel();
 }
 

@@ -1,5 +1,5 @@
-#ifndef __TEA_OPENCL_TILE_HEADER
-#define __TEA_OPENCL_TILE_HEADER
+#ifndef __TEA_OPENCL_CHUNK_HEADER
+#define __TEA_OPENCL_CHUNK_HEADER
 
 #include <map>
 #include "../ctx_common.hpp"

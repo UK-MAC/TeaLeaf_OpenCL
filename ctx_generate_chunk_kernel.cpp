@@ -30,7 +30,7 @@ const double* state_ymin, const double* state_ymax,
 const double* state_radius, const int* state_geometry,
 const int g_rect, const int g_circ, const int g_point)
 {
-    tiles.at(fine_tile)->generate_chunk_kernel(number_of_states,
+    chunks.at(fine_chunk)->generate_chunk_kernel(number_of_states,
         state_density, state_energy, state_xmin, state_xmax,
         state_ymin, state_ymax, state_radius, state_geometry,
         g_rect, g_circ, g_point);

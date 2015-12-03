@@ -70,9 +70,9 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
 
 /*
  *  TODO
- *  Hardcoded to have 2 tile levels (coarse and fine). When properly merged with
+ *  Hardcoded to have 2 chunk levels (coarse and fine). When properly merged with
  *  the Fortran then it should technically be possible to have an arbitrary
- *  layering of tiles at different coarse levels, corresponding to the 'chunk'
+ *  layering of chunks at different coarse levels, corresponding to the 'chunk'
  *  value
  *
  *  The abstraction of the TeaChunk class should also mean that a class can be
@@ -80,25 +80,25 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
  *  problem size is small enough that it isn't worth running on a GPU, probably
  *  about 50x50 cells
  */
-const static int fine_tile = 0;
-const static int coarse_tile = 1;
+const static int fine_chunk = 0;
+const static int coarse_chunk = 1;
 
 class TeaChunk;
 
 #if __cplusplus > 199711L
 #include <memory>
-typedef std::shared_ptr<TeaChunk> tile_ptr_t;
+typedef std::shared_ptr<TeaChunk> chunk_ptr_t;
 #else
 #include <tr1/memory>
-typedef std::tr1::shared_ptr<TeaChunk> tile_ptr_t;
+typedef std::tr1::shared_ptr<TeaChunk> chunk_ptr_t;
 #endif
 
-#include "generic_tile.hpp"
+#include "generic_chunk.hpp"
 
-#include "opencl_tile/opencl_tile.hpp"
+#include "opencl_chunk/opencl_chunk.hpp"
 
 // TODO
-//#include "fortran_tile/fortran_tile.hpp"
+//#include "fortran_chunk/fortran_chunk.hpp"
 
 class TeaCLContext
 {
@@ -121,13 +121,13 @@ private:
     // for OpenCL
     cl::Context context;
 
-    // number of tiles
-    size_t n_tiles;
-    std::map<int, tile_ptr_t> tiles;
-    std::map<int, tile_ptr_t>::iterator typedef tileit_t;
+    // number of chunks
+    size_t n_chunks;
+    std::map<int, chunk_ptr_t> chunks;
+    std::map<int, chunk_ptr_t>::iterator typedef chunkit_t;
 
-    #define FOR_EACH_TILE \
-        for (tileit_t tile_it = tiles.begin(); tile_it != tiles.end(); tile_it++)
+    #define FOR_EACH_CHUNK \
+        for (chunkit_t chunk_it = chunks.begin(); chunk_it != chunks.end(); chunk_it++)
 
     /*
      *  initialisation subroutines
@@ -190,6 +190,17 @@ public:
     (double * rrn);
     void tea_leaf_dpcg_calc_p_kernel
     (void);
+
+    void tea_leaf_dpcg_local_solve
+    (double * coarse_solve_eps,
+     int    * coarse_solve_max_iters,
+     int    * it_count,
+     double * theta,
+     int    * inner_use_ppcg,
+     double * inner_cg_alphas,
+     double * inner_cg_betas,
+     double * inner_ch_alphas,
+     double * inner_ch_betas);
 
     void tea_leaf_cheby_init_kernel
     (const double * ch_alphas, const double * ch_betas, int n_coefs,

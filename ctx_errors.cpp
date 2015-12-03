@@ -221,10 +221,10 @@ void TeaCLContext::print_profiling_info
         std::map<std::string, double>::iterator ii;
         std::map<std::string, int>::iterator jj;
 
-        FOR_EACH_TILE
+        FOR_EACH_CHUNK
         {
-            for (ii = tile_it->second->kernel_times.begin(), jj = tile_it->second->kernel_calls.begin();
-                ii != tile_it->second->kernel_times.end(); ii++, jj++)
+            for (ii = chunk_it->second->kernel_times.begin(), jj = chunk_it->second->kernel_calls.begin();
+                ii != chunk_it->second->kernel_times.end(); ii++, jj++)
             {
                 std::string func_name = ii->first;
 
@@ -260,8 +260,8 @@ std::vector<double> TeaOpenCLChunk::dumpArray
 {
     // number of bytes to exchange for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((tile_x_cells) + 2*run_params.halo_exchange_depth + x_extra)       \
-        * ((tile_y_cells) + 2*run_params.halo_exchange_depth + y_extra)       \
+        ( ((chunk_x_cells) + 2*run_params.halo_exchange_depth + x_extra)       \
+        * ((chunk_y_cells) + 2*run_params.halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_buffer(BUFSZ2D(x_extra, y_extra)/sizeof(double));

@@ -34,24 +34,24 @@ void TeaCLContext::tea_leaf_cg_init_kernel
 
     // Assume calc_residual has been called before this (to calculate initial_residual)
 
-    tiles.at(fine_tile)->tea_leaf_cg_init_kernel(rro);
+    chunks.at(fine_chunk)->tea_leaf_cg_init_kernel(rro);
 }
 
 void TeaCLContext::tea_leaf_cg_calc_w_kernel
 (double* pw)
 {
-    tiles.at(fine_tile)->tea_leaf_cg_calc_w_kernel(pw);
+    chunks.at(fine_chunk)->tea_leaf_cg_calc_w_kernel(pw);
 }
 
 void TeaCLContext::tea_leaf_cg_calc_ur_kernel
 (double alpha, double* rrn)
 {
-    tiles.at(fine_tile)->tea_leaf_cg_calc_ur_kernel(alpha, rrn);
+    chunks.at(fine_chunk)->tea_leaf_cg_calc_ur_kernel(alpha, rrn);
 }
 
 void TeaCLContext::tea_leaf_cg_calc_p_kernel
 (double beta)
 {
-    tiles.at(fine_tile)->tea_leaf_cg_calc_p_kernel(beta);
+    chunks.at(fine_chunk)->tea_leaf_cg_calc_p_kernel(beta);
 }
 
