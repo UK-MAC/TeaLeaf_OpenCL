@@ -22,7 +22,7 @@ void TeaOpenCLChunk::initProgram
 
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge
     // rather expensive check so don't always do it
-    if (tile_y_cells % JACOBI_BLOCK_SIZE)
+    if (chunk_y_cells % JACOBI_BLOCK_SIZE)
     {
         options << "-DBLOCK_TOP_CHECK ";
     }
@@ -124,9 +124,9 @@ void TeaOpenCLChunk::initProgram
 launch_specs_t TeaOpenCLChunk::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
-    size_t global_horz_size = (-(hmin)) + (hmax) + tile_x_cells;
+    size_t global_horz_size = (-(hmin)) + (hmax) + chunk_x_cells;
     while (global_horz_size % LOCAL_X) global_horz_size++;
-    size_t global_vert_size = (-(vmin)) + (vmax) + tile_y_cells;
+    size_t global_vert_size = (-(vmin)) + (vmax) + chunk_y_cells;
     while (global_vert_size % LOCAL_Y) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
@@ -285,9 +285,9 @@ void TeaOpenCLChunk::compileKernel
 
     kernel_info_t kernel_info = {
         .x_min = 1,
-        .x_max = tile_x_cells,
+        .x_max = chunk_x_cells,
         .y_min = 1,
-        .y_max = tile_y_cells,
+        .y_max = chunk_y_cells,
         // no halo depth
         .halo_depth = 0,
         .preconditioner_type = run_params.preconditioner_type,
@@ -329,10 +329,10 @@ void TeaOpenCLChunk::initSizes
     fprintf(DBGOUT, "Local size = %dx%d\n", int(LOCAL_X), int(LOCAL_Y));
 
     // pad the global size so the local size fits
-    const int glob_x = tile_x_cells+4 +
-        (((tile_x_cells+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells+4)%LOCAL_X)));
-    const int glob_y = tile_y_cells+4 +
-        (((tile_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells+4)%LOCAL_Y)));
+    const int glob_x = chunk_x_cells+4 +
+        (((chunk_x_cells+4)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((chunk_x_cells+4)%LOCAL_X)));
+    const int glob_y = chunk_y_cells+4 +
+        (((chunk_y_cells+4)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((chunk_y_cells+4)%LOCAL_Y)));
 
     fprintf(DBGOUT, "Global size = %dx%d\n", glob_x, glob_y);
     global_size = cl::NDRange(glob_x, glob_y);
@@ -369,8 +369,8 @@ void TeaOpenCLChunk::initSizes
     update_bt_local_size[2] = cl::NDRange(local_row_size, 2);
 
     // start off doing minimum amount of work
-    size_t global_bt_update_size = tile_x_cells + 4;
-    size_t global_lr_update_size = tile_y_cells + 4;
+    size_t global_bt_update_size = chunk_x_cells + 4;
+    size_t global_lr_update_size = chunk_y_cells + 4;
 
     // increase just to fit in with local work group sizes
     while (global_bt_update_size % local_row_size)
@@ -384,8 +384,8 @@ void TeaOpenCLChunk::initSizes
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
     update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
-    size_t global_bt_pack_size = tile_x_cells + 2*run_params.halo_exchange_depth;
-    size_t global_lr_pack_size = tile_y_cells + 2*run_params.halo_exchange_depth;
+    size_t global_bt_pack_size = chunk_x_cells + 2*run_params.halo_exchange_depth;
+    size_t global_lr_pack_size = chunk_y_cells + 2*run_params.halo_exchange_depth;
 
     // increase just to fit in with local work group sizes
     while (global_bt_pack_size % local_row_size)

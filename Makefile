@@ -205,7 +205,7 @@ OCL_FILES=\
 	opencl_tea_leaf_ppcg.o \
 	opencl_update_halo.o
 
-VPATH+=./opencl_tile
+VPATH+=./opencl_chunk
 
 tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CTX_FILES) $(OCL_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\

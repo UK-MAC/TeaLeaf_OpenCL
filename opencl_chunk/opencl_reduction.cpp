@@ -16,13 +16,13 @@ void TeaOpenCLChunk::initReduction
      *  that doesn't include these halo cells for the reduction which should
      *  speed it up a bit
      */
-    const int red_x = tile_x_cells +
-        (((tile_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((tile_x_cells)%LOCAL_X)));
-    const int red_y = tile_y_cells +
-        (((tile_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((tile_y_cells)%LOCAL_Y)));
+    const int red_x = chunk_x_cells +
+        (((chunk_x_cells)%LOCAL_X == 0) ? 0 : (LOCAL_X - ((chunk_x_cells)%LOCAL_X)));
+    const int red_y = chunk_y_cells +
+        (((chunk_y_cells)%LOCAL_Y == 0) ? 0 : (LOCAL_Y - ((chunk_y_cells)%LOCAL_Y)));
     reduced_cells = red_x*red_y;
 
-    fprintf(stdout, "%d %d\n", tile_x_cells, tile_y_cells);
+    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
 
     // each work group reduces to 1 value inside each kernel
     const int total_to_reduce = ceil(float(reduced_cells)/(LOCAL_X*LOCAL_Y));

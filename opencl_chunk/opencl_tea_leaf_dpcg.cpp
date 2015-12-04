@@ -35,8 +35,8 @@ void TeaOpenCLChunk::getCoarseCopyParameters
     (*buffer_origin)[1] = run_params.halo_exchange_depth;
     (*buffer_origin)[2] = 0;
 
-    (*region)[0] = tile_x_cells;
-    (*region)[1] = tile_y_cells;
+    (*region)[0] = chunk_x_cells;
+    (*region)[1] = chunk_y_cells;
     (*region)[2] = 1;
 
     // convert to bytes
@@ -44,8 +44,8 @@ void TeaOpenCLChunk::getCoarseCopyParameters
     (*buffer_origin)[0] *= sizeof(double);
     (*region)[0] *= sizeof(double);
 
-    (*buffer_row_pitch) = (tile_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
-    (*host_row_pitch) = (tile_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
+    (*buffer_row_pitch) = (chunk_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
+    (*host_row_pitch) = (chunk_x_cells + 2*run_params.halo_exchange_depth)*sizeof(double);
 
 }
 

@@ -37,8 +37,8 @@ void TeaOpenCLChunk::tea_leaf_ppcg_inner_kernel
     int step_global_size[2];
 
     int step_offset[2] = {step_depth, step_depth};
-    step_global_size[0] = tile_x_cells + (run_params.halo_exchange_depth-step_depth)*2,
-    step_global_size[1] = tile_y_cells + (run_params.halo_exchange_depth-step_depth)*2;
+    step_global_size[0] = chunk_x_cells + (run_params.halo_exchange_depth-step_depth)*2,
+    step_global_size[1] = chunk_y_cells + (run_params.halo_exchange_depth-step_depth)*2;
 
     if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
     {

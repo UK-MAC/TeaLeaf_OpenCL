@@ -1,4 +1,4 @@
-#include "opencl_tile.hpp"
+#include "opencl_chunk.hpp"
 #include <numeric>
 
 void TeaOpenCLChunk::packUnpackAllBuffers
