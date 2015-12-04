@@ -26,8 +26,11 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   REAL(KIND=8) :: solve_time
 
   INTEGER :: it_count, info
+  INTEGER :: t
   INTEGER :: fields(NUM_FIELDS)
   REAL(KIND=8) :: halo_time,timer
+
+  REAL(KIND=8), DIMENSION(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: t2_local
 
   IF (.NOT. ALLOCATED(inner_cg_alphas)) THEN
     ALLOCATE(inner_cg_alphas(coarse_solve_max_iters))
@@ -70,19 +73,37 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   !    inner_cg_alphas, inner_cg_betas,      &
   !    inner_ch_alphas, inner_ch_betas       &
   !    )
-  CALL tea_leaf_dpcg_coarse_solve_ocl(       &
-        coarse_solve_eps,                   &
-        coarse_solve_max_iters,             &
-        it_count, theta,                    &
-        inner_use_ppcg_int,                     &
-        inner_cg_alphas, inner_cg_betas,    &
-        inner_ch_alphas, inner_ch_betas     &
-        )
 
-  ! FIXME needs to copy back t2 as well (or at least make sure fine chunk is aware of it)
+  IF (use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
+                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
+
+      CALL tea_leaf_dpcg_coarse_solve_ocl(       &
+            coarse_solve_eps,                   &
+            coarse_solve_max_iters,             &
+            it_count, theta,                    &
+            inner_use_ppcg_int,                     &
+            inner_cg_alphas, inner_cg_betas,    &
+            inner_ch_alphas, inner_ch_betas,    &
+            t2_local)
+
+      chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
+                   chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1) = t2_local
+    ENDDO
+  ENDIF
 
   ! add back onto the fine grid
   CALL tea_leaf_dpcg_subtract_z()
+
+  IF (use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
+                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
+
+      CALL tea_leaf_dpcg_subtract_u_kernel_ocl(t2_local)
+    ENDDO
+  ENDIF
 
   ! for all subsequent steps, use ppcg
   inner_use_ppcg = .TRUE.
@@ -125,6 +146,9 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
   REAL(KIND=8) :: solve_time
 
   INTEGER :: it_count
+  INTEGER :: t
+
+  REAL(KIND=8), DIMENSION(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: t2_local
 
   CALL tea_leaf_dpcg_matmul_ZTA(solve_time)
   CALL tea_leaf_dpcg_restrict_ZT(.TRUE.)
@@ -154,14 +178,25 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
   !    inner_cg_alphas, inner_cg_betas,      &
   !    inner_ch_alphas, inner_ch_betas       &
   !    )
-  CALL tea_leaf_dpcg_coarse_solve_ocl(       &
-        coarse_solve_eps,                   &
-        coarse_solve_max_iters,             &
-        it_count, theta,                    &
-        inner_use_ppcg,                     &
-        inner_cg_alphas, inner_cg_betas,    &
-        inner_ch_alphas, inner_ch_betas     &
-        )
+
+  IF (use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
+                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
+
+      CALL tea_leaf_dpcg_coarse_solve_ocl(       &
+            coarse_solve_eps,                   &
+            coarse_solve_max_iters,             &
+            it_count, theta,                    &
+            inner_use_ppcg_int,                     &
+            inner_cg_alphas, inner_cg_betas,    &
+            inner_ch_alphas, inner_ch_betas,    &
+            t2_local)
+
+      chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
+                   chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1) = t2_local
+    ENDDO
+  ENDIF
 
   CALL tea_leaf_dpcg_prolong_Z()
 
