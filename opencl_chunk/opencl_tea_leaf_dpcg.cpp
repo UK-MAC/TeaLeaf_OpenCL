@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-// FIXME some of these might not have to copy memory back and forth as much as they do
+// TODO some of these might not have to copy memory back and forth as much as they do
 
 void TeaOpenCLChunk::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * host_Kx, double * host_Ky)
