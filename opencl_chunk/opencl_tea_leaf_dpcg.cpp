@@ -51,8 +51,8 @@ void TeaOpenCLChunk::getCoarseCopyParameters
 
 }
 
-void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
-(double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)
+void TeaOpenCLChunk::writeRect
+(cl::Buffer dst, double * src)
 {
     cl::size_t<3> buffer_origin;
     cl::size_t<3> host_origin;
@@ -64,8 +64,8 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
     getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
         &buffer_row_pitch, &host_row_pitch);
 
-    // Need to copy back into the middle of the grid, not in the halos
-    queue.enqueueWriteBufferRect(vector_Kx, CL_TRUE,
+    queue.enqueueWriteBufferRect(dst,
+        CL_TRUE,
         buffer_origin,
         host_origin,
         region,
@@ -73,8 +73,24 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
         0,
         host_row_pitch,
         0,
-        global_coarse_Kx);
-    queue.enqueueWriteBufferRect(vector_Ky, CL_TRUE,
+        src);
+}
+
+void TeaOpenCLChunk::readRect
+(double * dst, cl::Buffer src)
+{
+    cl::size_t<3> buffer_origin;
+    cl::size_t<3> host_origin;
+    cl::size_t<3> region;
+
+    size_t buffer_row_pitch;
+    size_t host_row_pitch;
+
+    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
+        &buffer_row_pitch, &host_row_pitch);
+
+    queue.enqueueReadBufferRect(src,
+        CL_TRUE,
         buffer_origin,
         host_origin,
         region,
@@ -82,17 +98,16 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
         0,
         host_row_pitch,
         0,
-        global_coarse_Ky);
+        dst);
+}
+
+void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
+(double * global_coarse_Kx, double * global_coarse_Ky, double * global_coarse_Di)
+{
+    writeRect(vector_Kx, global_coarse_Kx);
+    writeRect(vector_Ky, global_coarse_Ky);
     // FIXME diagonal...?
-    //queue.enqueueWriteBufferRect(vector_Di, CL_TRUE,
-    //    buffer_origin,
-    //    host_origin,
-    //    region,
-    //    buffer_row_pitch,
-    //    0,
-    //    host_row_pitch,
-    //    0,
-    //    global_coarse_Di);
+    //writeRect(vector_Di, global_coarse_Di);
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
@@ -130,26 +145,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_restrict_zt_kernel
 void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_t2
 (double * global_coarse_t2)
 {
-    cl::size_t<3> buffer_origin;
-    cl::size_t<3> host_origin;
-    cl::size_t<3> region;
-
-    size_t buffer_row_pitch;
-    size_t host_row_pitch;
-
-    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
-        &buffer_row_pitch, &host_row_pitch);
-
-    // t2 is used as u0 in the coarse solve
-    queue.enqueueWriteBufferRect(u0, CL_TRUE,
-        buffer_origin,
-        host_origin,
-        region,
-        buffer_row_pitch,
-        0,
-        host_row_pitch,
-        0,
-        global_coarse_t2);
+    writeRect(u0, global_coarse_t2);
 
     return;
     tea_leaf_calc_residual();
@@ -223,26 +219,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
  double * inner_ch_betas,
  double * t2_result)
 {
-    cl::size_t<3> buffer_origin;
-    cl::size_t<3> host_origin;
-    cl::size_t<3> region;
-
-    size_t buffer_row_pitch;
-    size_t host_row_pitch;
-
-    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
-        &buffer_row_pitch, &host_row_pitch);
-
-    // t2 is 0 here - we want a 0 initial guess
-    queue.enqueueWriteBufferRect(u, CL_TRUE,
-        buffer_origin,
-        host_origin,
-        region,
-        buffer_row_pitch,
-        0,
-        host_row_pitch,
-        0,
-        t2_result);
+    writeRect(u, t2_result);
 
     double rro, rrn, pw;
 
@@ -292,15 +269,6 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
     exit(0);
     }
 
-    // copy back result into t2
-    queue.enqueueReadBufferRect(u, CL_TRUE,
-        buffer_origin,
-        host_origin,
-        region,
-        buffer_row_pitch,
-        0,
-        host_row_pitch,
-        0,
-        t2_result);
+    readRect(t2_result, u);
 }
 

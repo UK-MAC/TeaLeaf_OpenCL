@@ -251,6 +251,11 @@ private:
      size_t * buffer_row_pitch,
      size_t * host_row_pitch);
 
+    void writeRect
+    (cl::Buffer dst, double * src);
+    void readRect
+    (double * dst, cl::Buffer src);
+
 public:
     TeaOpenCLChunk
     (run_params_t run_params, cl::Context context, cl::Device device,
