@@ -62,9 +62,9 @@ extern "C" void tea_leaf_dpcg_calc_rrn_kernel_ocl_
 }
 
 extern "C" void tea_leaf_dpcg_calc_p_kernel_ocl_
-(void)
+(double * beta)
 {
-    tea_context.tea_leaf_dpcg_calc_p_kernel();
+    tea_context.tea_leaf_dpcg_calc_p_kernel(*beta);
 }
 
 extern "C" void tea_leaf_dpcg_coarse_solve_ocl_
@@ -150,9 +150,9 @@ void TeaCLContext::tea_leaf_dpcg_calc_rrn_kernel
 }
 
 void TeaCLContext::tea_leaf_dpcg_calc_p_kernel
-(void)
+(double beta)
 {
-    chunks.at(fine_chunk)->tea_leaf_dpcg_calc_p_kernel();
+    chunks.at(fine_chunk)->tea_leaf_dpcg_calc_p_kernel(beta);
 }
 
 void TeaCLContext::tea_leaf_dpcg_local_solve

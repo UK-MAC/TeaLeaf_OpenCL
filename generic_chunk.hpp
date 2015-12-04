@@ -115,7 +115,7 @@ public:
     (double * rrn)=0;
 
     virtual void tea_leaf_dpcg_calc_p_kernel
-    (void)=0;
+    (double beta)=0;
 
     virtual void tea_leaf_dpcg_coarsen_matrix_kernel
     (double * host_Kx, double * host_Ky)=0;

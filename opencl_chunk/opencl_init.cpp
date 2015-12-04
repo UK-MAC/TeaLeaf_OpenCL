@@ -8,7 +8,7 @@ TeaOpenCLChunk::TeaOpenCLChunk
  run_params(run_params),
  TeaChunk(x_cells, y_cells, coarse_x_cells, coarse_y_cells)
 {
-    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
+    //fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

@@ -183,8 +183,10 @@ void TeaOpenCLChunk::tea_leaf_dpcg_calc_rrn_kernel
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_calc_p_kernel
-(void)
+(double beta)
 {
+    tea_leaf_dpcg_calc_p_device.setArg(3, beta);
+
     ENQUEUE(tea_leaf_dpcg_calc_p_device);
 }
 
@@ -200,19 +202,37 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
  double * inner_ch_betas,
  double * t2_result)
 {
-    double rx, ry;
-    int zeros[4] = {0};
+    cl::size_t<3> buffer_origin;
+    cl::size_t<3> host_origin;
+    cl::size_t<3> region;
+
+    size_t buffer_row_pitch;
+    size_t host_row_pitch;
+
+    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
+        &buffer_row_pitch, &host_row_pitch);
+
+    // 0 initial guess
+    queue.enqueueWriteBufferRect(u, CL_TRUE,
+        buffer_origin,
+        host_origin,
+        region,
+        buffer_row_pitch,
+        0,
+        host_row_pitch,
+        0,
+        t2_result);
 
     double rro, rrn, pw;
 
-    // FIXME read in from input file
-    tea_leaf_common_init(COEF_CONDUCTIVITY, 0.04, &rx, &ry, zeros, 0);
     tea_leaf_calc_residual();
     tea_leaf_cg_init_kernel(&rro);
 
+    fprintf(stdout, "%f\n", rro);
+
     for (int ii = 0; ii < 100; ii++)
     {
-        // FIXME redo these so it doesnt copy back memory repeatedly
+        // TODO redo these so it doesnt copy back memory repeatedly
         tea_leaf_cg_calc_w_kernel(&pw);
 
         double alpha = rro/pw;
@@ -224,17 +244,26 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         tea_leaf_cg_calc_p_kernel(beta);
 
         rro = rrn;
+
+        inner_cg_alphas[ii] = alpha;
+        inner_cg_betas[ii] = beta;
+
+    fprintf(stdout, "%f\n", rrn);
+
+        *it_count = ii;
     }
 
-    cl::size_t<3> buffer_origin;
-    cl::size_t<3> host_origin;
-    cl::size_t<3> region;
+    std::vector<double> result = dumpArray("u", 0, 0);
 
-    size_t buffer_row_pitch;
-    size_t host_row_pitch;
+    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
 
-    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
-        &buffer_row_pitch, &host_row_pitch);
+    FILE * chunkout = fopen("chunk.out", "w");
+    for (int ii = 0; ii < result.size(); ii++)
+        fprintf(chunkout, "%f ", result.at(ii));
+    fprintf(chunkout, "\n");
+    fclose(chunkout);
+
+    exit(0);
 
     // t2 is used as u0 in the coarse solve
     queue.enqueueReadBufferRect(u, CL_TRUE,

@@ -76,6 +76,7 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
+      chunk%def%t2 = 0
       CALL tea_leaf_dpcg_coarse_solve_ocl(       &
             coarse_solve_eps,                   &
             coarse_solve_max_iters,             &
@@ -175,6 +176,7 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
+      chunk%def%t2 = 0
       CALL tea_leaf_dpcg_coarse_solve_ocl(       &
             coarse_solve_eps,                   &
             coarse_solve_max_iters,             &
@@ -430,7 +432,7 @@ SUBROUTINE tea_leaf_dpcg_calc_p(beta)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_dpcg_calc_p_kernel_ocl()
+      CALL tea_leaf_dpcg_calc_p_kernel_ocl(beta)
     ENDDO
   ENDIF
 

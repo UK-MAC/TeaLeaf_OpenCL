@@ -189,6 +189,7 @@ CTX_FILES=\
 
 OCL_FILES=\
 	opencl_buffers.o \
+	opencl_errors.o \
 	opencl_field_summary.o \
 	opencl_generate_chunk.o \
 	opencl_init.o \

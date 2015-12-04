@@ -189,7 +189,7 @@ public:
     void tea_leaf_dpcg_calc_rrn_kernel
     (double * rrn);
     void tea_leaf_dpcg_calc_p_kernel
-    (void);
+    (double beta);
 
     void tea_leaf_dpcg_local_solve
     (double * coarse_solve_eps,

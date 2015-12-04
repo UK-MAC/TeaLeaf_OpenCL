@@ -160,6 +160,7 @@ opencl_buffers.o: opencl_chunk/opencl_buffers.cpp opencl_chunk/opencl_chunk.hpp 
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
  opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp
+opencl_errors.o: opencl_chunk/opencl_errors.cpp
 opencl_field_summary.o: opencl_chunk/opencl_field_summary.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
