@@ -8,7 +8,7 @@
 #define DEFLATION_IDX \
     /* column */ \
     (int)(get_group_id(0) \
-    /* row */ \
+    /* row - need to use x_max and not get_global_size because it might be padded too big */ \
     + get_group_id(1)*ceil(kernel_info.x_max/(float)SUB_TILE_BLOCK_SIZE))
 
 /*
