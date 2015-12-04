@@ -91,15 +91,6 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   ! add back onto the fine grid
   CALL tea_leaf_dpcg_subtract_z()
 
-  IF (use_opencl_kernels) THEN
-    DO t=1,tiles_per_task
-      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
-                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
-
-      CALL tea_leaf_dpcg_subtract_u_kernel_ocl(t2_local)
-    ENDDO
-  ENDIF
-
   ! for all subsequent steps, use ppcg
   inner_use_ppcg = .TRUE.
   inner_use_ppcg_int = 1

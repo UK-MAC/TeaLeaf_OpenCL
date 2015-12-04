@@ -257,17 +257,17 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
     fprintf(stdout, "%d iters\n", *it_count);
     fprintf(stdout, "\n");
 
-    if (*inner_use_ppcg)
-    {
-    std::vector<double> result = dumpArray("u", 0, 0);
-    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
-    FILE * chunkout = fopen("chunk.out", "w");
-    for (size_t ii = 0; ii < result.size(); ii++)
-        fprintf(chunkout, "%e ", result.at(ii));
-    fprintf(chunkout, "\n");
-    fclose(chunkout);
-    exit(0);
-    }
+    //if (*inner_use_ppcg)
+    //{
+    //std::vector<double> result = dumpArray("u", 0, 0);
+    //fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
+    //FILE * chunkout = fopen("chunk.out", "w");
+    //for (size_t ii = 0; ii < result.size(); ii++)
+    //    fprintf(chunkout, "%e ", result.at(ii));
+    //fprintf(chunkout, "\n");
+    //fclose(chunkout);
+    //exit(0);
+    //}
 
     readRect(t2_result, u);
 }
