@@ -180,6 +180,8 @@ public:
     (double * t2_local);
     void tea_leaf_dpcg_restrict_zt_kernel
     (double * ztr_local);
+    void tea_leaf_dpcg_solve_z_kernel
+    (void);
     void tea_leaf_dpcg_matmul_zta_kernel
     (double * ztaz_local);
     void tea_leaf_dpcg_init_p_kernel

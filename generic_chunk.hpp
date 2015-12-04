@@ -102,6 +102,9 @@ public:
     virtual void tea_leaf_dpcg_restrict_zt_kernel
     (double * ztr_local)=0;
 
+    virtual void tea_leaf_dpcg_solve_z
+    (void)=0;
+
     virtual void tea_leaf_dpcg_matmul_zta_kernel
     (double * ztaz_local)=0;
 

@@ -1,6 +1,8 @@
 #include "../ctx_common.hpp"
 #include "opencl_reduction.hpp"
 
+#include <cmath>
+
 // FIXME some of these might not have to copy memory back and forth as much as they do
 
 void TeaOpenCLChunk::tea_leaf_dpcg_coarsen_matrix_kernel
@@ -148,6 +150,25 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_t2
         host_row_pitch,
         0,
         global_coarse_t2);
+
+    return;
+    tea_leaf_calc_residual();
+    {
+    std::vector<double> result = dumpArray("u0", 0, 0);
+    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
+    FILE * chunkout = fopen("chunk.out", "w");
+    for (size_t ii = 0; ii < result.size(); ii++)
+        fprintf(chunkout, "%.15e ", 1e10*result.at(ii));
+    fprintf(chunkout, "\n");
+    fclose(chunkout);
+    exit(0);
+    }
+}
+
+void TeaOpenCLChunk::tea_leaf_dpcg_solve_z
+(void)
+{
+    ENQUEUE(tea_leaf_dpcg_solve_z_device);
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_matmul_zta_kernel
@@ -212,7 +233,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
     getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
         &buffer_row_pitch, &host_row_pitch);
 
-    // 0 initial guess
+    // t2 is 0 here - we want a 0 initial guess
     queue.enqueueWriteBufferRect(u, CL_TRUE,
         buffer_origin,
         host_origin,
@@ -228,9 +249,13 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
     tea_leaf_calc_residual();
     tea_leaf_cg_init_kernel(&rro);
 
-    fprintf(stdout, "%f\n", rro);
+    double initial = rro;
 
-    for (int ii = 0; ii < 100; ii++)
+    rrn = 1e10;
+
+    fprintf(stdout, "before: %e\n", rro);
+
+    for (int ii = 0; (ii < (*coarse_solve_max_iters)) && (sqrt(fabs(rrn)) > (*coarse_solve_eps)*initial); ii++)
     {
         // TODO redo these so it doesnt copy back memory repeatedly
         tea_leaf_cg_calc_w_kernel(&pw);
@@ -248,24 +273,26 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         inner_cg_alphas[ii] = alpha;
         inner_cg_betas[ii] = beta;
 
-    fprintf(stdout, "%f\n", rrn);
-
-        *it_count = ii;
+        *it_count = ii + 1;
     }
 
+    fprintf(stdout, "after: %e\n", rrn);
+    fprintf(stdout, "%d iters\n", *it_count);
+    fprintf(stdout, "\n");
+
+    if (*inner_use_ppcg)
+    {
     std::vector<double> result = dumpArray("u", 0, 0);
-
     fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
-
     FILE * chunkout = fopen("chunk.out", "w");
-    for (int ii = 0; ii < result.size(); ii++)
-        fprintf(chunkout, "%f ", result.at(ii));
+    for (size_t ii = 0; ii < result.size(); ii++)
+        fprintf(chunkout, "%e ", result.at(ii));
     fprintf(chunkout, "\n");
     fclose(chunkout);
-
     exit(0);
+    }
 
-    // t2 is used as u0 in the coarse solve
+    // copy back result into t2
     queue.enqueueReadBufferRect(u, CL_TRUE,
         buffer_origin,
         host_origin,

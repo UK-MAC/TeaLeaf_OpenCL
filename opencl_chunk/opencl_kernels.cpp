@@ -601,6 +601,14 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_dpcg_restrict_ZT_device.setArg(1, vector_r);
     tea_leaf_dpcg_restrict_ZT_device.setArg(2, coarse_local_ztr);
 
+    tea_leaf_dpcg_solve_z_device.setArg(1, vector_r);
+    tea_leaf_dpcg_solve_z_device.setArg(2, vector_z);
+    tea_leaf_dpcg_solve_z_device.setArg(3, cp);
+    tea_leaf_dpcg_solve_z_device.setArg(4, bfp);
+    tea_leaf_dpcg_solve_z_device.setArg(5, vector_Mi);
+    tea_leaf_dpcg_solve_z_device.setArg(6, vector_Kx);
+    tea_leaf_dpcg_solve_z_device.setArg(7, vector_Ky);
+
     tea_leaf_dpcg_matmul_ZTA_device.setArg(1, vector_z);
     tea_leaf_dpcg_matmul_ZTA_device.setArg(2, vector_Kx);
     tea_leaf_dpcg_matmul_ZTA_device.setArg(3, vector_Ky);

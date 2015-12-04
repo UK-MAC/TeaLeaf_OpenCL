@@ -271,12 +271,11 @@ SUBROUTINE tea_leaf_dpcg_matmul_ZTA(solve_time)
 
   INTEGER :: fields(NUM_FIELDS)
 
-  ! TODO can just call from when inside C++
-  !IF (use_opencl_kernels) THEN
-  !  DO t=1,tiles_per_task
-  !    CALL tea_leaf_dpcg_solve_z_kernel_ocl()
-  !  ENDDO
-  !ENDIF
+  IF (use_opencl_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_dpcg_solve_z_kernel_ocl()
+    ENDDO
+  ENDIF
 
   fields = 0
   fields(FIELD_Z) = 1

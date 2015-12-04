@@ -37,6 +37,12 @@ extern "C" void tea_leaf_dpcg_copy_reduced_t2_ocl_
     tea_context.tea_leaf_dpcg_copy_reduced_t2(global_coarse_t2);
 }
 
+extern "C" void tea_leaf_dpcg_solve_z_kernel_ocl_
+(double * beta)
+{
+    tea_context.tea_leaf_dpcg_solve_z_kernel();
+}
+
 extern "C" void tea_leaf_dpcg_matmul_zta_kernel_ocl_
 (double * host_ztaz)
 {
@@ -123,6 +129,12 @@ void TeaCLContext::tea_leaf_dpcg_restrict_zt_kernel
 (double * host_ztr)
 {
     chunks.at(fine_chunk)->tea_leaf_dpcg_restrict_zt_kernel(host_ztr);
+}
+
+void TeaCLContext::tea_leaf_dpcg_solve_z_kernel
+(void)
+{
+    chunks.at(fine_chunk)->tea_leaf_dpcg_solve_z();
 }
 
 void TeaCLContext::tea_leaf_dpcg_matmul_zta_kernel

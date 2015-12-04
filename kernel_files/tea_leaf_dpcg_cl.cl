@@ -262,7 +262,14 @@ __kernel void tea_leaf_dpcg_solve_z
     }
     else if (WITHIN_BOUNDS)
     {
-        z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
+        {
+            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+        }
     }
 }
 
