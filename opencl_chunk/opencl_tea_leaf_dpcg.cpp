@@ -226,9 +226,25 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         rro = rrn;
     }
 
-    // FIXME copy back correctly
-    queue.enqueueReadBuffer(coarse_local_ztaz, CL_TRUE, 0, 
-        local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
-        ztaz_local);
+    cl::size_t<3> buffer_origin;
+    cl::size_t<3> host_origin;
+    cl::size_t<3> region;
+
+    size_t buffer_row_pitch;
+    size_t host_row_pitch;
+
+    getCoarseCopyParameters(&buffer_origin, &host_origin, &region,
+        &buffer_row_pitch, &host_row_pitch);
+
+    // t2 is used as u0 in the coarse solve
+    queue.enqueueReadBufferRect(u, CL_TRUE,
+        buffer_origin,
+        host_origin,
+        region,
+        buffer_row_pitch,
+        0,
+        host_row_pitch,
+        0,
+        t2_result);
 }
 

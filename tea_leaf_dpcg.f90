@@ -76,9 +76,6 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
-                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
-
       CALL tea_leaf_dpcg_coarse_solve_ocl(       &
             coarse_solve_eps,                   &
             coarse_solve_max_iters,             &
@@ -86,10 +83,7 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
             inner_use_ppcg_int,                     &
             inner_cg_alphas, inner_cg_betas,    &
             inner_ch_alphas, inner_ch_betas,    &
-            t2_local)
-
-      chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
-                   chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1) = t2_local
+            chunk%def%t2)
     ENDDO
   ENDIF
 
@@ -181,9 +175,6 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
-      t2_local = chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
-                              chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1)
-
       CALL tea_leaf_dpcg_coarse_solve_ocl(       &
             coarse_solve_eps,                   &
             coarse_solve_max_iters,             &
@@ -191,10 +182,7 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
             inner_use_ppcg_int,                     &
             inner_cg_alphas, inner_cg_betas,    &
             inner_ch_alphas, inner_ch_betas,    &
-            t2_local)
-
-      chunk%def%t2(chunk%tiles(t)%def_tile_coords(1):chunk%tiles(t)%def_tile_coords(1)+chunk%sub_tile_dims(1)-1, &
-                   chunk%tiles(t)%def_tile_coords(2):chunk%tiles(t)%def_tile_coords(2)+chunk%sub_tile_dims(2)-1) = t2_local
+            chunk%def%t2)
     ENDDO
   ENDIF
 
