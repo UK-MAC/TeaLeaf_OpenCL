@@ -15,20 +15,23 @@ void TeaOpenCLChunk::initProgram
 
 #ifdef __arm__
     // on ARM, don't use built in functions as they don't exist
-    options << "-DCLOVER_NO_BUILTINS ";
+    options << "-D CLOVER_NO_BUILTINS ";
 #endif
 
-    options << "-DJACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
+    options << "-D JACOBI_BLOCK_SIZE=" << JACOBI_BLOCK_SIZE << " ";
 
     // if it doesn't subdivide exactly, need to make sure it doesn't go off the edge
     // rather expensive check so don't always do it
     if (chunk_y_cells % JACOBI_BLOCK_SIZE)
     {
-        options << "-DBLOCK_TOP_CHECK ";
+        options << "-D BLOCK_TOP_CHECK ";
     }
 
     // local sizes
-    options << "-DBLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
+    options << "-D BLOCK_SZ=" << LOCAL_X*LOCAL_Y << " ";
+
+    // need a separate specification for the kernels which coarsen or refine to/from coarse grid
+    options << "-D COARSE_BLOCK_SZ=" << SUB_TILE_BLOCK_SIZE*SUB_TILE_BLOCK_SIZE << " ";
 
     // include current directory
     options << "-I. ";
@@ -37,7 +40,7 @@ void TeaOpenCLChunk::initProgram
     options << device_type_prepro;
 
     // depth of halo in terms of memory allocated, NOT in terms of the actual halo size (which might be different)
-    options << "-DHALO_DEPTH=" << run_params.halo_exchange_depth << " ";
+    options << "-D HALO_DEPTH=" << run_params.halo_exchange_depth << " ";
 
     /*
     if (!rank)
@@ -125,9 +128,9 @@ launch_specs_t TeaOpenCLChunk::findPaddingSize
 (int vmin, int vmax, int hmin, int hmax)
 {
     size_t global_horz_size = (-(hmin)) + (hmax) + chunk_x_cells;
-    while (global_horz_size % LOCAL_X) global_horz_size++;
+    while ((global_horz_size % LOCAL_X) || (global_horz_size % SUB_TILE_BLOCK_SIZE)) global_horz_size++;
     size_t global_vert_size = (-(vmin)) + (vmax) + chunk_y_cells;
-    while (global_vert_size % LOCAL_Y) global_vert_size++;
+    while ((global_vert_size % LOCAL_Y) || (global_vert_size % SUB_TILE_BLOCK_SIZE)) global_vert_size++;
     launch_specs_t cur_specs;
     cur_specs.global = cl::NDRange(global_horz_size, global_vert_size);
     cur_specs.offset = cl::NDRange((run_params.halo_exchange_depth) + (hmin), (run_params.halo_exchange_depth) + (vmin));

@@ -3,6 +3,9 @@
 
 #define JACOBI_BLOCK_SIZE 4
 
+// TODO should be some kind of option in the input file to specify the tile size
+#define SUB_TILE_BLOCK_SIZE 8
+
 #define DEFAULT_LOCAL_SIZE 128
 
 // FIXME Change these to make more sense

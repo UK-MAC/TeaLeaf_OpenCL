@@ -6,7 +6,7 @@
 void TeaOpenCLChunk::tea_leaf_dpcg_coarsen_matrix_kernel
 (double * host_Kx, double * host_Ky)
 {
-    ENQUEUE(tea_leaf_dpcg_coarsen_matrix_device);
+    ENQUEUE_DEFLATION(tea_leaf_dpcg_coarsen_matrix_device);
 
     queue.finish();
 
@@ -100,7 +100,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         t2_local);
 
-    ENQUEUE(tea_leaf_dpcg_prolong_Z_device);
+    ENQUEUE_DEFLATION(tea_leaf_dpcg_prolong_Z_device);
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_subtract_u_kernel
@@ -110,13 +110,13 @@ void TeaOpenCLChunk::tea_leaf_dpcg_subtract_u_kernel
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         t2_local);
 
-    ENQUEUE(tea_leaf_dpcg_subtract_u_device);
+    ENQUEUE_DEFLATION(tea_leaf_dpcg_subtract_u_device);
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_restrict_zt_kernel
 (double * ztr_local)
 {
-    ENQUEUE(tea_leaf_dpcg_restrict_ZT_device);
+    ENQUEUE_DEFLATION(tea_leaf_dpcg_restrict_ZT_device);
 
     queue.finish();
 
@@ -153,7 +153,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_t2
 void TeaOpenCLChunk::tea_leaf_dpcg_matmul_zta_kernel
 (double * ztaz_local)
 {
-    ENQUEUE(tea_leaf_dpcg_matmul_ZTA_device);
+    ENQUEUE_DEFLATION(tea_leaf_dpcg_matmul_ZTA_device);
 
     queue.finish();
 

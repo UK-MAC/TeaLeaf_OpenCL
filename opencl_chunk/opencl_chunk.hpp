@@ -186,11 +186,18 @@ private:
      const std::vector< cl::Event > * const events=NULL,
      cl::Event * const event=NULL);
 
-    #define ENQUEUE(knl)                                    \
-        enqueueKernel(knl, __LINE__, __FILE__,  \
-                      launch_specs.at(#knl).offset,   \
-                      launch_specs.at(#knl).global,   \
+    #define ENQUEUE(knl)                                \
+        enqueueKernel(knl, __LINE__, __FILE__,          \
+                      launch_specs.at(#knl).offset,     \
+                      launch_specs.at(#knl).global,     \
                       local_size);
+
+    // always uses SUB_TILE_BLOCK_SIZE as local size
+    #define ENQUEUE_DEFLATION(knl)                      \
+        enqueueKernel(knl, __LINE__, __FILE__,          \
+                      launch_specs.at(#knl).offset,     \
+                      launch_specs.at(#knl).global,     \
+                      cl::NDRange(SUB_TILE_BLOCK_SIZE, SUB_TILE_BLOCK_SIZE));
 
     template <typename T>
     T reduceValue

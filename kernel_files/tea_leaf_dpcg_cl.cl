@@ -7,9 +7,9 @@
 // NB: coarse arrays have no halo data! They are one contiguous block
 #define DEFLATION_IDX \
     /* column */ \
-    ((get_group_id(0)) \
+    (int)(get_group_id(0) \
     /* row */ \
-    + get_group_id(1)*get_num_groups(0))
+    + get_group_id(1)*ceil(kernel_info.x_max/(float)SUB_TILE_BLOCK_SIZE))
 
 /*
  *  Deflation needs a reduction which only reduces within the work then then
@@ -19,9 +19,9 @@
 #if defined(CL_DEVICE_TYPE_GPU)
 
     // binary tree reduction
-    #define DEFLATION_REDUCTION(in, out, operation)                           \
+    #define DEFLATION_REDUCTION(in, out, operation)                 \
         barrier(CLK_LOCAL_MEM_FENCE);                               \
-        for (int offset = BLOCK_SZ / 2; offset > 0; offset /= 2)    \
+        for (int offset = COARSE_BLOCK_SZ / 2; offset > 0; offset /= 2)    \
         {                                                           \
             if (lid < offset)                                       \
             {                                                       \
@@ -38,15 +38,15 @@
 #elif defined(CL_DEVICE_TYPE_CPU)
 
     // loop in first thread
-    #define DEFLATION_REDUCTION(in, out, operation)                       \
+    #define DEFLATION_REDUCTION(in, out, operation)             \
         barrier(CLK_LOCAL_MEM_FENCE);                           \
-        if (0 == lid)                                           \
+        if (!lid && WITHIN_BOUNDS)                                           \
         {                                                       \
-            for (int offset = 1; offset < BLOCK_SZ; offset++)   \
+            for (int offset = 1; offset < COARSE_BLOCK_SZ; offset++)   \
             {                                                   \
                 in[0] = operation(in[0], in[offset]);           \
             }                                                   \
-            out[DEFLATION_IDX] = in[0]; \
+            out[DEFLATION_IDX] = in[0];                         \
         }
 
 #endif
@@ -60,8 +60,8 @@ __kernel void tea_leaf_dpcg_coarsen_matrix
 {
     __kernel_indexes;
 
-    __SHARED__ double Kx_sum_shared[BLOCK_SZ];
-    __SHARED__ double Ky_sum_shared[BLOCK_SZ];
+    __SHARED__ double Kx_sum_shared[COARSE_BLOCK_SZ];
+    __SHARED__ double Ky_sum_shared[COARSE_BLOCK_SZ];
 
     if (WITHIN_BOUNDS)
     {
@@ -113,7 +113,7 @@ __kernel void tea_leaf_dpcg_restrict_ZT
 {
     __kernel_indexes;
 
-    __SHARED__ double ZTr_sum_shared[BLOCK_SZ];
+    __SHARED__ double ZTr_sum_shared[COARSE_BLOCK_SZ];
 
     if (WITHIN_BOUNDS)
     {
@@ -136,7 +136,7 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
 {
     __kernel_indexes;
 
-    __SHARED__ double ztaz_shared[BLOCK_SZ];
+    __SHARED__ double ztaz_shared[COARSE_BLOCK_SZ];
 
     if (WITHIN_BOUNDS)
     {
@@ -234,8 +234,8 @@ __kernel void tea_leaf_dpcg_solve_z
 
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __SHARED__ double r_l[BLOCK_SZ];
-        __SHARED__ double z_l[BLOCK_SZ];
+        __SHARED__ double r_l[COARSE_BLOCK_SZ];
+        __SHARED__ double z_l[COARSE_BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;

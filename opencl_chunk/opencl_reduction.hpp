@@ -12,11 +12,11 @@ T TeaOpenCLChunk::reduceValue
     for (size_t ii = 0; ii < red_kernels.size(); ii++)
     {
         red_kernels.at(ii).kernel.setArg(0, results_buf);
-        TeaOpenCLChunk::enqueueKernel(red_kernels.at(ii).kernel,
-                                   __LINE__, __FILE__,
-                                   cl::NullRange,
-                                   red_kernels.at(ii).global_size,
-                                   red_kernels.at(ii).local_size);
+        enqueueKernel(red_kernels.at(ii).kernel,
+                __LINE__, __FILE__,
+                cl::NullRange,
+                red_kernels.at(ii).global_size,
+                red_kernels.at(ii).local_size);
     }
 
     T result;

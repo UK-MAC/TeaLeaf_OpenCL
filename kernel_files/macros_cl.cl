@@ -49,7 +49,7 @@ typedef struct kernel_info_struct {
     const int row = get_global_id(1);				\
     const int loc_column = get_local_id(0);			\
     const int loc_row = get_local_id(1);			\
-    const int lid = loc_row*LOCAL_X + loc_column;	\
+    const int lid = loc_row*get_local_size(0) + loc_column;	\
     const int gid = row*get_global_size(0) + column;
 
 #define THARR2D(x_offset, y_offset, big_row)                \
