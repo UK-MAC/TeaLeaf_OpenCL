@@ -6,7 +6,8 @@ TeaOpenCLChunk::TeaOpenCLChunk
 :device(device),
  context(context),
  run_params(run_params),
- TeaChunk(x_cells, y_cells, coarse_x_cells, coarse_y_cells)
+ chunk_x_cells(x_cells), chunk_y_cells(y_cells),
+ local_coarse_x_cells(coarse_x_cells),local_coarse_y_cells(coarse_y_cells)
 {
     //fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
 

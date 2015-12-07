@@ -112,124 +112,127 @@ set_field.o :  \
 	tea.o
 
 ctx_errors.o: ctx_errors.cpp \
- ctx_common.hpp kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
+ ctx_common.hpp kernel_files/definitions.hpp types.hpp \
  opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
 ctx_field_summary_kernel.o: ctx_field_summary_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_generate_chunk_kernel.o: ctx_generate_chunk_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_init.o: ctx_init.cpp \
- ctx_common.hpp kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
+ ctx_common.hpp kernel_files/definitions.hpp types.hpp \
  opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp ctx_strings.hpp
 ctx_initialise_chunk_kernel.o: ctx_initialise_chunk_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_pack.o: ctx_pack.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_set_field_kernel.o: ctx_set_field_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_strings.o: ctx_strings.cpp ctx_strings.hpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_cg_kernel.o: ctx_tea_leaf_cg_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_cheby_kernel.o: ctx_tea_leaf_cheby_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_common_kernel.o: ctx_tea_leaf_common_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_dpcg_kernel.o: ctx_tea_leaf_dpcg_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_jacobi_kernel.o: ctx_tea_leaf_jacobi_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_tea_leaf_ppcg_kernel.o: ctx_tea_leaf_ppcg_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 ctx_update_halo_kernel.o: ctx_update_halo_kernel.cpp ctx_common.hpp \
- kernel_files/definitions.hpp types.hpp generic_chunk.hpp \
- opencl_chunk/opencl_chunk.hpp opencl_chunk/../ctx_common.hpp
+ kernel_files/definitions.hpp types.hpp opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../ctx_common.hpp
 opencl_buffers.o: opencl_chunk/opencl_buffers.cpp opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp
-opencl_errors.o: opencl_chunk/opencl_errors.cpp
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp
+opencl_errors.o: opencl_chunk/opencl_errors.cpp opencl_chunk/../ctx_common.hpp \
+ opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_field_summary.o: opencl_chunk/opencl_field_summary.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_generate_chunk.o: opencl_chunk/opencl_generate_chunk.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_init.o: opencl_chunk/opencl_init.cpp opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_initialise_chunk.o: opencl_chunk/opencl_initialise_chunk.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_kernels.o: opencl_chunk/opencl_kernels.cpp opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_pack.o: opencl_chunk/opencl_pack.cpp opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp
 opencl_reduction.o: opencl_chunk/opencl_reduction.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_set_field.o: opencl_chunk/opencl_set_field.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_tea_leaf_cg.o: opencl_chunk/opencl_tea_leaf_cg.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp opencl_chunk/opencl_reduction.hpp
 opencl_tea_leaf_cheby.o: opencl_chunk/opencl_tea_leaf_cheby.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp opencl_chunk/opencl_reduction.hpp
 opencl_tea_leaf_common.o: opencl_chunk/opencl_tea_leaf_common.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_tea_leaf_dpcg.o: opencl_chunk/opencl_tea_leaf_dpcg.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp opencl_chunk/opencl_reduction.hpp
 opencl_tea_leaf_jacobi.o: opencl_chunk/opencl_tea_leaf_jacobi.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp opencl_chunk/opencl_reduction.hpp
 opencl_tea_leaf_ppcg.o: opencl_chunk/opencl_tea_leaf_ppcg.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp
 opencl_update_halo.o: opencl_chunk/opencl_update_halo.cpp \
  opencl_chunk/../ctx_common.hpp \
  opencl_chunk/../kernel_files/definitions.hpp opencl_chunk/../types.hpp \
- opencl_chunk/../generic_chunk.hpp opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
+ opencl_chunk/../opencl_chunk/opencl_chunk.hpp \
  opencl_chunk/../opencl_chunk/../ctx_common.hpp

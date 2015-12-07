@@ -21,5 +21,7 @@ tl_eps=1.0e-12
 halo_depth=4
 opencl_vendor=any
 opencl_type=cpu
+
 tl_preconditioner_type=jac_diag
+
 *endtea

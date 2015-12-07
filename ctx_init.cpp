@@ -426,11 +426,3 @@ void TeaCLContext::initOcl
     }
 }
 
-TeaChunk::TeaChunk
-(int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells)
-:chunk_x_cells(x_cells), chunk_y_cells(y_cells),
-local_coarse_x_cells(coarse_x_cells),local_coarse_y_cells(coarse_y_cells)
-{
-    ;
-}
-

@@ -8,7 +8,7 @@
 
 #define CL_SAFE_CALL(x) try{x}catch(cl::Error e){DIE("%d %s - %d %s", __LINE__, __FILE__, e.err(), e.what());}
 
-class TeaOpenCLChunk : public TeaChunk
+class TeaOpenCLChunk
 {
 private:
     // kernels
@@ -257,6 +257,21 @@ private:
     (double * dst, cl::Buffer src);
 
 public:
+    // for recording times if profiling is on
+    std::map<std::string, double> kernel_times;
+    // recording number of times each kernel was called
+    std::map<std::string, int> kernel_calls;
+
+    // number of cells
+    const int chunk_x_cells;
+    const int chunk_y_cells;
+    // size of local portion of next coarsest grid
+    const int local_coarse_x_cells;
+    const int local_coarse_y_cells;
+
+    // mpi rank
+    int rank;
+
     TeaOpenCLChunk
     (run_params_t run_params, cl::Context context, cl::Device device,
      int x_cells, int y_cells, int coarse_x_cells, int coarse_y_cells);

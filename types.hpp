@@ -74,26 +74,19 @@ typedef std::vector<reduce_kernel_info_t> reduce_info_vec_t;
  *  the Fortran then it should technically be possible to have an arbitrary
  *  layering of chunks at different coarse levels, corresponding to the 'chunk'
  *  value
- *
- *  The abstraction of the TeaChunk class should also mean that a class can be
- *  created that just calls the Fortran kernels - this can be used when the
- *  problem size is small enough that it isn't worth running on a GPU, probably
- *  about 50x50 cells
  */
 const static int fine_chunk = 0;
 const static int coarse_chunk = 1;
 
-class TeaChunk;
+class TeaOpenCLChunk;
 
 #if __cplusplus > 199711L
 #include <memory>
-typedef std::shared_ptr<TeaChunk> chunk_ptr_t;
+typedef std::shared_ptr<TeaOpenCLChunk> chunk_ptr_t;
 #else
 #include <tr1/memory>
-typedef std::tr1::shared_ptr<TeaChunk> chunk_ptr_t;
+typedef std::tr1::shared_ptr<TeaOpenCLChunk> chunk_ptr_t;
 #endif
-
-#include "generic_chunk.hpp"
 
 #include "opencl_chunk/opencl_chunk.hpp"
 
