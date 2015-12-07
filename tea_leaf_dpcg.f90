@@ -46,7 +46,7 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   inner_use_ppcg_int = 0
 
   chunk%def%t1 = 0.0_8
-  CALL tea_leaf_dpcg_restrict_ZT(.TRUE.)
+  CALL tea_leaf_dpcg_restrict_ZT(.FALSE.)
 
   !CALL tea_leaf_dpcg_local_solve(   &
   !    chunk%def%x_min, &
