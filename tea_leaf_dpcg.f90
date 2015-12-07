@@ -254,8 +254,6 @@ SUBROUTINE tea_leaf_dpcg_matmul_ZTA(solve_time)
 
   INTEGER :: t, err
 
-  INTEGER :: sub_tile_dx, sub_tile_dy
-
   REAL(KIND=8),dimension(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: ztaz_local
 
   REAL(KIND=8) :: halo_time,timer
@@ -297,7 +295,6 @@ SUBROUTINE tea_leaf_dpcg_restrict_ZT(not_init)
   LOGICAL :: not_init
   INTEGER :: t, err
 
-  INTEGER :: sub_tile_dx, sub_tile_dy
   REAL(KIND=8),dimension(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: ztr_local
 
   IF (use_opencl_kernels) THEN
@@ -332,8 +329,6 @@ SUBROUTINE tea_leaf_dpcg_prolong_Z()
 
   INTEGER :: t
 
-  INTEGER :: sub_tile_dx, sub_tile_dy
-
   REAL(KIND=8), DIMENSION(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: t2_local
 
   IF (use_opencl_kernels) THEN
@@ -351,8 +346,6 @@ SUBROUTINE tea_leaf_dpcg_subtract_z()
 
   IMPLICIT NONE
   INTEGER :: t
-
-  INTEGER :: sub_tile_dx, sub_tile_dy
 
   REAL(KIND=8), DIMENSION(chunk%sub_tile_dims(1), chunk%sub_tile_dims(2)) :: t2_local
 

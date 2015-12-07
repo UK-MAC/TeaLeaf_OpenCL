@@ -10,6 +10,17 @@ void TeaOpenCLChunk::tea_leaf_dpcg_coarsen_matrix_kernel
 {
     ENQUEUE_DEFLATION(tea_leaf_dpcg_coarsen_matrix_device);
 
+    // These need to be run because init_cg isn't called
+    if (run_params.preconditioner_type == TL_PREC_JAC_BLOCK)
+    {
+        ENQUEUE(tea_leaf_block_init_device);
+        ENQUEUE(tea_leaf_block_solve_device);
+    }
+    else if (run_params.preconditioner_type == TL_PREC_JAC_DIAG)
+    {
+        ENQUEUE(tea_leaf_init_jac_diag_device);
+    }
+
     queue.finish();
 
     queue.enqueueReadBuffer(coarse_local_Kx, CL_TRUE, 0,
@@ -146,19 +157,6 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_t2
 (double * global_coarse_t2)
 {
     writeRect(u0, global_coarse_t2);
-
-    return;
-    tea_leaf_calc_residual();
-    {
-    std::vector<double> result = dumpArray("u0", 0, 0);
-    fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
-    FILE * chunkout = fopen("chunk.out", "w");
-    for (size_t ii = 0; ii < result.size(); ii++)
-        fprintf(chunkout, "%.15e ", 1e10*result.at(ii));
-    fprintf(chunkout, "\n");
-    fclose(chunkout);
-    exit(0);
-    }
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_solve_z
@@ -230,7 +228,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
 
     rrn = 1e10;
 
-    fprintf(stdout, "before: %e\n", rro);
+    //fprintf(stdout, "before: %e\n", rro);
 
     for (int ii = 0; (ii < (*coarse_solve_max_iters)) && (sqrt(fabs(rrn)) > (*coarse_solve_eps)*initial); ii++)
     {
@@ -253,21 +251,21 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         *it_count = ii + 1;
     }
 
-    fprintf(stdout, "after: %e\n", rrn);
-    fprintf(stdout, "%d iters\n", *it_count);
-    fprintf(stdout, "\n");
+//if (*inner_use_ppcg > 10)
+//{
+//std::vector<double> result = dumpArray("u", 0, 0);
+//fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
+//FILE * chunkout = fopen("chunk.out", "w");
+//for (size_t ii = 0; ii < result.size(); ii++)
+//    fprintf(chunkout, "%e ", result.at(ii));
+//fprintf(chunkout, "\n");
+//fclose(chunkout);
+//exit(0);
+//}
 
-    //if (*inner_use_ppcg)
-    //{
-    //std::vector<double> result = dumpArray("u", 0, 0);
-    //fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
-    //FILE * chunkout = fopen("chunk.out", "w");
-    //for (size_t ii = 0; ii < result.size(); ii++)
-    //    fprintf(chunkout, "%e ", result.at(ii));
-    //fprintf(chunkout, "\n");
-    //fclose(chunkout);
-    //exit(0);
-    //}
+    //fprintf(stdout, "after: %e\n", rrn);
+    //fprintf(stdout, "%d iters\n", *it_count);
+    //fprintf(stdout, "\n");
 
     readRect(t2_result, u);
 }

@@ -128,7 +128,9 @@ void TeaOpenCLChunk::initMemory
     ADD_BUFFER_DBG_MAP(vector_sd);
     ADD_BUFFER_DBG_MAP(vector_p);
     ADD_BUFFER_DBG_MAP(vector_r);
+    ADD_BUFFER_DBG_MAP(vector_rm1);
     ADD_BUFFER_DBG_MAP(vector_w);
+    ADD_BUFFER_DBG_MAP(vector_z);
     ADD_BUFFER_DBG_MAP(vector_Mi);
     ADD_BUFFER_DBG_MAP(vector_Kx);
     ADD_BUFFER_DBG_MAP(vector_Ky);

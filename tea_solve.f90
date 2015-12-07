@@ -313,6 +313,7 @@ SUBROUTINE tea_leaf()
       CALL tea_leaf_dpcg_setup_and_solve_E(solve_time)
 
       CALL tea_leaf_dpcg_calc_rrn(rrn)
+
       IF (profiler_on) dot_product_time=timer()
       CALL tea_allsum(rrn)
       IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
