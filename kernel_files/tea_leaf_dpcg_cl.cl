@@ -3,13 +3,15 @@
 
 // TODO this might need to be switched round because of the fortran order of tile indexing
 
+#define NUM_X_SUB_TILES (ceil((float)kernel_info.x_max/(float)SUB_TILE_BLOCK_SIZE))
+
 // special indexing to write into the correct position in the 'coarse' arrays
 // NB: coarse arrays have no halo data! They are one contiguous block
 #define DEFLATION_IDX \
     /* column */ \
     (int)(get_group_id(0) \
     /* row - need to use x_max and not get_global_size because it might be padded too big */ \
-    + get_group_id(1)*ceil(kernel_info.x_max/(float)SUB_TILE_BLOCK_SIZE))
+    + get_group_id(1)*NUM_X_SUB_TILES)
 
 /*
  *  Deflation needs a reduction which only reduces within the work then then
@@ -40,7 +42,7 @@
     // loop in first thread
     #define DEFLATION_REDUCTION(in, out, operation)             \
         barrier(CLK_LOCAL_MEM_FENCE);                           \
-        if (!lid && WITHIN_BOUNDS)                                           \
+        if (!lid && WITHIN_BOUNDS)                              \
         {                                                       \
             for (int offset = 1; offset < COARSE_BLOCK_SZ; offset++)   \
             {                                                   \
@@ -53,10 +55,10 @@
 
 __kernel void tea_leaf_dpcg_coarsen_matrix
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const Kx,
- __GLOBAL__ double * __restrict const Ky,
- __GLOBAL__ double * __restrict const Kx_coarse,
- __GLOBAL__ double * __restrict const Ky_coarse)
+ __GLOBAL__ const double * __restrict const Kx,
+ __GLOBAL__ const double * __restrict const Ky,
+ __GLOBAL__       double * __restrict const Kx_coarse,
+ __GLOBAL__       double * __restrict const Ky_coarse)
 {
     __kernel_indexes;
 
@@ -80,8 +82,8 @@ __kernel void tea_leaf_dpcg_coarsen_matrix
 
 __kernel void tea_leaf_dpcg_prolong_Z
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const z,
- __GLOBAL__ double * __restrict const t2_coarse)
+ __GLOBAL__       double * __restrict const z,
+ __GLOBAL__ const double * __restrict const t2_coarse)
 {
     __kernel_indexes;
 
@@ -95,8 +97,8 @@ __kernel void tea_leaf_dpcg_prolong_Z
 
 __kernel void tea_leaf_dpcg_subtract_u
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const u,
- __GLOBAL__ double * __restrict const t2_coarse)
+ __GLOBAL__       double * __restrict const u,
+ __GLOBAL__ const double * __restrict const t2_coarse)
 {
     __kernel_indexes;
 
@@ -108,8 +110,8 @@ __kernel void tea_leaf_dpcg_subtract_u
 
 __kernel void tea_leaf_dpcg_restrict_ZT
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const r,
- __GLOBAL__ double * __restrict const ZTr_coarse)
+ __GLOBAL__ const double * __restrict const r,
+ __GLOBAL__       double * __restrict const ZTr_coarse)
 {
     __kernel_indexes;
 
@@ -156,8 +158,8 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
 
 __kernel void tea_leaf_dpcg_init_p
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const p,
- __GLOBAL__ double * __restrict const z)
+       __GLOBAL__ double * __restrict const p,
+ const __GLOBAL__ double * __restrict const z)
 {
     __kernel_indexes;
 
@@ -169,8 +171,8 @@ __kernel void tea_leaf_dpcg_init_p
 
 __kernel void tea_leaf_dpcg_store_r
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const r,
- __GLOBAL__ double * __restrict const r_m1)
+ const __GLOBAL__ double * __restrict const r,
+       __GLOBAL__ double * __restrict const r_m1)
 {
     __kernel_indexes;
 
@@ -205,8 +207,8 @@ __kernel void tea_leaf_dpcg_calc_rrn
 
 __kernel void tea_leaf_dpcg_calc_p
 (kernel_info_t kernel_info,
- __GLOBAL__ double * __restrict const p,
- __GLOBAL__ double * __restrict const z,
+       __GLOBAL__ double * __restrict const p,
+ const __GLOBAL__ double * __restrict const z,
  double beta)
 {
     __kernel_indexes;
