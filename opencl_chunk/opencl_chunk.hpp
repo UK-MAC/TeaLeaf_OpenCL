@@ -133,7 +133,7 @@ private:
     cl::Buffer vector_rm1;
 
     // small arrays that are the size of the number of work groups launched
-    // could reuse them but they're tiny
+    // These ones don't have any halos data in them
     cl::Buffer coarse_local_Kx;
     cl::Buffer coarse_local_Ky;
     cl::Buffer coarse_local_t2;

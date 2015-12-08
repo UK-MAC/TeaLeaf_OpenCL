@@ -19,16 +19,16 @@ TeaOpenCLChunk::TeaOpenCLChunk
     switch (device_type)
     {
     case CL_DEVICE_TYPE_GPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        device_type_prepro = "-D CL_DEVICE_TYPE_GPU ";
         break;
     case CL_DEVICE_TYPE_CPU : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_CPU ";
+        device_type_prepro = "-D CL_DEVICE_TYPE_CPU ";
         break;
     case CL_DEVICE_TYPE_ACCELERATOR : 
-        device_type_prepro = "-DCL_DEVICE_TYPE_ACCELERATOR ";
+        device_type_prepro = "-D CL_DEVICE_TYPE_ACCELERATOR ";
         break;
     default :
-        device_type_prepro = "-DCL_DEVICE_TYPE_GPU ";
+        device_type_prepro = "-D CL_DEVICE_TYPE_GPU ";
         break;
     }
 
