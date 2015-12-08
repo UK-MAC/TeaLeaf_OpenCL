@@ -79,14 +79,16 @@ extern "C" void tea_leaf_dpcg_coarse_solve_ocl_
  int    * it_count,
  double * theta,
  int    * inner_use_ppcg,
+ int    * ppcg_max_iters,
  double * inner_cg_alphas,
  double * inner_cg_betas,
  double * inner_ch_alphas,
  double * inner_ch_betas,
  double * t2_result)
 {
-    tea_context.tea_leaf_dpcg_local_solve(coarse_solve_eps,
-        coarse_solve_max_iters, it_count, theta, inner_use_ppcg,
+    tea_context.tea_leaf_dpcg_local_solve(*coarse_solve_eps,
+        *coarse_solve_max_iters, it_count, *theta, *inner_use_ppcg,
+        *ppcg_max_iters,
         inner_cg_alphas, inner_cg_betas, inner_ch_alphas,
         inner_ch_betas, t2_result);
 }
@@ -168,11 +170,12 @@ void TeaCLContext::tea_leaf_dpcg_calc_p_kernel
 }
 
 void TeaCLContext::tea_leaf_dpcg_local_solve
-(double * coarse_solve_eps,
- int    * coarse_solve_max_iters,
+(double   coarse_solve_eps,
+ int      coarse_solve_max_iters,
  int    * it_count,
- double * theta,
- int    * inner_use_ppcg,
+ double   theta,
+ int      inner_use_ppcg,
+ int      ppcg_max_iters,
  double * inner_cg_alphas,
  double * inner_cg_betas,
  double * inner_ch_alphas,
@@ -181,6 +184,7 @@ void TeaCLContext::tea_leaf_dpcg_local_solve
 {
     chunks.at(coarse_chunk)->tea_leaf_dpcg_local_solve(coarse_solve_eps,
         coarse_solve_max_iters, it_count, theta, inner_use_ppcg,
+        ppcg_max_iters,
         inner_cg_alphas, inner_cg_betas, inner_ch_alphas,
         inner_ch_betas, t2_result);
 }

@@ -124,7 +124,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
 void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
 (double * t2_local)
 {
-    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
+    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0,
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         t2_local);
 
@@ -134,7 +134,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
 void TeaOpenCLChunk::tea_leaf_dpcg_subtract_u_kernel
 (double * t2_local)
 {
-    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0, 
+    queue.enqueueWriteBuffer(coarse_local_t2, CL_TRUE, 0,
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         t2_local);
 
@@ -148,7 +148,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_restrict_zt_kernel
 
     queue.finish();
 
-    queue.enqueueReadBuffer(coarse_local_ztr, CL_TRUE, 0, 
+    queue.enqueueReadBuffer(coarse_local_ztr, CL_TRUE, 0,
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         ztr_local);
 }
@@ -172,7 +172,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_matmul_zta_kernel
 
     queue.finish();
 
-    queue.enqueueReadBuffer(coarse_local_ztaz, CL_TRUE, 0, 
+    queue.enqueueReadBuffer(coarse_local_ztaz, CL_TRUE, 0,
         local_coarse_x_cells*local_coarse_y_cells*sizeof(double),
         ztaz_local);
 }
@@ -206,11 +206,12 @@ void TeaOpenCLChunk::tea_leaf_dpcg_calc_p_kernel
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
-(double * coarse_solve_eps,
- int    * coarse_solve_max_iters,
+(double   coarse_solve_eps,
+ int      coarse_solve_max_iters,
  int    * it_count,
- double * theta,
- int    * inner_use_ppcg,
+ double   theta,
+ int      inner_use_ppcg,
+ int      ppcg_max_iters,
  double * inner_cg_alphas,
  double * inner_cg_betas,
  double * inner_ch_alphas,
@@ -230,7 +231,12 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
 
     //fprintf(stdout, "before: %e\n", rro);
 
-    for (int ii = 0; (ii < (*coarse_solve_max_iters)) && (sqrt(fabs(rrn)) > (*coarse_solve_eps)*initial); ii++)
+    if (inner_use_ppcg)
+    {
+        ppcg_init(inner_ch_alphas, inner_ch_betas, theta, ppcg_max_iters);
+    }
+
+    for (int ii = 0; (ii < coarse_solve_max_iters) && (sqrt(fabs(rrn)) > coarse_solve_eps*initial); ii++)
     {
         // TODO redo these so it doesnt copy back memory repeatedly
         tea_leaf_cg_calc_w_kernel(&pw);
@@ -238,6 +244,19 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         double alpha = rro/pw;
 
         tea_leaf_cg_calc_ur_kernel(alpha, &rrn);
+
+        if (inner_use_ppcg)
+        {
+            ppcg_init_sd_kernel();
+
+            for (int jj = 0; jj < 10; jj++)
+            {
+                int zeros[4] = {EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE};
+                tea_leaf_ppcg_inner_kernel(jj + 1, 7, zeros);
+            }
+
+            tea_leaf_calc_2norm_kernel(2, &rrn);
+        }
 
         double beta = rrn/rro;
 
@@ -251,7 +270,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         *it_count = ii + 1;
     }
 
-//if (*inner_use_ppcg > 10)
+//if (inner_use_ppcg > 10)
 //{
 //std::vector<double> result = dumpArray("u", 0, 0);
 //fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);

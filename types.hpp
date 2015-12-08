@@ -187,11 +187,12 @@ public:
     (double beta);
 
     void tea_leaf_dpcg_local_solve
-    (double * coarse_solve_eps,
-     int    * coarse_solve_max_iters,
+    (double   coarse_solve_eps,
+     int      coarse_solve_max_iters,
      int    * it_count,
-     double * theta,
-     int    * inner_use_ppcg,
+     double   theta,
+     int      inner_use_ppcg,
+     int      ppcg_max_iters,
      double * inner_cg_alphas,
      double * inner_cg_betas,
      double * inner_ch_alphas,
