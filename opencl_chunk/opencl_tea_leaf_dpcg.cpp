@@ -252,7 +252,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
             for (int jj = 0; jj < 10; jj++)
             {
                 int zeros[4] = {EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE};
-                tea_leaf_ppcg_inner_kernel(jj + 1, 7, zeros);
+                tea_leaf_ppcg_inner_kernel(jj + 1, run_params.halo_exchange_depth, zeros);
             }
 
             tea_leaf_calc_2norm_kernel(2, &rrn);
