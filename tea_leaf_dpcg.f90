@@ -101,13 +101,15 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   inner_use_ppcg = .TRUE.
   inner_use_ppcg_int = 1
 
-  !CALL tea_calc_eigenvalues(inner_cg_alphas, inner_cg_betas, eigmin, eigmax, &
-  !    max_iters, it_count, info)
-  info = 0
-
-  ! With jacobi preconditioner on
-  eigmin = 0.01_8
-  eigmax = 2.0_8
+  IF (tl_preconditioner_type .EQ. TL_PREC_JAC_DIAG) THEN
+    ! With jacobi preconditioner on
+    eigmin = 0.01_8
+    eigmax = 2.0_8
+    info = 0
+  ELSE
+    CALL tea_calc_eigenvalues(inner_cg_alphas, inner_cg_betas, eigmin, eigmax, &
+        max_iters, it_count, info)
+  ENDIF
 
   IF (info .NE. 0) CALL report_error('tea_leaf_dpcg_init_x0', 'Error in calculating eigenvalues')
 
