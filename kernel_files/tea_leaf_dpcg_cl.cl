@@ -39,6 +39,10 @@
 
 #elif defined(CL_DEVICE_TYPE_CPU)
 
+#if 0
+#define DEFLATION_REDUCTION(in, out, operation) { barrier(CLK_LOCAL_MEM_FENCE); if (!lid && WITHIN_BOUNDS) { bool swapped = false; while (1) { for (int ii = 0; ii < COARSE_BLOCK_SZ - 1; ii++) { if (in[ii] > in[ii + 1]) { double tmp = in[ii]; in[ii] = in[ii + 1]; in[ii + 1] = tmp; swapped = true; } } if (!swapped) { break; } swapped = false; } for (int offset = 1; offset < COARSE_BLOCK_SZ; offset++) { in[0] = operation(in[0], in[offset]); } out[DEFLATION_IDX] = in[0]; } }
+
+#else
     // loop in first thread
     #define DEFLATION_REDUCTION(in, out, operation)             \
         barrier(CLK_LOCAL_MEM_FENCE);                           \
@@ -50,6 +54,7 @@
             }                                                   \
             out[DEFLATION_IDX] = in[0];                         \
         }
+#endif
 
 #endif
 
