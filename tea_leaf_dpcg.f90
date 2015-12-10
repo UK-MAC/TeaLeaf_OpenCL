@@ -222,6 +222,11 @@ SUBROUTINE tea_leaf_dpcg_coarsen_matrix()
   CALL MPI_Allreduce(MPI_IN_PLACE, chunk%def%def_kx, size(chunk%def%def_kx), MPI_DOUBLE_PRECISION, MPI_SUM, mpi_cart_comm, err)
   CALL MPI_Allreduce(MPI_IN_PLACE, chunk%def%def_ky, size(chunk%def%def_ky), MPI_DOUBLE_PRECISION, MPI_SUM, mpi_cart_comm, err)
 
+  IF (.NOT. reflective_boundary) THEN
+    chunk%def%def_kx(1:halo_exchange_depth,:) = 0
+    chunk%def%def_ky(:,1:halo_exchange_depth) = 0
+  ENDIF
+
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task
       sub_tile_dx=(chunk%tiles(t)%field%x_max-chunk%tiles(t)%field%x_min+chunk%sub_tile_dims(1))/chunk%sub_tile_dims(1)

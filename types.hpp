@@ -59,10 +59,10 @@ typedef struct {
     // which solver to use, enumerated
     int tea_solver;
     // total number of cells in this MPI rank
-    size_t x_cells;
-    size_t y_cells;
+    int x_cells;
+    int y_cells;
     // halo size
-    size_t halo_exchange_depth;
+    int halo_exchange_depth;
 } run_params_t;
 
 // vectors of kernels and work group sizes for a specific reduction
