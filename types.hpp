@@ -58,9 +58,6 @@ typedef struct {
     int preconditioner_type;
     // which solver to use, enumerated
     int tea_solver;
-    // total number of cells in this MPI rank
-    int x_cells;
-    int y_cells;
     // halo size
     int halo_exchange_depth;
 } run_params_t;

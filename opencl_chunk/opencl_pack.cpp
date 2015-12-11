@@ -90,14 +90,14 @@ void TeaOpenCLChunk::packUnpackAllBuffers
     {
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        side_size = depth*(run_params.y_cells + 2*depth);
+        side_size = depth*(chunk_y_cells + 2*depth);
         pack_global = update_lr_global_size[depth];
         pack_local = update_lr_local_size[depth];
         pack_offset = update_lr_offset[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        side_size = depth*(run_params.x_cells + 2*depth);
+        side_size = depth*(chunk_x_cells + 2*depth);
         pack_global = update_bt_global_size[depth];
         pack_local = update_bt_local_size[depth];
         pack_offset = update_bt_offset[depth];
@@ -121,8 +121,8 @@ void TeaOpenCLChunk::packUnpackAllBuffers
         {
             if (offsets[ii] < 0 || offsets[ii] > NUM_FIELDS*side_size)
             {
-                DIE("Tried to pack/unpack field %d but invalid offset %d given\n",
-                    ii, offsets[ii]);
+                DIE("Tried to pack/unpack field %d but invalid offset %d given (max size is %d)\n",
+                    ii, offsets[ii], NUM_FIELDS*side_size);
             }
 
             int x_inc = 0, y_inc = 0;
@@ -137,6 +137,7 @@ void TeaOpenCLChunk::packUnpackAllBuffers
             case FIELD_p:
             case FIELD_sd:
             case FIELD_r:
+            case FIELD_z:
                 break;
             default:
                 DIE("Invalid field number %d in choosing _inc values\n", which_field);
@@ -159,6 +160,7 @@ void TeaOpenCLChunk::packUnpackAllBuffers
             CASE_BUF(vector_p); break;
             CASE_BUF(vector_sd); break;
             CASE_BUF(vector_r); break;
+            CASE_BUF(vector_z); break;
             default:
                 DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
             }

@@ -19,6 +19,6 @@ void TeaCLContext::packUnpackAllBuffers
  const int depth, const int face, const int pack,
  double * host_buffer)
 {
-    chunks.at(coarse_chunk)->packUnpackAllBuffers(fields, offsets, depth, face, pack, host_buffer);
+    chunks.at(fine_chunk)->packUnpackAllBuffers(fields, offsets, depth, face, pack, host_buffer);
 }
 
