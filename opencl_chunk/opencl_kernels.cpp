@@ -383,9 +383,7 @@ void TeaOpenCLChunk::initSizes
 
     // create ndranges for depth 1 and 2
     update_lr_global_size[1] = cl::NDRange(1, global_lr_update_size);
-    update_lr_global_size[2] = cl::NDRange(2, global_lr_update_size);
     update_bt_global_size[1] = cl::NDRange(global_bt_update_size, 1);
-    update_bt_global_size[2] = cl::NDRange(global_bt_update_size, 2);
 
     size_t global_bt_pack_size = chunk_x_cells + 2*run_params.halo_exchange_depth;
     size_t global_lr_pack_size = chunk_y_cells + 2*run_params.halo_exchange_depth;
