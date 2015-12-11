@@ -139,7 +139,8 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
  __GLOBAL__ const double * __restrict const z,
  __GLOBAL__ const double * __restrict const Kx,
  __GLOBAL__ const double * __restrict const Ky,
- __GLOBAL__       double * __restrict const ztaz_coarse)
+ __GLOBAL__       double * __restrict const ztaz_coarse,
+ double scale_factor)
 {
     __kernel_indexes;
 
@@ -147,7 +148,7 @@ __kernel void tea_leaf_dpcg_matmul_ZTA
 
     if (WITHIN_BOUNDS)
     {
-        ztaz_shared[lid] = (1.0
+        ztaz_shared[lid] = (scale_factor
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*z[THARR2D(0, 0, 0)]
             - (Ky[THARR2D(0, 1, 0)]*z[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*z[THARR2D(0, -1, 0)])
@@ -279,4 +280,3 @@ __kernel void tea_leaf_dpcg_solve_z
         }
     }
 }
-

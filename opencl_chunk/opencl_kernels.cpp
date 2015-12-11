@@ -519,6 +519,7 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_cg_solve_calc_w_device.setArg(3, vector_w);
     tea_leaf_cg_solve_calc_w_device.setArg(4, vector_Kx);
     tea_leaf_cg_solve_calc_w_device.setArg(5, vector_Ky);
+    tea_leaf_cg_solve_calc_w_device.setArg(6, 1.0);
 
     tea_leaf_cg_solve_calc_ur_device.setArg(2, u);
     tea_leaf_cg_solve_calc_ur_device.setArg(3, vector_p);
@@ -577,6 +578,7 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_ppcg_solve_update_r_device.setArg(3, vector_Kx);
     tea_leaf_ppcg_solve_update_r_device.setArg(4, vector_Ky);
     tea_leaf_ppcg_solve_update_r_device.setArg(5, vector_sd);
+    tea_leaf_ppcg_solve_update_r_device.setArg(8, 1.0);
 
     tea_leaf_ppcg_solve_calc_sd_device.setArg(1, vector_r);
     tea_leaf_ppcg_solve_calc_sd_device.setArg(2, vector_sd);
@@ -605,6 +607,7 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_dpcg_matmul_ZTA_device.setArg(2, vector_Kx);
     tea_leaf_dpcg_matmul_ZTA_device.setArg(3, vector_Ky);
     tea_leaf_dpcg_matmul_ZTA_device.setArg(4, coarse_local_ztaz);
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(5, 1.0);
 
     tea_leaf_dpcg_solve_z_device.setArg(1, vector_r);
     tea_leaf_dpcg_solve_z_device.setArg(2, vector_z);
@@ -644,6 +647,7 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_calc_residual_device.setArg(3, vector_r);
     tea_leaf_calc_residual_device.setArg(4, vector_Kx);
     tea_leaf_calc_residual_device.setArg(5, vector_Ky);
+    tea_leaf_calc_residual_device.setArg(6, 1.0);
 
     tea_leaf_calc_2norm_device.setArg(3, reduce_buf_1);
 
@@ -677,6 +681,7 @@ void TeaOpenCLChunk::initArgs
     tea_leaf_init_jac_diag_device.setArg(1, vector_Mi);
     tea_leaf_init_jac_diag_device.setArg(2, vector_Kx);
     tea_leaf_init_jac_diag_device.setArg(3, vector_Ky);
+    tea_leaf_init_jac_diag_device.setArg(4, 1.0);
 
     MPI_Barrier(MPI_COMM_WORLD);
 

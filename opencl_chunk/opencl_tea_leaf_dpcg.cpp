@@ -117,8 +117,15 @@ void TeaOpenCLChunk::tea_leaf_dpcg_copy_reduced_coarse_grid
 {
     writeRect(vector_Kx, global_coarse_Kx);
     writeRect(vector_Ky, global_coarse_Ky);
-    // FIXME diagonal...?
-    //writeRect(vector_Di, global_coarse_Di);
+
+    // matmul needs a scaling factor because the diagonal is the size of the sub tile + the others, not 1.0
+    double scale_factor = double(SUB_TILE_BLOCK_SIZE*SUB_TILE_BLOCK_SIZE);
+
+    tea_leaf_cg_solve_calc_w_device.setArg(6, scale_factor);
+    tea_leaf_ppcg_solve_update_r_device.setArg(8, scale_factor);
+    tea_leaf_calc_residual_device.setArg(6, scale_factor);
+    tea_leaf_init_jac_diag_device.setArg(4, scale_factor);
+    tea_leaf_dpcg_matmul_ZTA_device.setArg(5, scale_factor);
 }
 
 void TeaOpenCLChunk::tea_leaf_dpcg_prolong_z_kernel
@@ -229,10 +236,11 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
 
     rrn = 1e10;
 
-    //fprintf(stdout, "before: %e\n", rro);
+    //fprintf(stdout, "initial: %+.15e\n", initial);
 
     if (inner_use_ppcg)
     {
+        // FIXME only needs to be done once
         ppcg_init(inner_ch_alphas, inner_ch_betas, theta, ppcg_max_iters);
     }
 
@@ -249,7 +257,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         {
             ppcg_init_sd_kernel();
 
-            for (int jj = 0; jj < 10; jj++)
+            for (int jj = 0; jj < 4; jj++)
             {
                 int zeros[4] = {EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE};
                 tea_leaf_ppcg_inner_kernel(jj + 1, run_params.halo_exchange_depth, zeros);
@@ -269,18 +277,6 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
 
         *it_count = ii + 1;
     }
-
-//if (inner_use_ppcg > 10)
-//{
-//std::vector<double> result = dumpArray("u", 0, 0);
-//fprintf(stdout, "%d %d\n", chunk_x_cells, chunk_y_cells);
-//FILE * chunkout = fopen("chunk.out", "w");
-//for (size_t ii = 0; ii < result.size(); ii++)
-//    fprintf(chunkout, "%e ", result.at(ii));
-//fprintf(chunkout, "\n");
-//fclose(chunkout);
-//exit(0);
-//}
 
     //fprintf(stdout, "after: %e\n", rrn);
     //fprintf(stdout, "%d iters\n", *it_count);

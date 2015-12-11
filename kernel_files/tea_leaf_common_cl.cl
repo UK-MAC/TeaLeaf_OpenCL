@@ -21,13 +21,14 @@ __kernel void tea_leaf_calc_residual
  __GLOBAL__ const double * __restrict const u0,
  __GLOBAL__       double * __restrict const r,
  __GLOBAL__ const double * __restrict const Kx,
- __GLOBAL__ const double * __restrict const Ky)
+ __GLOBAL__ const double * __restrict const Ky,
+ double scale_factor)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
-        const double smvp = (1.0
+        const double smvp = (scale_factor
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
             - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
@@ -133,13 +134,14 @@ __kernel void tea_leaf_init_jac_diag
 (kernel_info_t kernel_info,
  __GLOBAL__       double * __restrict const Mi,
  __GLOBAL__ const double * __restrict const Kx,
- __GLOBAL__ const double * __restrict const Ky)
+ __GLOBAL__ const double * __restrict const Ky,
+ double scale_factor)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
-        const double diag = (1.0
+        const double diag = (scale_factor
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
 

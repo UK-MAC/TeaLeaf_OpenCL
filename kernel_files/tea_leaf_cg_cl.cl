@@ -49,7 +49,8 @@ __kernel void tea_leaf_cg_solve_calc_w
  __GLOBAL__ const double * __restrict const p,
  __GLOBAL__       double * __restrict const w,
  __GLOBAL__ const double * __restrict const Kx,
- __GLOBAL__ const double * __restrict const Ky)
+ __GLOBAL__ const double * __restrict const Ky,
+ double scale_factor)
 {
     __kernel_indexes;
 
@@ -58,7 +59,7 @@ __kernel void tea_leaf_cg_solve_calc_w
 
     if (WITHIN_BOUNDS)
     {
-        w[THARR2D(0, 0, 0)] = (1.0
+        w[THARR2D(0, 0, 0)] = (scale_factor
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*p[THARR2D(0, 0, 0)]
             - (Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
