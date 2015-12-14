@@ -181,6 +181,9 @@ SUBROUTINE tea_decompose_tiles(x_cells, y_cells)
   ! get good split for sub-tiles
   CALL MPI_DIMS_CREATE(sub_tiles_per_tile, 2, chunk%sub_tile_dims, err) 
 
+  ! switch round to make tiles more square
+  chunk%sub_tile_dims = (/chunk%sub_tile_dims(2), chunk%sub_tile_dims(1)/)
+
   tiles_x = chunk%tile_dims(1)
   tiles_y = chunk%tile_dims(2)
 

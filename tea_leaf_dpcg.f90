@@ -49,32 +49,6 @@ SUBROUTINE tea_leaf_dpcg_init_x0(solve_time)
   chunk%def%t1 = 0.0_8
   CALL tea_leaf_dpcg_restrict_ZT(.FALSE.)
 
-  !CALL tea_leaf_dpcg_local_solve(   &
-  !    chunk%def%x_min, &
-  !    chunk%def%x_max,                                  &
-  !    chunk%def%y_min,                                  &
-  !    chunk%def%y_max,                                  &
-  !    halo_exchange_depth,                                  &
-  !    chunk%def%t2,                               &
-  !    chunk%def%t1,                               &
-  !    chunk%def%def_Kx, &
-  !    chunk%def%def_Ky, &
-  !    chunk%def%def_di, &
-  !    chunk%def%def_p,                               &
-  !    chunk%def%def_r,                               &
-  !    chunk%def%def_Mi,                               &
-  !    chunk%def%def_w,                               &
-  !    chunk%def%def_z, &
-  !    chunk%def%def_sd, &
-  !    coarse_solve_eps, &
-  !    coarse_solve_max_iters,                          &
-  !    it_count,         &
-  !    0.0_8,            &
-  !    inner_use_ppcg,       &
-  !    inner_cg_alphas, inner_cg_betas,      &
-  !    inner_ch_alphas, inner_ch_betas       &
-  !    )
-
   ppcg_max_iters = 0
 
   IF (use_opencl_kernels) THEN
@@ -146,32 +120,6 @@ SUBROUTINE tea_leaf_dpcg_setup_and_solve_E(solve_time)
 
   CALL tea_leaf_dpcg_matmul_ZTA(solve_time)
   CALL tea_leaf_dpcg_restrict_ZT(.TRUE.)
-
-  !CALL tea_leaf_dpcg_local_solve(   &
-  !    chunk%def%x_min, &
-  !    chunk%def%x_max,                                  &
-  !    chunk%def%y_min,                                  &
-  !    chunk%def%y_max,                                  &
-  !    halo_exchange_depth,                                  &
-  !    chunk%def%t2,                               &
-  !    chunk%def%t1,                               &
-  !    chunk%def%def_Kx, &
-  !    chunk%def%def_Ky, &
-  !    chunk%def%def_di, &
-  !    chunk%def%def_p,                               &
-  !    chunk%def%def_r,                               &
-  !    chunk%def%def_Mi,                               &
-  !    chunk%def%def_w,                               &
-  !    chunk%def%def_z, &
-  !    chunk%def%def_sd, &
-  !    coarse_solve_eps, &
-  !    coarse_solve_max_iters,                          &
-  !    it_count,         &
-  !    theta,            &
-  !    inner_use_ppcg,       &
-  !    inner_cg_alphas, inner_cg_betas,      &
-  !    inner_ch_alphas, inner_ch_betas       &
-  !    )
 
   IF (use_opencl_kernels) THEN
     DO t=1,tiles_per_task

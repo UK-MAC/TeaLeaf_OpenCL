@@ -257,7 +257,7 @@ void TeaOpenCLChunk::tea_leaf_dpcg_local_solve
         {
             ppcg_init_sd_kernel();
 
-            for (int jj = 0; jj < 4; jj++)
+            for (int jj = 0; jj < 10; jj++)
             {
                 int zeros[4] = {EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE, EXTERNAL_FACE};
                 tea_leaf_ppcg_inner_kernel(jj + 1, run_params.halo_exchange_depth, zeros);

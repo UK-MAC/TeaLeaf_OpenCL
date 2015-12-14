@@ -13,7 +13,7 @@ ymax=10.0
 initial_timestep=0.004
 end_step=10
 tl_max_iters=10000
- test_problem 6
+ test_problem 7
 tl_use_dpcg
 tl_check_result
 tl_eps=1.0e-15
@@ -21,9 +21,10 @@ tl_eps=1.0e-15
 halo_depth=1
 opencl_vendor=any
 opencl_type=gpu
+opencl_device=0
 
 tl_preconditioner_type=jac_diag
 
-coarse_solve_max_iters=50
+coarse_solve_max_iters=10
 
 *endtea

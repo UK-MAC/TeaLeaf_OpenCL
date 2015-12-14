@@ -409,7 +409,7 @@ void TeaCLContext::initOcl
                 int coarse_x_cells = tile_sizes[ii*4 + 2];
                 int coarse_y_cells = tile_sizes[ii*4 + 3];
 
-                fprintf(stdout, "%d %d\n", x_cells, y_cells);
+                //fprintf(stdout, "%d %d\n", x_cells, y_cells);
 
                 chunk_ptr_t new_chunk(new TeaOpenCLChunk(run_params, context,
                     device, x_cells, y_cells, coarse_x_cells, coarse_y_cells));
