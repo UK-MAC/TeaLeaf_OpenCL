@@ -26,12 +26,10 @@ __kernel void tea_leaf_cheby_solve_init_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
     }
-
+    __local double r_l[BLOCK_SZ];
+    __local double z_l[BLOCK_SZ];
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
-
         r_l[lid] = 0;
         z_l[lid] = 0;
 
@@ -105,10 +103,10 @@ __kernel void tea_leaf_cheby_solve_calc_p
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
     }
 
+    __local double r_l[BLOCK_SZ];
+    __local double z_l[BLOCK_SZ];
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;
@@ -145,4 +143,3 @@ __kernel void tea_leaf_cheby_solve_calc_p
         }
     }
 }
-

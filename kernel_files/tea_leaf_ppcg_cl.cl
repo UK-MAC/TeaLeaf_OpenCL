@@ -19,10 +19,11 @@ __kernel void tea_leaf_ppcg_solve_init_sd
 {
     __kernel_indexes;
 
+    __local double r_l[BLOCK_SZ];
+    __local double z_l[BLOCK_SZ];
+
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;
@@ -108,10 +109,10 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         row <= (y_max + HALO_DEPTH - 1) + bounds_extra_y &&
         column <= (x_max + HALO_DEPTH - 1) + bounds_extra_x;
 
+    __local double r_l[BLOCK_SZ];
+    __local double z_l[BLOCK_SZ];
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double r_l[BLOCK_SZ];
-        __local double z_l[BLOCK_SZ];
 
         r_l[lid] = 0;
         z_l[lid] = 0;
@@ -152,4 +153,3 @@ __kernel void tea_leaf_ppcg_solve_calc_sd
         }
     }
 }
-

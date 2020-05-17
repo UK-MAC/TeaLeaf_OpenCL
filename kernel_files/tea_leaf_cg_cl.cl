@@ -61,7 +61,7 @@ __kernel void tea_leaf_cg_solve_calc_w
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*p[THARR2D(0, 0, 0)]
             - (Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
             - (Kx[THARR2D(1, 0, 0)]*p[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*p[THARR2D(-1, 0, 0)]);
-        
+
         pw_shared[lid] = p[THARR2D(0, 0, 0)]*w[THARR2D(0, 0, 0)];
     }
 
@@ -96,10 +96,10 @@ __kernel void tea_leaf_cg_solve_calc_ur
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
     }
-
+    __local double z_l[BLOCK_SZ];
     if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        __local double z_l[BLOCK_SZ];
+
 
         if (WITHIN_BOUNDS)
         {
@@ -158,4 +158,3 @@ __kernel void tea_leaf_cg_solve_calc_p
         }
     }
 }
-
