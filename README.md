@@ -21,8 +21,6 @@ Turn on opencl kernel use by putting `use_opencl_kernels` in tea.in.
 
 * `tl_max_iters` specifies the number of iterations to do before stopping
 * `tl_eps` specifies the acceptable error level to stop at
-* `hydro_on`/`hydro_off` will turn the hydrodynamics on or off
-* `tea_leaf_on`/`tea_leaf_off` will turn the linear solver on or off
 
 Enabling these flags will turn on the relevant solver:
 
